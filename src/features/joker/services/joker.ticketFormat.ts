@@ -60,7 +60,7 @@ function buildSingleTicketLines(order: JokerOrderItem[]) {
     const itemNumber = index + 1;
 
     lines.push(BOLD_ON);
-    lines.push(`${itemNumber}) ${item.productName}\n`);
+    lines.push(`${itemNumber}) ${item.quantity}x ${item.productName}\n`);
     lines.push(BOLD_OFF);
 
     const detailLines = item.detail ? item.detail.split("\n").filter((line) => line.trim().length > 0) : [];

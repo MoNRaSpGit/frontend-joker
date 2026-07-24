@@ -20,7 +20,9 @@ export function OrderList({ order, isPrinting, onRemoveItem, onPrint }: OrderLis
           {order.map((item) => (
             <li key={item.lineId} className="joker-order-item">
               <div>
-                <strong>{item.productName}</strong>
+                <strong>
+                  {item.quantity}x {item.productName}
+                </strong>
                 {item.detail ? (
                   <p className="joker-order-item__excluded">{item.detail}</p>
                 ) : (

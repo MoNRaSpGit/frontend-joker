@@ -55,7 +55,7 @@ export function OrdersScreen({ products, isLoading, loadError, onReload }: Order
         <CustomizeProductModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onConfirm={(detail) => addItem(selectedProduct, detail)}
+          onConfirm={(detail, quantity) => addItem(selectedProduct, detail, quantity)}
         />
       ) : null}
     </>

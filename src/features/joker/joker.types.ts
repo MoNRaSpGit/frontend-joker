@@ -10,4 +10,5 @@ export type JokerOrderItem = {
   productId: number;
   productName: string;
   detail: string;
+  quantity: number;
 };

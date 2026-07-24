@@ -401,6 +401,40 @@ input {
   font-size: 13px;
 }
 
+.joker-quantity-stepper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 1.2rem;
+}
+
+.joker-quantity-stepper__btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 1.3rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.joker-quantity-stepper__btn:hover:not(:disabled) {
+  background: #eef2f7;
+}
+
+.joker-quantity-stepper__btn:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.joker-quantity-stepper__value {
+  min-width: 32px;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
 .joker-detail-input {
   width: 100%;
   margin: 0 0 1.2rem;

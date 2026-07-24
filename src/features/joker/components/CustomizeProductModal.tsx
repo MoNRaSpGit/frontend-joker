@@ -4,15 +4,24 @@ import type { JokerProduct } from "../joker.types";
 type CustomizeProductModalProps = {
   product: JokerProduct;
   onClose: () => void;
-  onConfirm: (detail: string) => void;
+  onConfirm: (detail: string, quantity: number) => void;
 };
 
 export function CustomizeProductModal({ product, onClose, onConfirm }: CustomizeProductModalProps) {
   const [detail, setDetail] = useState("");
+  const [quantity, setQuantity] = useState(1);
 
   function handleConfirm() {
-    onConfirm(detail.trim());
+    onConfirm(detail.trim(), quantity);
     onClose();
+  }
+
+  function decreaseQuantity() {
+    setQuantity((current) => Math.max(1, current - 1));
+  }
+
+  function increaseQuantity() {
+    setQuantity((current) => Math.min(99, current + 1));
   }
 
   return (
@@ -22,6 +31,18 @@ export function CustomizeProductModal({ product, onClose, onConfirm }: Customize
           <h2>{product.name}</h2>
           <button type="button" className="joker-modal-close" onClick={onClose}>
             Cerrar
+          </button>
+        </div>
+
+        <p className="joker-modal-card__hint">Cantidad</p>
+
+        <div className="joker-quantity-stepper">
+          <button type="button" className="joker-quantity-stepper__btn" onClick={decreaseQuantity} disabled={quantity <= 1}>
+            -
+          </button>
+          <span className="joker-quantity-stepper__value">{quantity}</span>
+          <button type="button" className="joker-quantity-stepper__btn" onClick={increaseQuantity} disabled={quantity >= 99}>
+            +
           </button>
         </div>
 
