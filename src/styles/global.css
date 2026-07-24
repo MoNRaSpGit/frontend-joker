@@ -65,6 +65,34 @@ input {
   background: #f8fafc;
 }
 
+.joker-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.joker-tab {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid #dbe4ee;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.joker-tab:hover {
+  background: #f8fafc;
+}
+
+.joker-tab.is-active {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
 .joker-printer-list {
   display: grid;
   gap: 6px;
@@ -124,6 +152,50 @@ input {
 .joker-panel__heading {
   display: grid;
   gap: 2px;
+}
+
+.joker-panel__heading--row {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.joker-button--auto {
+  flex: none;
+}
+
+.joker-product-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.joker-form-field {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 1rem;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.joker-form-field input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #dbe4ee;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-weight: 400;
+  font-size: 0.98rem;
+}
+
+.joker-form-field input:focus {
+  outline: none;
+  border-color: #111;
+  background: #fff;
 }
 
 .joker-panel__heading h2 {

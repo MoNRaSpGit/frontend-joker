@@ -1,25 +1,21 @@
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import { CustomizeProductModal } from "./components/CustomizeProductModal";
-import { OrderList } from "./components/OrderList";
 import { PrinterSettingsModal } from "./components/PrinterSettingsModal";
-import { ProductGrid } from "./components/ProductGrid";
-import { useJokerOrder } from "./hooks/useJokerOrder";
 import { listProducts } from "./joker.api";
-import { printOrderTicket } from "./services/joker.print";
 import { getPreferredPrinterName } from "./services/joker.qzPrint";
 import { primeUsbPrinterConnection } from "./services/joker.webusbPrint";
 import type { JokerProduct } from "./joker.types";
+import { OrdersScreen } from "./screens/OrdersScreen";
+import { ProductsScreen } from "./screens/ProductsScreen";
+
+type JokerTab = "pedidos" | "productos";
 
 export function JokerHomePage() {
+  const [activeTab, setActiveTab] = useState<JokerTab>("pedidos");
   const [products, setProducts] = useState<JokerProduct[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<JokerProduct | null>(null);
-  const [isPrinting, setIsPrinting] = useState(false);
   const [isPrinterModalOpen, setIsPrinterModalOpen] = useState(false);
   const [preferredPrinterName, setPreferredPrinterNameState] = useState<string | null>(() => getPreferredPrinterName());
-  const { order, addItem, removeItem, clearOrder } = useJokerOrder();
 
   // Reconecta en silencio la impresora USB ya autorizada en una sesion
   // anterior (no pide permiso de nuevo, solo la vuelve a encontrar).
@@ -44,57 +40,42 @@ export function JokerHomePage() {
     }
   }
 
-  async function handlePrint() {
-    if (!order.length || isPrinting) return;
-
-    setIsPrinting(true);
-    try {
-      await printOrderTicket(order);
-      toast.success("Pedido impreso.");
-      clearOrder();
-    } catch (printError) {
-      toast.error(printError instanceof Error ? `No se pudo imprimir: ${printError.message}` : "No se pudo imprimir el pedido.");
-    } finally {
-      setIsPrinting(false);
-    }
-  }
-
   return (
     <main className="joker-shell">
       <header className="joker-header">
         <div className="joker-header__row">
           <div>
             <p className="joker-kicker">Joker</p>
-            <h1>Armar pedido</h1>
+            <h1>{activeTab === "pedidos" ? "Armar pedido" : "Productos"}</h1>
           </div>
           <button type="button" className="joker-printer-btn" onClick={() => setIsPrinterModalOpen(true)}>
             Impresora{preferredPrinterName ? `: ${preferredPrinterName}` : ""}
           </button>
         </div>
+
+        <nav className="joker-tabs">
+          <button
+            type="button"
+            className={`joker-tab${activeTab === "pedidos" ? " is-active" : ""}`}
+            onClick={() => setActiveTab("pedidos")}
+          >
+            Pedidos
+          </button>
+          <button
+            type="button"
+            className={`joker-tab${activeTab === "productos" ? " is-active" : ""}`}
+            onClick={() => setActiveTab("productos")}
+          >
+            Productos
+          </button>
+        </nav>
       </header>
 
-      {isLoadingProducts ? (
-        <p className="joker-empty-state">Cargando menu...</p>
-      ) : loadError ? (
-        <div className="joker-panel">
-          <p className="joker-order-item__excluded">No se pudo cargar el menu: {loadError}</p>
-          <button type="button" className="joker-button joker-button--ghost" onClick={() => void loadProducts()}>
-            Reintentar
-          </button>
-        </div>
+      {activeTab === "pedidos" ? (
+        <OrdersScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
       ) : (
-        <ProductGrid products={products} onSelectProduct={setSelectedProduct} />
+        <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
       )}
-
-      <OrderList order={order} isPrinting={isPrinting} onRemoveItem={removeItem} onPrint={handlePrint} />
-
-      {selectedProduct ? (
-        <CustomizeProductModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-          onConfirm={(detail) => addItem(selectedProduct, detail)}
-        />
-      ) : null}
 
       {isPrinterModalOpen ? (
         <PrinterSettingsModal
