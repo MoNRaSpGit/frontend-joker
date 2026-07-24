@@ -7,13 +7,6 @@ const FOOTER_MESSAGE = "Muito obrigado.";
 const DECORATIVE_CHAR = "=";
 const DIVIDER_CHAR = "-";
 
-function centerLine(text: string, width = TICKET_WIDTH) {
-  const trimmed = text.slice(0, width);
-  const totalPadding = Math.max(0, width - trimmed.length);
-  const left = Math.floor(totalPadding / 2);
-  return `${" ".repeat(left)}${trimmed}`;
-}
-
 function decorativeBorder() {
   return DECORATIVE_CHAR.repeat(TICKET_WIDTH);
 }
@@ -35,30 +28,28 @@ export function buildOrderTicketLines(order: JokerOrderItem[]) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
-  lines.push(ALIGN_CENTER);
 
-  // Titulo grande y en negrita: el nombre del local es lo primero que se ve.
+  // Cabecera centrada: la centra la propia impresora (ESC a 1), no
+  // relleno manual con espacios (eso duplicaba el efecto y lo corria).
+  lines.push(ALIGN_CENTER);
   lines.push(BOLD_ON, DOUBLE_SIZE_ON);
   lines.push(`${STORE_NAME}\n`);
   lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-
   lines.push(`${SUBTITLE}\n`);
   lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
 
+  // Cuerpo del pedido: alineado a la izquierda, como una lista normal.
+  lines.push(ALIGN_LEFT);
   lines.push(`${decorativeBorder()}\n`);
 
   order.forEach((item, index) => {
     const itemNumber = index + 1;
 
     lines.push(BOLD_ON);
-    lines.push(`${centerLine(`${itemNumber}) ${item.productName}`)}\n`);
+    lines.push(`${itemNumber}) ${item.productName}\n`);
     lines.push(BOLD_OFF);
 
-    lines.push(
-      item.excludedIngredients.length
-        ? `${centerLine(`Sin: ${item.excludedIngredients.join(", ")}`)}\n`
-        : `${centerLine("Con todo")}\n`
-    );
+    lines.push(item.excludedIngredients.length ? `   Sin: ${item.excludedIngredients.join(", ")}\n` : "   Con todo\n");
 
     if (index < order.length - 1) {
       lines.push(`${divider()}\n`);
@@ -68,8 +59,10 @@ export function buildOrderTicketLines(order: JokerOrderItem[]) {
   lines.push(`${decorativeBorder()}\n`);
   lines.push("\n");
 
+  // Pie centrado, otra vez dejando que lo centre la impresora sola.
+  lines.push(ALIGN_CENTER);
   lines.push(BOLD_ON);
-  lines.push(`${centerLine(`*** ${FOOTER_MESSAGE} ***`)}\n`);
+  lines.push(`*** ${FOOTER_MESSAGE} ***\n`);
   lines.push(BOLD_OFF);
 
   lines.push("\n\n\n");
