@@ -1,6 +1,7 @@
 import type { JokerOrderItem } from "../joker.types";
 
 const TICKET_WIDTH = 48;
+const TICKET_COPIES = 3;
 const STORE_NAME = "JOKER";
 const SUBTITLE = "Pedido para cocina";
 const FOOTER_MESSAGE = "Muito obrigado.";
@@ -24,7 +25,20 @@ const DOUBLE_SIZE_ON = "\x1D\x21\x11";
 const DOUBLE_SIZE_OFF = "\x1D\x21\x00";
 const CUT_PAPER = "\x1D\x56\x41\x00";
 
+// Imprime TICKET_COPIES copias iguales, una atras de la otra en el mismo
+// trabajo (cada copia ya trae su propio corte de papel al final).
 export function buildOrderTicketLines(order: JokerOrderItem[]) {
+  const singleTicket = buildSingleTicketLines(order);
+  const lines: string[] = [];
+
+  for (let copyIndex = 0; copyIndex < TICKET_COPIES; copyIndex += 1) {
+    lines.push(...singleTicket);
+  }
+
+  return lines;
+}
+
+function buildSingleTicketLines(order: JokerOrderItem[]) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
