@@ -41,41 +41,49 @@ export function JokerHomePage() {
   }
 
   return (
-    <main className="joker-shell">
-      <header className="joker-header">
-        <div className="joker-header__row">
-          <div>
-            <p className="joker-kicker">Joker</p>
-            <h1>{activeTab === "pedidos" ? "Armar pedido" : "Productos"}</h1>
+    <div className="joker-app">
+      <header className="joker-topbar">
+        <div className="joker-topbar__inner">
+          <div className="joker-brand">
+            <span className="joker-brand__mark">🃏</span>
+            <div>
+              <p className="joker-brand__kicker">El Joker</p>
+              <h1 className="joker-brand__title">{activeTab === "pedidos" ? "Armar pedido" : "Productos"}</h1>
+            </div>
           </div>
-          <button type="button" className="joker-printer-btn" onClick={() => setIsPrinterModalOpen(true)}>
-            Impresora{preferredPrinterName ? `: ${preferredPrinterName}` : ""}
-          </button>
-        </div>
 
-        <nav className="joker-tabs">
-          <button
-            type="button"
-            className={`joker-tab${activeTab === "pedidos" ? " is-active" : ""}`}
-            onClick={() => setActiveTab("pedidos")}
-          >
-            Pedidos
-          </button>
-          <button
-            type="button"
-            className={`joker-tab${activeTab === "productos" ? " is-active" : ""}`}
-            onClick={() => setActiveTab("productos")}
-          >
-            Productos
-          </button>
-        </nav>
+          <div className="joker-topbar__actions">
+            <nav className="joker-tabs">
+              <button
+                type="button"
+                className={`joker-tab${activeTab === "pedidos" ? " is-active" : ""}`}
+                onClick={() => setActiveTab("pedidos")}
+              >
+                Pedidos
+              </button>
+              <button
+                type="button"
+                className={`joker-tab${activeTab === "productos" ? " is-active" : ""}`}
+                onClick={() => setActiveTab("productos")}
+              >
+                Productos
+              </button>
+            </nav>
+
+            <button type="button" className="joker-printer-btn" onClick={() => setIsPrinterModalOpen(true)}>
+              🖨️ {preferredPrinterName || "Elegir impresora"}
+            </button>
+          </div>
+        </div>
       </header>
 
-      {activeTab === "pedidos" ? (
-        <OrdersScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
-      ) : (
-        <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
-      )}
+      <main className="joker-shell">
+        {activeTab === "pedidos" ? (
+          <OrdersScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
+        ) : (
+          <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
+        )}
+      </main>
 
       {isPrinterModalOpen ? (
         <PrinterSettingsModal
@@ -84,6 +92,6 @@ export function JokerHomePage() {
           onPrinterChange={setPreferredPrinterNameState}
         />
       ) : null}
-    </main>
+    </div>
   );
 }

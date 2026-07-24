@@ -70,7 +70,7 @@ export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
                   onClick={() => onSelectProduct(product)}
                 >
                   <strong>{product.name}</strong>
-                  <span>{formatPrice(product.price)}</span>
+                  <span className="joker-product-card__price">{formatPrice(product.price)}</span>
                 </button>
               ))}
             </div>

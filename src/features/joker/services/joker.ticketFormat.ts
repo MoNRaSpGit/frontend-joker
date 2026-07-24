@@ -2,8 +2,7 @@ import type { JokerOrderItem } from "../joker.types";
 
 const TICKET_WIDTH = 48;
 const TICKET_COPIES = 3;
-const STORE_NAME = "JOKER";
-const SUBTITLE = "Pedido para cocina";
+const STORE_NAME = "EL JOKER";
 const FOOTER_MESSAGE = "Muito obrigado.";
 const DECORATIVE_CHAR = "=";
 const DIVIDER_CHAR = "-";
@@ -49,7 +48,6 @@ function buildSingleTicketLines(order: JokerOrderItem[]) {
   lines.push(BOLD_ON, DOUBLE_SIZE_ON);
   lines.push(`${STORE_NAME}\n`);
   lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-  lines.push(`${SUBTITLE}\n`);
   lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
 
   // Cuerpo del pedido: alineado a la izquierda, como una lista normal.

@@ -12,22 +12,23 @@ export function OrderList({ order, isPrinting, onRemoveItem, onPrint }: OrderLis
     <section className="joker-panel">
       <div className="joker-panel__heading">
         <p className="joker-eyebrow">Pedido</p>
-        <h2>Ticket a imprimir</h2>
+        <h2>Ticket a imprimir{order.length ? ` (${order.length})` : ""}</h2>
       </div>
 
       {order.length ? (
         <ul className="joker-order-list">
           {order.map((item) => (
             <li key={item.lineId} className="joker-order-item">
-              <div>
-                <strong>
-                  {item.quantity}x {item.productName}
-                </strong>
-                {item.detail ? (
-                  <p className="joker-order-item__excluded">{item.detail}</p>
-                ) : (
-                  <p className="joker-order-item__excluded joker-order-item__excluded--full">Sin detalle</p>
-                )}
+              <div className="joker-order-item__info">
+                <span className="joker-qty-badge">{item.quantity}x</span>
+                <div>
+                  <strong>{item.productName}</strong>
+                  {item.detail ? (
+                    <p className="joker-order-item__excluded">{item.detail}</p>
+                  ) : (
+                    <p className="joker-order-item__excluded joker-order-item__excluded--full">Sin detalle</p>
+                  )}
+                </div>
               </div>
               <button
                 type="button"
