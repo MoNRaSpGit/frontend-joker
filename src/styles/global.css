@@ -40,6 +40,63 @@ input {
   gap: 4px;
 }
 
+.joker-header__row {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.joker-printer-btn {
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.joker-printer-btn:hover {
+  background: #f8fafc;
+}
+
+.joker-printer-list {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.joker-printer-option {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid #dbe4ee;
+  border-radius: 10px;
+  background: #f8fafc;
+  text-align: left;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.joker-printer-option:hover {
+  background: #eef2f7;
+}
+
+.joker-printer-option.is-active {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
 .joker-kicker {
   margin: 0;
   font-size: 12px;

@@ -2,19 +2,27 @@ import qz from "qz-tray";
 import { buildOrderTicketLines } from "./joker.ticketFormat";
 import type { JokerOrderItem } from "../joker.types";
 
-const FALLBACK_PREFERRED_PRINTER = "ImpRamon";
+const PREFERRED_PRINTER_STORAGE_KEY = "joker.qz.preferredPrinter";
 
-let cachedPrinterName = FALLBACK_PREFERRED_PRINTER;
+function readPreferredPrinter(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(PREFERRED_PRINTER_STORAGE_KEY);
+}
 
-function pickPrinterName(printers: string[] = []) {
-  const list = Array.isArray(printers) ? printers : [];
-  const physical = list.filter((name) => !/pdf|xps|onenote|fax|microsoft print to pdf/i.test(String(name || "")));
-  if (!physical.length) {
-    return "";
-  }
+let cachedPrinterName: string | null = readPreferredPrinter();
 
-  const preferred = physical.find((name) => /xprinter|xp-|pos|thermal|receipt/i.test(String(name || "")));
-  return preferred || physical[0];
+export function getPreferredPrinterName() {
+  return cachedPrinterName;
+}
+
+export function setPreferredPrinterName(name: string) {
+  cachedPrinterName = name;
+  window.localStorage.setItem(PREFERRED_PRINTER_STORAGE_KEY, name);
+}
+
+export function clearPreferredPrinterName() {
+  cachedPrinterName = null;
+  window.localStorage.removeItem(PREFERRED_PRINTER_STORAGE_KEY);
 }
 
 async function ensureQzConnected() {
@@ -23,31 +31,33 @@ async function ensureQzConnected() {
   }
 }
 
+export async function listQzPrinters() {
+  await ensureQzConnected();
+  const printers = await qz.printers.find();
+  return Array.isArray(printers) ? printers : [];
+}
+
 export async function printOrderTicketByQz(order: JokerOrderItem[]) {
   await ensureQzConnected();
+
+  if (!cachedPrinterName) {
+    throw new Error("Todavia no elegiste una impresora. Toca \"Impresora\" para elegirla.");
+  }
+
   const data = buildOrderTicketLines(order);
+  const config = qz.configs.create(cachedPrinterName, { encoding: "CP437" });
 
-  const attemptPrinter = async (printerName: string) => {
-    const config = qz.configs.create(printerName, { encoding: "CP437" });
+  try {
     await qz.print(config, data);
-    cachedPrinterName = printerName;
-    return { printerName };
-  };
-
-  if (cachedPrinterName) {
-    try {
-      return await attemptPrinter(cachedPrinterName);
-    } catch {
-      // Si falla, intentar descubrimiento una sola vez.
-    }
+  } catch (error) {
+    // Si la impresora guardada ya no existe (se cambio de equipo), se
+    // avisa claro en vez de reintentar con una elegida al azar.
+    throw new Error(
+      `No se pudo imprimir en "${cachedPrinterName}". ${
+        error instanceof Error ? error.message : "Revisa que siga siendo la impresora correcta (boton Impresora)."
+      }`
+    );
   }
 
-  const printers = await qz.printers.find();
-  const printerName = pickPrinterName(printers);
-  if (!printerName) {
-    const detected = Array.isArray(printers) && printers.length ? printers.join(", ") : "ninguna";
-    throw new Error(`QZ no encontro una impresora termica (Xprinter/POS). Detectadas: ${detected}`);
-  }
-
-  return attemptPrinter(printerName);
+  return { printerName: cachedPrinterName };
 }
