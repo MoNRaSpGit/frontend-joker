@@ -5,13 +5,16 @@ import { OrderList } from "./components/OrderList";
 import { PrinterSettingsModal } from "./components/PrinterSettingsModal";
 import { ProductGrid } from "./components/ProductGrid";
 import { useJokerOrder } from "./hooks/useJokerOrder";
-import { JOKER_PRODUCTS } from "./joker.products";
+import { listProducts } from "./joker.api";
 import { printOrderTicket } from "./services/joker.print";
 import { getPreferredPrinterName } from "./services/joker.qzPrint";
 import { primeUsbPrinterConnection } from "./services/joker.webusbPrint";
 import type { JokerProduct } from "./joker.types";
 
 export function JokerHomePage() {
+  const [products, setProducts] = useState<JokerProduct[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<JokerProduct | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const [isPrinterModalOpen, setIsPrinterModalOpen] = useState(false);
@@ -23,6 +26,23 @@ export function JokerHomePage() {
   useEffect(() => {
     void primeUsbPrinterConnection().catch(() => {});
   }, []);
+
+  useEffect(() => {
+    void loadProducts();
+  }, []);
+
+  async function loadProducts() {
+    setIsLoadingProducts(true);
+    setLoadError(null);
+    try {
+      const result = await listProducts();
+      setProducts(result.items);
+    } catch (fetchError) {
+      setLoadError(fetchError instanceof Error ? fetchError.message : "No se pudo cargar el menu.");
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }
 
   async function handlePrint() {
     if (!order.length || isPrinting) return;
@@ -53,7 +73,18 @@ export function JokerHomePage() {
         </div>
       </header>
 
-      <ProductGrid products={JOKER_PRODUCTS} onSelectProduct={setSelectedProduct} />
+      {isLoadingProducts ? (
+        <p className="joker-empty-state">Cargando menu...</p>
+      ) : loadError ? (
+        <div className="joker-panel">
+          <p className="joker-order-item__excluded">No se pudo cargar el menu: {loadError}</p>
+          <button type="button" className="joker-button joker-button--ghost" onClick={() => void loadProducts()}>
+            Reintentar
+          </button>
+        </div>
+      ) : (
+        <ProductGrid products={products} onSelectProduct={setSelectedProduct} />
+      )}
 
       <OrderList order={order} isPrinting={isPrinting} onRemoveItem={removeItem} onPrint={handlePrint} />
 

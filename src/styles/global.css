@@ -140,6 +140,17 @@ input {
   color: #64748b;
 }
 
+.joker-product-category + .joker-product-category {
+  margin-top: 18px;
+}
+
+.joker-product-category__title {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #334155;
+}
+
 .joker-product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));

@@ -5,4 +5,5 @@ dist
 *.log
 coverage
 *.tsbuildinfo
+.env
 NOTES.local.md
