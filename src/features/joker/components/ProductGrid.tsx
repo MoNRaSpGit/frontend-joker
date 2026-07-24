@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { JokerProduct } from "../joker.types";
 
 type ProductGridProps = {
@@ -7,6 +8,16 @@ type ProductGridProps = {
 
 function formatPrice(price: number) {
   return price.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
+}
+
+const DIACRITIC_MARKS_PATTERN = /[̀-ͯ]/g;
+
+function normalizeForSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(DIACRITIC_MARKS_PATTERN, "")
+    .toLowerCase()
+    .trim();
 }
 
 function groupByCategory(products: JokerProduct[]) {
@@ -22,7 +33,14 @@ function groupByCategory(products: JokerProduct[]) {
 }
 
 export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
-  const groups = groupByCategory(products);
+  const [search, setSearch] = useState("");
+
+  const normalizedSearch = normalizeForSearch(search);
+  const filteredProducts = normalizedSearch
+    ? products.filter((product) => normalizeForSearch(product.name).includes(normalizedSearch))
+    : products;
+
+  const groups = groupByCategory(filteredProducts);
 
   return (
     <section className="joker-panel">
@@ -30,6 +48,14 @@ export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
         <p className="joker-eyebrow">Menu</p>
         <h2>Elegi un producto</h2>
       </div>
+
+      <input
+        type="search"
+        className="joker-search-input"
+        placeholder="Buscar producto..."
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+      />
 
       {groups.length ? (
         groups.map(([category, categoryProducts]) => (
@@ -51,7 +77,9 @@ export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
           </div>
         ))
       ) : (
-        <p className="joker-empty-state">Todavia no hay productos cargados.</p>
+        <p className="joker-empty-state">
+          {normalizedSearch ? "No se encontraron productos." : "Todavia no hay productos cargados."}
+        </p>
       )}
     </section>
   );
