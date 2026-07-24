@@ -1,0 +1,18 @@
+{
+  "name": "El Joker",
+  "short_name": "El Joker",
+  "description": "Armado e impresion de pedidos para El Joker",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#150c28",
+  "theme_color": "#150c28",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
