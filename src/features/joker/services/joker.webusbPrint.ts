@@ -152,7 +152,7 @@ export async function printOrderTicketByWebUsb(order: JokerOrderItem[]) {
   const sanitizedOrder = order.map((item) => ({
     ...item,
     productName: stripAccents(item.productName),
-    excludedIngredients: item.excludedIngredients.map(stripAccents)
+    detail: stripAccents(item.detail)
   }));
 
   const lines = buildOrderTicketLines(sanitizedOrder);

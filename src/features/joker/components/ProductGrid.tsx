@@ -22,7 +22,6 @@ export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
             onClick={() => onSelectProduct(product)}
           >
             <strong>{product.name}</strong>
-            <span>{product.ingredients.length} ingredientes</span>
           </button>
         ))}
       </div>

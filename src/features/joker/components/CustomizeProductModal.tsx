@@ -4,26 +4,14 @@ import type { JokerProduct } from "../joker.types";
 type CustomizeProductModalProps = {
   product: JokerProduct;
   onClose: () => void;
-  onConfirm: (excludedIngredients: string[]) => void;
+  onConfirm: (detail: string) => void;
 };
 
 export function CustomizeProductModal({ product, onClose, onConfirm }: CustomizeProductModalProps) {
-  const [excluded, setExcluded] = useState<Set<string>>(new Set());
-
-  function toggleIngredient(ingredient: string) {
-    setExcluded((current) => {
-      const next = new Set(current);
-      if (next.has(ingredient)) {
-        next.delete(ingredient);
-      } else {
-        next.add(ingredient);
-      }
-      return next;
-    });
-  }
+  const [detail, setDetail] = useState("");
 
   function handleConfirm() {
-    onConfirm(Array.from(excluded));
+    onConfirm(detail.trim());
     onClose();
   }
 
@@ -37,28 +25,16 @@ export function CustomizeProductModal({ product, onClose, onConfirm }: Customize
           </button>
         </div>
 
-        <p className="joker-modal-card__hint">Arranca con todo. Destilda lo que el cliente no quiere.</p>
+        <p className="joker-modal-card__hint">Detalle del pedido (ej: Sin lechuga, con doble queso).</p>
 
-        <ul className="joker-ingredient-list">
-          {product.ingredients.map((ingredient, index) => {
-            const inputId = `ingredient-${product.id}-${index}`;
-            const isExcluded = excluded.has(ingredient);
-
-            return (
-              <li key={`${ingredient}-${index}`} className={isExcluded ? "is-excluded" : ""}>
-                <label htmlFor={inputId}>
-                  <input
-                    id={inputId}
-                    type="checkbox"
-                    checked={!isExcluded}
-                    onChange={() => toggleIngredient(ingredient)}
-                  />
-                  <span>{ingredient}</span>
-                </label>
-              </li>
-            );
-          })}
-        </ul>
+        <textarea
+          className="joker-detail-input"
+          rows={4}
+          value={detail}
+          onChange={(event) => setDetail(event.target.value)}
+          placeholder="Escribi aca el detalle..."
+          autoFocus
+        />
 
         <div className="joker-modal-card__actions">
           <button type="button" className="joker-button joker-button--ghost" onClick={onClose}>

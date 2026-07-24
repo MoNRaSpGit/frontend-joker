@@ -63,7 +63,12 @@ function buildSingleTicketLines(order: JokerOrderItem[]) {
     lines.push(`${itemNumber}) ${item.productName}\n`);
     lines.push(BOLD_OFF);
 
-    lines.push(item.excludedIngredients.length ? `   Sin: ${item.excludedIngredients.join(", ")}\n` : "   Con todo\n");
+    const detailLines = item.detail ? item.detail.split("\n").filter((line) => line.trim().length > 0) : [];
+    if (detailLines.length) {
+      detailLines.forEach((detailLine) => lines.push(`   ${detailLine}\n`));
+    } else {
+      lines.push("   Sin detalle\n");
+    }
 
     if (index < order.length - 1) {
       lines.push(`${divider()}\n`);

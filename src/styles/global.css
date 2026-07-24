@@ -302,45 +302,22 @@ input {
   font-size: 13px;
 }
 
-.joker-ingredient-list {
-  display: grid;
-  gap: 6px;
+.joker-detail-input {
+  width: 100%;
   margin: 0 0 1.2rem;
-  padding: 0;
-  list-style: none;
-}
-
-.joker-ingredient-list li {
+  padding: 10px 12px;
+  border: 1px solid #dbe4ee;
   border-radius: 10px;
   background: #f8fafc;
-  transition: background 0.15s ease;
-}
-
-.joker-ingredient-list li label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 46px;
-  padding: 8px 12px;
-  cursor: pointer;
   font-size: 0.98rem;
+  resize: vertical;
+  min-height: 90px;
 }
 
-.joker-ingredient-list li input[type="checkbox"] {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-
-.joker-ingredient-list li.is-excluded {
-  background: #1e293b;
-}
-
-.joker-ingredient-list li.is-excluded label {
-  color: #94a3b8;
-  text-decoration: line-through;
+.joker-detail-input:focus {
+  outline: none;
+  border-color: #111;
+  background: #fff;
 }
 
 .joker-modal-card__actions {

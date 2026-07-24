@@ -61,7 +61,7 @@ export function JokerHomePage() {
         <CustomizeProductModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onConfirm={(excludedIngredients) => addItem(selectedProduct, excludedIngredients)}
+          onConfirm={(detail) => addItem(selectedProduct, detail)}
         />
       ) : null}
 

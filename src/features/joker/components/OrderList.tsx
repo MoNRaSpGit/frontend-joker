@@ -21,10 +21,10 @@ export function OrderList({ order, isPrinting, onRemoveItem, onPrint }: OrderLis
             <li key={item.lineId} className="joker-order-item">
               <div>
                 <strong>{item.productName}</strong>
-                {item.excludedIngredients.length ? (
-                  <p className="joker-order-item__excluded">Sin: {item.excludedIngredients.join(", ")}</p>
+                {item.detail ? (
+                  <p className="joker-order-item__excluded">{item.detail}</p>
                 ) : (
-                  <p className="joker-order-item__excluded joker-order-item__excluded--full">Con todo</p>
+                  <p className="joker-order-item__excluded joker-order-item__excluded--full">Sin detalle</p>
                 )}
               </div>
               <button
