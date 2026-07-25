@@ -1,11 +1,7 @@
-import type { JokerOrderItem } from "../joker.types";
+import type { JokerOrderItem, JokerSettings } from "../joker.types";
 
 const TICKET_WIDTH = 48;
 const TICKET_COPIES = 3;
-const STORE_NAME = "EL JOKER";
-// TODO: datos inventados, reemplazar por los reales del local cuando los tengan.
-const STORE_ADDRESS = "Av. Siempre Viva 742";
-const STORE_PHONE = "Tel: 099 123 456";
 const FOOTER_MESSAGE = "Muito obrigado.";
 const DECORATIVE_CHAR = "=";
 const DIVIDER_CHAR = "-";
@@ -29,8 +25,8 @@ const CUT_PAPER = "\x1D\x56\x41\x00";
 
 // Imprime TICKET_COPIES copias iguales, una atras de la otra en el mismo
 // trabajo (cada copia ya trae su propio corte de papel al final).
-export function buildOrderTicketLines(order: JokerOrderItem[]) {
-  const singleTicket = buildSingleTicketLines(order);
+export function buildOrderTicketLines(order: JokerOrderItem[], settings: JokerSettings) {
+  const singleTicket = buildSingleTicketLines(order, settings);
   const lines: string[] = [];
 
   for (let copyIndex = 0; copyIndex < TICKET_COPIES; copyIndex += 1) {
@@ -40,7 +36,7 @@ export function buildOrderTicketLines(order: JokerOrderItem[]) {
   return lines;
 }
 
-function buildSingleTicketLines(order: JokerOrderItem[]) {
+function buildSingleTicketLines(order: JokerOrderItem[], settings: JokerSettings) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
@@ -49,10 +45,14 @@ function buildSingleTicketLines(order: JokerOrderItem[]) {
   // relleno manual con espacios (eso duplicaba el efecto y lo corria).
   lines.push(ALIGN_CENTER);
   lines.push(BOLD_ON, DOUBLE_SIZE_ON);
-  lines.push(`${STORE_NAME}\n`);
+  lines.push(`${settings.storeName}\n`);
   lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-  lines.push(`${STORE_ADDRESS}\n`);
-  lines.push(`${STORE_PHONE}\n`);
+  if (settings.address) {
+    lines.push(`${settings.address}\n`);
+  }
+  if (settings.phone) {
+    lines.push(`${settings.phone}\n`);
+  }
   lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
 
   // Cuerpo del pedido: alineado a la izquierda, como una lista normal.

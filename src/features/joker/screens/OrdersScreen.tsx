@@ -5,16 +5,17 @@ import { OrderList } from "../components/OrderList";
 import { ProductGrid } from "../components/ProductGrid";
 import { useJokerOrder } from "../hooks/useJokerOrder";
 import { printOrderTicket } from "../services/joker.print";
-import type { JokerProduct } from "../joker.types";
+import type { JokerProduct, JokerSettings } from "../joker.types";
 
 type OrdersScreenProps = {
   products: JokerProduct[];
   isLoading: boolean;
   loadError: string | null;
   onReload: () => void;
+  settings: JokerSettings;
 };
 
-export function OrdersScreen({ products, isLoading, loadError, onReload }: OrdersScreenProps) {
+export function OrdersScreen({ products, isLoading, loadError, onReload, settings }: OrdersScreenProps) {
   const [selectedProduct, setSelectedProduct] = useState<JokerProduct | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const { order, addItem, removeItem, clearOrder } = useJokerOrder();
@@ -24,7 +25,7 @@ export function OrdersScreen({ products, isLoading, loadError, onReload }: Order
 
     setIsPrinting(true);
     try {
-      await printOrderTicket(order);
+      await printOrderTicket(order, settings);
       toast.success("Pedido impreso.");
       clearOrder();
     } catch (printError) {
