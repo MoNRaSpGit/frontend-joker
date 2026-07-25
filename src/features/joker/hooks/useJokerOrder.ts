@@ -20,6 +20,10 @@ export function useJokerOrder() {
     ]);
   }
 
+  function updateItem(lineId: string, address: string, detail: string, quantity: number) {
+    setOrder((current) => current.map((item) => (item.lineId === lineId ? { ...item, address, detail, quantity } : item)));
+  }
+
   function removeItem(lineId: string) {
     setOrder((current) => current.filter((item) => item.lineId !== lineId));
   }
@@ -28,5 +32,5 @@ export function useJokerOrder() {
     setOrder([]);
   }
 
-  return { order, addItem, removeItem, clearOrder };
+  return { order, addItem, updateItem, removeItem, clearOrder };
 }

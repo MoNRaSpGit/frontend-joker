@@ -3,11 +3,12 @@ import type { JokerOrderItem } from "../joker.types";
 type OrderListProps = {
   order: JokerOrderItem[];
   isPrinting: boolean;
+  onEditItem: (item: JokerOrderItem) => void;
   onRemoveItem: (lineId: string) => void;
   onPrint: () => void;
 };
 
-export function OrderList({ order, isPrinting, onRemoveItem, onPrint }: OrderListProps) {
+export function OrderList({ order, isPrinting, onEditItem, onRemoveItem, onPrint }: OrderListProps) {
   return (
     <section className="joker-panel">
       <div className="joker-panel__heading">
@@ -31,14 +32,19 @@ export function OrderList({ order, isPrinting, onRemoveItem, onPrint }: OrderLis
                   )}
                 </div>
               </div>
-              <button
-                type="button"
-                className="joker-order-item__remove"
-                onClick={() => onRemoveItem(item.lineId)}
-                aria-label={`Quitar ${item.productName} del pedido`}
-              >
-                x
-              </button>
+              <div className="joker-product-row-actions">
+                <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => onEditItem(item)}>
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="joker-order-item__remove"
+                  onClick={() => onRemoveItem(item.lineId)}
+                  aria-label={`Quitar ${item.productName} del pedido`}
+                >
+                  x
+                </button>
+              </div>
             </li>
           ))}
         </ul>

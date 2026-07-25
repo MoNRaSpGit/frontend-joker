@@ -3,14 +3,26 @@ import type { JokerProduct } from "../joker.types";
 
 type CustomizeProductModalProps = {
   product: JokerProduct;
+  initialAddress?: string;
+  initialDetail?: string;
+  initialQuantity?: number;
+  isEditing?: boolean;
   onClose: () => void;
   onConfirm: (address: string, detail: string, quantity: number) => void;
 };
 
-export function CustomizeProductModal({ product, onClose, onConfirm }: CustomizeProductModalProps) {
-  const [address, setAddress] = useState("");
-  const [detail, setDetail] = useState("");
-  const [quantity, setQuantity] = useState(1);
+export function CustomizeProductModal({
+  product,
+  initialAddress = "",
+  initialDetail = "",
+  initialQuantity = 1,
+  isEditing = false,
+  onClose,
+  onConfirm
+}: CustomizeProductModalProps) {
+  const [address, setAddress] = useState(initialAddress);
+  const [detail, setDetail] = useState(initialDetail);
+  const [quantity, setQuantity] = useState(initialQuantity);
 
   function handleConfirm() {
     onConfirm(address.trim(), detail.trim(), quantity);
@@ -73,7 +85,7 @@ export function CustomizeProductModal({ product, onClose, onConfirm }: Customize
             Cancelar
           </button>
           <button type="button" className="joker-button joker-button--primary" onClick={handleConfirm}>
-            Agregar al pedido
+            {isEditing ? "Guardar cambios" : "Agregar al pedido"}
           </button>
         </div>
       </div>
