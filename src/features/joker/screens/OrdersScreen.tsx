@@ -18,14 +18,15 @@ export function OrdersScreen({ products, isLoading, loadError, onReload }: Order
   const [selectedProduct, setSelectedProduct] = useState<JokerProduct | null>(null);
   const [editingItem, setEditingItem] = useState<JokerOrderItem | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
-  const { order, addItem, updateItem, removeItem, clearOrder } = useJokerOrder();
+  const [ticketCopies, setTicketCopies] = useState<1 | 3>(3);
+  const { order, orderAddress, setOrderAddress, addItem, updateItem, removeItem, clearOrder } = useJokerOrder();
 
   async function handlePrint() {
     if (!order.length || isPrinting) return;
 
     setIsPrinting(true);
     try {
-      await printOrderTicket(order);
+      await printOrderTicket(order, orderAddress, ticketCopies);
       toast.success("Pedido impreso.");
       clearOrder();
     } catch (printError) {
@@ -52,7 +53,10 @@ export function OrdersScreen({ products, isLoading, loadError, onReload }: Order
 
       <OrderList
         order={order}
+        orderAddress={orderAddress}
         isPrinting={isPrinting}
+        ticketCopies={ticketCopies}
+        onTicketCopiesChange={setTicketCopies}
         onEditItem={setEditingItem}
         onRemoveItem={removeItem}
         onPrint={handlePrint}
@@ -61,20 +65,27 @@ export function OrdersScreen({ products, isLoading, loadError, onReload }: Order
       {selectedProduct ? (
         <CustomizeProductModal
           product={selectedProduct}
+          initialAddress={orderAddress}
           onClose={() => setSelectedProduct(null)}
-          onConfirm={(address, detail, quantity) => addItem(selectedProduct, address, detail, quantity)}
+          onConfirm={(address, detail, quantity) => {
+            setOrderAddress(address);
+            addItem(selectedProduct, detail, quantity);
+          }}
         />
       ) : null}
 
       {editingItem ? (
         <CustomizeProductModal
-          product={{ id: editingItem.productId, name: editingItem.productName, category: "", price: 0 }}
-          initialAddress={editingItem.address}
+          product={{ id: editingItem.productId, name: editingItem.productName, category: "", price: editingItem.unitPrice }}
+          initialAddress={orderAddress}
           initialDetail={editingItem.detail}
           initialQuantity={editingItem.quantity}
           isEditing
           onClose={() => setEditingItem(null)}
-          onConfirm={(address, detail, quantity) => updateItem(editingItem.lineId, address, detail, quantity)}
+          onConfirm={(address, detail, quantity) => {
+            setOrderAddress(address);
+            updateItem(editingItem.lineId, detail, quantity);
+          }}
         />
       ) : null}
     </>

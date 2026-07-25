@@ -60,7 +60,7 @@ export function CustomizeProductModal({
         </div>
 
         <label className="joker-form-field">
-          <span>Direccion (si es delivery)</span>
+          <span>Direccion del pedido (si es delivery)</span>
           <input
             type="text"
             value={address}

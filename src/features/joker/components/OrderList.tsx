@@ -2,19 +2,39 @@ import type { JokerOrderItem } from "../joker.types";
 
 type OrderListProps = {
   order: JokerOrderItem[];
+  orderAddress: string;
   isPrinting: boolean;
+  ticketCopies: 1 | 3;
+  onTicketCopiesChange: (copies: 1 | 3) => void;
   onEditItem: (item: JokerOrderItem) => void;
   onRemoveItem: (lineId: string) => void;
   onPrint: () => void;
 };
 
-export function OrderList({ order, isPrinting, onEditItem, onRemoveItem, onPrint }: OrderListProps) {
+function formatPrice(price: number) {
+  return price.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
+}
+
+export function OrderList({
+  order,
+  orderAddress,
+  isPrinting,
+  ticketCopies,
+  onTicketCopiesChange,
+  onEditItem,
+  onRemoveItem,
+  onPrint
+}: OrderListProps) {
+  const total = order.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+
   return (
     <section className="joker-panel">
       <div className="joker-panel__heading">
         <p className="joker-eyebrow">Pedido</p>
         <h2>Ticket a imprimir{order.length ? ` (${order.length})` : ""}</h2>
       </div>
+
+      {orderAddress ? <p className="joker-order-item__excluded">Direccion: {orderAddress}</p> : null}
 
       {order.length ? (
         <ul className="joker-order-list">
@@ -23,8 +43,9 @@ export function OrderList({ order, isPrinting, onEditItem, onRemoveItem, onPrint
               <div className="joker-order-item__info">
                 <span className="joker-qty-badge">{item.quantity}x</span>
                 <div>
-                  <strong>{item.productName}</strong>
-                  {item.address ? <p className="joker-order-item__excluded">Direccion: {item.address}</p> : null}
+                  <strong>
+                    {item.productName} <span className="joker-product-card__price">{formatPrice(item.unitPrice * item.quantity)}</span>
+                  </strong>
                   {item.detail ? (
                     <p className="joker-order-item__excluded">Detalle: {item.detail}</p>
                   ) : (
@@ -51,6 +72,27 @@ export function OrderList({ order, isPrinting, onEditItem, onRemoveItem, onPrint
       ) : (
         <p className="joker-empty-state">Todavia no agregaste nada al pedido.</p>
       )}
+
+      {order.length ? (
+        <p className="joker-order-item__excluded joker-order-item__excluded--full">Total a pagar: {formatPrice(total)}</p>
+      ) : null}
+
+      <div className="joker-category-chips">
+        <button
+          type="button"
+          className={`joker-category-chip${ticketCopies === 1 ? " is-active" : ""}`}
+          onClick={() => onTicketCopiesChange(1)}
+        >
+          1 tick
+        </button>
+        <button
+          type="button"
+          className={`joker-category-chip${ticketCopies === 3 ? " is-active" : ""}`}
+          onClick={() => onTicketCopiesChange(3)}
+        >
+          3 tick
+        </button>
+      </div>
 
       <button
         type="button"

@@ -300,6 +300,35 @@ textarea {
   font-size: 0.98rem;
 }
 
+.joker-category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.joker-category-chip {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid var(--joker-border);
+  border-radius: 999px;
+  background: #faf9ff;
+  color: var(--joker-accent-dark);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.joker-category-chip:hover {
+  background: rgba(124, 58, 237, 0.1);
+}
+
+.joker-category-chip.is-active {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--joker-accent), var(--joker-accent-2));
+  color: #fff;
+}
+
 /* ---------- Product grid ---------- */
 
 .joker-product-category + .joker-product-category {

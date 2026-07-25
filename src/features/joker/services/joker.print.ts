@@ -4,14 +4,14 @@ import type { JokerOrderItem } from "../joker.types";
 
 // Orden: WebUSB primero (impresora por USB sin ningun software de por
 // medio), QZ Tray como respaldo (PC de escritorio).
-export async function printOrderTicket(order: JokerOrderItem[]) {
+export async function printOrderTicket(order: JokerOrderItem[], orderAddress: string, copies: number) {
   try {
-    await printOrderTicketByWebUsb(order);
+    await printOrderTicketByWebUsb(order, orderAddress, copies);
     return { method: "webusb" as const };
   } catch (webUsbError) {
     console.warn("[joker-print] WebUSB fallo, probando QZ.", webUsbError);
   }
 
-  await printOrderTicketByQz(order);
+  await printOrderTicketByQz(order, orderAddress, copies);
   return { method: "qz" as const };
 }

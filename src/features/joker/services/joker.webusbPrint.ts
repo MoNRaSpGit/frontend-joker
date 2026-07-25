@@ -137,7 +137,7 @@ export async function primeUsbPrinterConnection() {
   }
 }
 
-export async function printOrderTicketByWebUsb(order: JokerOrderItem[]) {
+export async function printOrderTicketByWebUsb(order: JokerOrderItem[], orderAddress: string, copies: number) {
   const usb = getUsbApi();
   if (!usb) {
     throw new Error("WebUSB no esta disponible en este navegador.");
@@ -152,11 +152,10 @@ export async function printOrderTicketByWebUsb(order: JokerOrderItem[]) {
   const sanitizedOrder = order.map((item) => ({
     ...item,
     productName: stripAccents(item.productName),
-    address: stripAccents(item.address),
     detail: stripAccents(item.detail)
   }));
 
-  const lines = buildOrderTicketLines(sanitizedOrder);
+  const lines = buildOrderTicketLines(sanitizedOrder, stripAccents(orderAddress), copies);
   const { device, path } = await connectPrinter(cachedUsbPrinter);
 
   try {

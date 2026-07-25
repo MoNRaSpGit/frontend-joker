@@ -37,14 +37,14 @@ export async function listQzPrinters() {
   return Array.isArray(printers) ? printers : [];
 }
 
-export async function printOrderTicketByQz(order: JokerOrderItem[]) {
+export async function printOrderTicketByQz(order: JokerOrderItem[], orderAddress: string, copies: number) {
   await ensureQzConnected();
 
   if (!cachedPrinterName) {
     throw new Error("Todavia no elegiste una impresora. Toca \"Impresora\" para elegirla.");
   }
 
-  const data = buildOrderTicketLines(order);
+  const data = buildOrderTicketLines(order, orderAddress, copies);
   const config = qz.configs.create(cachedPrinterName, { encoding: "CP437" });
 
   try {

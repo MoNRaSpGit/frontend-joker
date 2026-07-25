@@ -3,8 +3,9 @@ import type { JokerOrderItem, JokerProduct } from "../joker.types";
 
 export function useJokerOrder() {
   const [order, setOrder] = useState<JokerOrderItem[]>([]);
+  const [orderAddress, setOrderAddress] = useState("");
 
-  function addItem(product: JokerProduct, address: string, detail: string, quantity: number) {
+  function addItem(product: JokerProduct, detail: string, quantity: number) {
     const lineId = `${product.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     setOrder((current) => [
@@ -13,15 +14,15 @@ export function useJokerOrder() {
         lineId,
         productId: product.id,
         productName: product.name,
-        address,
+        unitPrice: product.price,
         detail,
         quantity
       }
     ]);
   }
 
-  function updateItem(lineId: string, address: string, detail: string, quantity: number) {
-    setOrder((current) => current.map((item) => (item.lineId === lineId ? { ...item, address, detail, quantity } : item)));
+  function updateItem(lineId: string, detail: string, quantity: number) {
+    setOrder((current) => current.map((item) => (item.lineId === lineId ? { ...item, detail, quantity } : item)));
   }
 
   function removeItem(lineId: string) {
@@ -30,7 +31,8 @@ export function useJokerOrder() {
 
   function clearOrder() {
     setOrder([]);
+    setOrderAddress("");
   }
 
-  return { order, addItem, updateItem, removeItem, clearOrder };
+  return { order, orderAddress, setOrderAddress, addItem, updateItem, removeItem, clearOrder };
 }
