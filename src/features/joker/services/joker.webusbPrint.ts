@@ -1,5 +1,5 @@
 import { buildOrderTicketLines } from "./joker.ticketFormat";
-import type { JokerOrderItem, JokerSettings } from "../joker.types";
+import type { JokerOrderItem } from "../joker.types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- WebUSB no tiene tipos oficiales en TS.
 type UsbDeviceLike = any;
@@ -137,7 +137,7 @@ export async function primeUsbPrinterConnection() {
   }
 }
 
-export async function printOrderTicketByWebUsb(order: JokerOrderItem[], settings: JokerSettings) {
+export async function printOrderTicketByWebUsb(order: JokerOrderItem[]) {
   const usb = getUsbApi();
   if (!usb) {
     throw new Error("WebUSB no esta disponible en este navegador.");
@@ -152,16 +152,11 @@ export async function printOrderTicketByWebUsb(order: JokerOrderItem[], settings
   const sanitizedOrder = order.map((item) => ({
     ...item,
     productName: stripAccents(item.productName),
+    address: stripAccents(item.address),
     detail: stripAccents(item.detail)
   }));
 
-  const sanitizedSettings: JokerSettings = {
-    storeName: stripAccents(settings.storeName),
-    address: stripAccents(settings.address),
-    phone: stripAccents(settings.phone)
-  };
-
-  const lines = buildOrderTicketLines(sanitizedOrder, sanitizedSettings);
+  const lines = buildOrderTicketLines(sanitizedOrder);
   const { device, path } = await connectPrinter(cachedUsbPrinter);
 
   try {

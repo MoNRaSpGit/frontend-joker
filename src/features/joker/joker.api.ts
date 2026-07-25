@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "../../shared/config/api";
-import type { JokerProduct, JokerSettings } from "./joker.types";
+import type { JokerProduct } from "./joker.types";
 
 type ProductListResponse = {
   items: JokerProduct[];
@@ -9,20 +9,10 @@ type ProductResponse = {
   item: JokerProduct;
 };
 
-type SettingsResponse = {
-  item: JokerSettings;
-};
-
 export type JokerProductInput = {
   name: string;
   category: string;
   price: number;
-};
-
-export type JokerSettingsInput = {
-  storeName: string;
-  address: string;
-  phone: string;
 };
 
 async function readJson<T>(response: Response): Promise<T> {
@@ -67,18 +57,4 @@ export async function updateProduct(productId: number, input: JokerProductInput)
 export async function deleteProduct(productId: number): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/joker/products/${productId}`, { method: "DELETE" });
   await readJson<{ ok: true }>(response);
-}
-
-export async function getSettings(): Promise<SettingsResponse> {
-  const response = await fetch(`${API_BASE_URL}/joker/settings`, { cache: "no-store" });
-  return readJson<SettingsResponse>(response);
-}
-
-export async function updateSettings(input: JokerSettingsInput): Promise<SettingsResponse> {
-  const response = await fetch(`${API_BASE_URL}/joker/settings`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input)
-  });
-  return readJson<SettingsResponse>(response);
 }

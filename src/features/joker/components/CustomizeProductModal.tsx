@@ -4,15 +4,16 @@ import type { JokerProduct } from "../joker.types";
 type CustomizeProductModalProps = {
   product: JokerProduct;
   onClose: () => void;
-  onConfirm: (detail: string, quantity: number) => void;
+  onConfirm: (address: string, detail: string, quantity: number) => void;
 };
 
 export function CustomizeProductModal({ product, onClose, onConfirm }: CustomizeProductModalProps) {
+  const [address, setAddress] = useState("");
   const [detail, setDetail] = useState("");
   const [quantity, setQuantity] = useState(1);
 
   function handleConfirm() {
-    onConfirm(detail.trim(), quantity);
+    onConfirm(address.trim(), detail.trim(), quantity);
     onClose();
   }
 
@@ -46,6 +47,17 @@ export function CustomizeProductModal({ product, onClose, onConfirm }: Customize
           </button>
         </div>
 
+        <label className="joker-form-field">
+          <span>Direccion (si es delivery)</span>
+          <input
+            type="text"
+            value={address}
+            onChange={(event) => setAddress(event.target.value)}
+            placeholder="Ej: Av. 18 de Julio 1234"
+            autoFocus
+          />
+        </label>
+
         <p className="joker-modal-card__hint">Detalle del pedido (ej: Sin lechuga, con doble queso).</p>
 
         <textarea
@@ -54,7 +66,6 @@ export function CustomizeProductModal({ product, onClose, onConfirm }: Customize
           value={detail}
           onChange={(event) => setDetail(event.target.value)}
           placeholder="Escribi aca el detalle..."
-          autoFocus
         />
 
         <div className="joker-modal-card__actions">

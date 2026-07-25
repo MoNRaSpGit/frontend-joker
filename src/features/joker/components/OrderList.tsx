@@ -23,8 +23,9 @@ export function OrderList({ order, isPrinting, onRemoveItem, onPrint }: OrderLis
                 <span className="joker-qty-badge">{item.quantity}x</span>
                 <div>
                   <strong>{item.productName}</strong>
+                  {item.address ? <p className="joker-order-item__excluded">Direccion: {item.address}</p> : null}
                   {item.detail ? (
-                    <p className="joker-order-item__excluded">{item.detail}</p>
+                    <p className="joker-order-item__excluded">Detalle: {item.detail}</p>
                   ) : (
                     <p className="joker-order-item__excluded joker-order-item__excluded--full">Sin detalle</p>
                   )}

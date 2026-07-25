@@ -1,7 +1,8 @@
-import type { JokerOrderItem, JokerSettings } from "../joker.types";
+import type { JokerOrderItem } from "../joker.types";
 
 const TICKET_WIDTH = 48;
 const TICKET_COPIES = 3;
+const STORE_NAME = "EL JOKER";
 const FOOTER_MESSAGE = "Muito obrigado.";
 const DECORATIVE_CHAR = "=";
 const DIVIDER_CHAR = "-";
@@ -25,8 +26,8 @@ const CUT_PAPER = "\x1D\x56\x41\x00";
 
 // Imprime TICKET_COPIES copias iguales, una atras de la otra en el mismo
 // trabajo (cada copia ya trae su propio corte de papel al final).
-export function buildOrderTicketLines(order: JokerOrderItem[], settings: JokerSettings) {
-  const singleTicket = buildSingleTicketLines(order, settings);
+export function buildOrderTicketLines(order: JokerOrderItem[]) {
+  const singleTicket = buildSingleTicketLines(order);
   const lines: string[] = [];
 
   for (let copyIndex = 0; copyIndex < TICKET_COPIES; copyIndex += 1) {
@@ -36,7 +37,7 @@ export function buildOrderTicketLines(order: JokerOrderItem[], settings: JokerSe
   return lines;
 }
 
-function buildSingleTicketLines(order: JokerOrderItem[], settings: JokerSettings) {
+function buildSingleTicketLines(order: JokerOrderItem[]) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
@@ -45,14 +46,8 @@ function buildSingleTicketLines(order: JokerOrderItem[], settings: JokerSettings
   // relleno manual con espacios (eso duplicaba el efecto y lo corria).
   lines.push(ALIGN_CENTER);
   lines.push(BOLD_ON, DOUBLE_SIZE_ON);
-  lines.push(`${settings.storeName}\n`);
+  lines.push(`${STORE_NAME}\n`);
   lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-  if (settings.address) {
-    lines.push(`${settings.address}\n`);
-  }
-  if (settings.phone) {
-    lines.push(`${settings.phone}\n`);
-  }
   lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
 
   // Cuerpo del pedido: alineado a la izquierda, como una lista normal.
@@ -66,11 +61,17 @@ function buildSingleTicketLines(order: JokerOrderItem[], settings: JokerSettings
     lines.push(`${itemNumber}) ${item.quantity}x ${item.productName}\n`);
     lines.push(BOLD_OFF);
 
+    if (item.address.trim()) {
+      lines.push(`   Direccion: ${item.address.trim()}\n`);
+    }
+
     const detailLines = item.detail ? item.detail.split("\n").filter((line) => line.trim().length > 0) : [];
     if (detailLines.length) {
-      detailLines.forEach((detailLine) => lines.push(`   ${detailLine}\n`));
+      detailLines.forEach((detailLine, detailIndex) =>
+        lines.push(`   ${detailIndex === 0 ? "Detalle: " : ""}${detailLine}\n`)
+      );
     } else {
-      lines.push("   Sin detalle\n");
+      lines.push("   Detalle: sin detalle\n");
     }
 
     if (index < order.length - 1) {

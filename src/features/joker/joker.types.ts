@@ -9,12 +9,7 @@ export type JokerOrderItem = {
   lineId: string;
   productId: number;
   productName: string;
+  address: string;
   detail: string;
   quantity: number;
-};
-
-export type JokerSettings = {
-  storeName: string;
-  address: string;
-  phone: string;
 };

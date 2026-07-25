@@ -1,29 +1,19 @@
 import { useEffect, useState } from "react";
 import { PrinterSettingsModal } from "./components/PrinterSettingsModal";
-import { getSettings, listProducts } from "./joker.api";
+import { listProducts } from "./joker.api";
 import { getPreferredPrinterName } from "./services/joker.qzPrint";
 import { primeUsbPrinterConnection } from "./services/joker.webusbPrint";
-import type { JokerProduct, JokerSettings } from "./joker.types";
+import type { JokerProduct } from "./joker.types";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
-import { SettingsScreen } from "./screens/SettingsScreen";
 
-type JokerTab = "pedidos" | "productos" | "local";
-
-const TAB_LABELS: Record<JokerTab, string> = {
-  pedidos: "Armar pedido",
-  productos: "Productos",
-  local: "Datos del local"
-};
-
-const DEFAULT_SETTINGS: JokerSettings = { storeName: "EL JOKER", address: "", phone: "" };
+type JokerTab = "pedidos" | "productos";
 
 export function JokerHomePage() {
   const [activeTab, setActiveTab] = useState<JokerTab>("pedidos");
   const [products, setProducts] = useState<JokerProduct[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [settings, setSettings] = useState<JokerSettings>(DEFAULT_SETTINGS);
   const [isPrinterModalOpen, setIsPrinterModalOpen] = useState(false);
   const [preferredPrinterName, setPreferredPrinterNameState] = useState<string | null>(() => getPreferredPrinterName());
 
@@ -35,7 +25,6 @@ export function JokerHomePage() {
 
   useEffect(() => {
     void loadProducts();
-    void loadSettings();
   }, []);
 
   async function loadProducts() {
@@ -51,15 +40,6 @@ export function JokerHomePage() {
     }
   }
 
-  async function loadSettings() {
-    try {
-      const result = await getSettings();
-      setSettings(result.item);
-    } catch {
-      // Si falla, seguimos con los datos por defecto y el ticket igual sale.
-    }
-  }
-
   return (
     <div className="joker-app">
       <header className="joker-topbar">
@@ -68,7 +48,7 @@ export function JokerHomePage() {
             <span className="joker-brand__mark">🃏</span>
             <div>
               <p className="joker-brand__kicker">El Joker</p>
-              <h1 className="joker-brand__title">{TAB_LABELS[activeTab]}</h1>
+              <h1 className="joker-brand__title">{activeTab === "pedidos" ? "Armar pedido" : "Productos"}</h1>
             </div>
           </div>
 
@@ -88,13 +68,6 @@ export function JokerHomePage() {
               >
                 Productos
               </button>
-              <button
-                type="button"
-                className={`joker-tab${activeTab === "local" ? " is-active" : ""}`}
-                onClick={() => setActiveTab("local")}
-              >
-                Local
-              </button>
             </nav>
 
             <button type="button" className="joker-printer-btn" onClick={() => setIsPrinterModalOpen(true)}>
@@ -106,17 +79,9 @@ export function JokerHomePage() {
 
       <main className="joker-shell">
         {activeTab === "pedidos" ? (
-          <OrdersScreen
-            products={products}
-            isLoading={isLoadingProducts}
-            loadError={loadError}
-            onReload={loadProducts}
-            settings={settings}
-          />
-        ) : activeTab === "productos" ? (
-          <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
+          <OrdersScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
         ) : (
-          <SettingsScreen onSettingsSaved={setSettings} />
+          <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
         )}
       </main>
 
