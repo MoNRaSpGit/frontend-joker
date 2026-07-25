@@ -5,7 +5,6 @@ const STORE_NAME = "EL JOKER";
 const FOOTER_MESSAGE = "Muito obrigado.";
 const DECORATIVE_CHAR = "=";
 const DIVIDER_CHAR = "-";
-const DOT_CHAR = ".";
 
 function decorativeBorder() {
   return DECORATIVE_CHAR.repeat(TICKET_WIDTH);
@@ -19,11 +18,11 @@ function formatMoney(amount: number) {
   return `$ ${Math.round(amount)}`;
 }
 
-// Arma una linea con el label a la izquierda y el valor a la derecha,
-// rellenando el medio con puntos (estilo ticket clasico).
-function dottedLine(label: string, value: string) {
-  const dotsCount = Math.max(3, TICKET_WIDTH - label.length - value.length);
-  return `${label}${DOT_CHAR.repeat(dotsCount)}${value}`;
+// Arma una linea con el label a la izquierda y el valor pegado a la derecha,
+// rellenando el medio con espacios.
+function rightAlignedLine(label: string, value: string) {
+  const gap = Math.max(1, TICKET_WIDTH - label.length - value.length);
+  return `${label}${" ".repeat(gap)}${value}`;
 }
 
 const ESC_INIT = "\x1B\x40";
@@ -76,7 +75,7 @@ function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string) {
     total += lineTotal;
 
     lines.push(BOLD_ON);
-    lines.push(`${dottedLine(`${itemNumber}) ${item.quantity}x ${item.productName} `, formatMoney(lineTotal))}\n`);
+    lines.push(`${rightAlignedLine(`${itemNumber}) ${item.quantity}x ${item.productName} `, formatMoney(lineTotal))}\n`);
     lines.push(BOLD_OFF);
 
     const detailLines = item.detail ? item.detail.split("\n").filter((line) => line.trim().length > 0) : [];
@@ -95,7 +94,7 @@ function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string) {
 
   lines.push(`${decorativeBorder()}\n`);
   lines.push(BOLD_ON);
-  lines.push(`${dottedLine("Total ", formatMoney(total))}\n`);
+  lines.push(`${rightAlignedLine("Total ", formatMoney(total))}\n`);
   lines.push(BOLD_OFF);
   lines.push("\n");
 
