@@ -550,6 +550,27 @@ textarea {
   text-align: center;
 }
 
+.joker-qty-badge--gold {
+  min-width: 34px;
+  padding: 3px 6px;
+  background: linear-gradient(135deg, #f4d675, #c9962c);
+  font-size: 16px;
+}
+
+.joker-qty-badge--silver {
+  min-width: 34px;
+  padding: 3px 6px;
+  background: linear-gradient(135deg, #eef0f2, #a9b1bb);
+  font-size: 16px;
+}
+
+.joker-qty-badge--bronze {
+  min-width: 34px;
+  padding: 3px 6px;
+  background: linear-gradient(135deg, #e0a06a, #9c5a2b);
+  font-size: 16px;
+}
+
 .joker-order-item__excluded {
   margin: 4px 0 0;
   font-size: 13px;

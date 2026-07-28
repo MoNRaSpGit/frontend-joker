@@ -37,6 +37,9 @@ function buildPaymentTotals(orders: JokerOrderRecord[]) {
   return totals;
 }
 
+const MEDALS = ["🥇", "🥈", "🥉"];
+const MEDAL_CLASSES = ["joker-qty-badge--gold", "joker-qty-badge--silver", "joker-qty-badge--bronze"];
+
 function buildRanking(orders: JokerOrderRecord[]) {
   const countByProduct = new Map<string, number>();
 
@@ -217,7 +220,9 @@ export function PanelScreen() {
             {ranking.map((entry, index) => (
               <li key={entry.productName} className="joker-order-item">
                 <div className="joker-order-item__info">
-                  <span className="joker-qty-badge">#{index + 1}</span>
+                  <span className={`joker-qty-badge ${MEDAL_CLASSES[index] ?? ""}`}>
+                    {MEDALS[index] ?? `#${index + 1}`}
+                  </span>
                   <strong>{entry.productName}</strong>
                 </div>
                 <span className="joker-qty-badge">{entry.quantity}</span>
