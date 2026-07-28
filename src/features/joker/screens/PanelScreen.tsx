@@ -8,8 +8,11 @@ function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
 }
 
-function formatTime(isoDate: string) {
-  return new Date(isoDate).toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
+function formatDateTime(isoDate: string) {
+  const date = new Date(isoDate);
+  const dateLabel = date.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" });
+  const timeLabel = date.toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
+  return `${dateLabel} ${timeLabel}`;
 }
 
 function getTodayLabel() {
@@ -138,15 +141,15 @@ export function PanelScreen() {
                   className="joker-order-item joker-order-item--flat joker-order-item--clickable"
                   onClick={() => setExpandedOrderId((current) => (current === order.id ? null : order.id))}
                 >
-                  <div className="joker-order-item__info">
-                    <strong>Pedido #{order.id}</strong>
-                    <span className="joker-order-item__excluded">{formatTime(order.createdAt)}</span>
-                  </div>
+                  <strong>Pedido #{order.id}</strong>
                   <strong className="joker-amount-plus">+{formatPrice(order.total)}</strong>
                 </button>
 
                 {expandedOrderId === order.id ? (
                   <ul className="joker-order-detail-list">
+                    <li className="joker-order-detail-list__meta">
+                      <span className="joker-order-item__excluded">{formatDateTime(order.createdAt)}</span>
+                    </li>
                     {order.items.map((item, index) => (
                       <li key={`${order.id}-${index}`}>
                         <span className="joker-qty-badge">{item.quantity}</span>

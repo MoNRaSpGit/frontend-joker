@@ -510,6 +510,11 @@ textarea {
   gap: 10px;
 }
 
+.joker-order-detail-list__meta {
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--joker-border);
+}
+
 .joker-qty-badge {
   flex-shrink: 0;
   min-width: 34px;
