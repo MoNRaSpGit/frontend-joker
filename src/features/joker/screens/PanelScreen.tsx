@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { listOrders } from "../joker.api";
+import { toast } from "react-toastify";
+import { listOrders, resetOrders } from "../joker.api";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerOrderRecord, JokerPaymentMethod } from "../joker.types";
 
@@ -55,10 +56,28 @@ export function PanelScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     void loadOrders();
   }, []);
+
+  async function handleReset() {
+    if (!window.confirm("Esto borra todos los pedidos guardados (modo pruebas). Continuar?")) {
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      await resetOrders();
+      toast.success("Panel reiniciado.");
+      await loadOrders();
+    } catch (resetError) {
+      toast.error(resetError instanceof Error ? resetError.message : "No se pudo reiniciar el panel.");
+    } finally {
+      setIsResetting(false);
+    }
+  }
 
   async function loadOrders() {
     setIsLoading(true);
@@ -96,9 +115,19 @@ export function PanelScreen() {
   return (
     <>
       <section className="joker-panel">
-        <div className="joker-panel__heading">
-          <p className="joker-eyebrow">Hoy</p>
-          <h2>Resumen del dia</h2>
+        <div className="joker-panel__heading joker-panel__heading--row">
+          <div>
+            <p className="joker-eyebrow">Hoy</p>
+            <h2>Resumen del dia</h2>
+          </div>
+          <button
+            type="button"
+            className="joker-button joker-button--ghost joker-button--auto"
+            onClick={handleReset}
+            disabled={isResetting}
+          >
+            {isResetting ? "Reiniciando..." : "Reiniciar panel"}
+          </button>
         </div>
 
         <div className="joker-stat-grid">

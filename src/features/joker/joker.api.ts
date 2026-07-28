@@ -96,3 +96,8 @@ export async function listOrders(dateLabel: string): Promise<OrderListResponse> 
   });
   return readJson<OrderListResponse>(response);
 }
+
+export async function resetOrders(): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/joker/orders`, { method: "DELETE" });
+  await readJson<{ ok: true }>(response);
+}
