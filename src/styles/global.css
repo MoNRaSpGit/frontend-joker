@@ -109,54 +109,75 @@ textarea {
   flex-wrap: wrap;
 }
 
-.joker-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+.joker-user-menu {
+  position: relative;
 }
 
-.joker-tab {
+.joker-user-menu-btn {
   min-height: 38px;
-  padding: 0 18px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: #cfcfcf;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.joker-tab:hover {
-  color: #fff;
-}
-
-.joker-tab.is-active {
-  background: var(--joker-accent);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(214, 31, 38, 0.45);
-}
-
-.joker-printer-btn {
-  flex-shrink: 0;
-  min-height: 38px;
-  padding: 0 16px;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
   color: #f1f1f1;
-  font-size: 13px;
-  font-weight: 700;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.joker-printer-btn:hover {
+.joker-user-menu-btn:hover,
+.joker-user-menu-btn:focus {
   background: rgba(255, 255, 255, 0.14);
   border-color: rgba(255, 255, 255, 0.3);
+}
+
+.joker-user-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 210px;
+  border: 1px solid #2b2b2b;
+  border-radius: 12px;
+  background: #111111;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+  padding: 6px;
+  z-index: 50;
+}
+
+.joker-user-dropdown-item {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #e6e6e6;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.joker-user-dropdown-item:hover {
+  background: #1c1c1c;
+  border-color: #333333;
+}
+
+.joker-user-dropdown-item.is-active {
+  background: var(--joker-accent);
+  border-color: var(--joker-accent);
+  color: #fff;
+}
+
+.joker-user-dropdown-divider {
+  height: 1px;
+  background: #262626;
+  margin: 6px 4px;
 }
 
 /* ---------- Shell / content ---------- */
@@ -446,6 +467,11 @@ textarea {
   font-size: 1.4rem;
   font-weight: 800;
   color: var(--joker-text);
+}
+
+.joker-amount-plus {
+  color: #1e5b3e;
+  font-weight: 800;
 }
 
 .joker-order-item--stacked {

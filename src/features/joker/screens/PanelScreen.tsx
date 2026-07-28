@@ -88,11 +88,11 @@ export function PanelScreen() {
         <div className="joker-stat-grid">
           <div className="joker-stat-tile">
             <span className="joker-stat-tile__label">Vendido</span>
-            <strong className="joker-stat-tile__value">{formatPrice(totalVendido)}</strong>
+            <strong className="joker-stat-tile__value joker-amount-plus">+{formatPrice(totalVendido)}</strong>
           </div>
           <div className="joker-stat-tile">
             <span className="joker-stat-tile__label">Ganancia (30%)</span>
-            <strong className="joker-stat-tile__value">{formatPrice(ganancia)}</strong>
+            <strong className="joker-stat-tile__value joker-amount-plus">+{formatPrice(ganancia)}</strong>
           </div>
           <div className="joker-stat-tile">
             <span className="joker-stat-tile__label">Pedidos</span>
@@ -140,7 +140,7 @@ export function PanelScreen() {
                     <span className="joker-order-item__excluded">{formatTime(order.createdAt)}</span>
                   </div>
                   <div className="joker-product-row-actions">
-                    <strong>{formatPrice(order.total)}</strong>
+                    <strong className="joker-amount-plus">+{formatPrice(order.total)}</strong>
                     <button
                       type="button"
                       className="joker-button joker-button--ghost joker-button--auto"
