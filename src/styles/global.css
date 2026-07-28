@@ -417,6 +417,7 @@ textarea {
 
 .joker-order-list {
   display: grid;
+  grid-template-columns: 1fr;
   gap: 10px;
   margin: 0;
   padding: 0;
@@ -476,6 +477,7 @@ textarea {
 
 .joker-order-item--stacked {
   display: grid;
+  grid-template-columns: 1fr;
   gap: 10px;
 }
 
