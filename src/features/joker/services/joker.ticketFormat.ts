@@ -68,6 +68,7 @@ function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string, p
     lines.push(`Direccion: ${orderAddress.trim()}\n`);
   }
   lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
+  lines.push(`Pago: ${JOKER_PAYMENT_METHOD_LABELS[paymentMethod]}\n`);
 
   // Cuerpo del pedido: alineado a la izquierda, como una lista normal.
   lines.push(ALIGN_LEFT);
@@ -102,7 +103,6 @@ function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string, p
   lines.push(BOLD_ON);
   lines.push(`${rightAlignedLine("Total ", formatMoney(total))}\n`);
   lines.push(BOLD_OFF);
-  lines.push(`${rightAlignedLine("Pago ", JOKER_PAYMENT_METHOD_LABELS[paymentMethod])}\n`);
   lines.push("\n");
 
   // Pie centrado, otra vez dejando que lo centre la impresora sola.
