@@ -175,10 +175,10 @@ export function PanelScreen() {
           {hasHiddenMovements ? (
             <button
               type="button"
-              className="joker-link-button"
+              className="joker-mini-button"
               onClick={() => setShowAllMovements((current) => !current)}
             >
-              {showAllMovements ? "Ver menos" : `Ver todos (${orders.length})`}
+              {showAllMovements ? "Ver menos" : "Ver todos"}
             </button>
           ) : null}
         </div>

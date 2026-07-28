@@ -574,23 +574,25 @@ textarea {
   text-align: center;
 }
 
-.joker-link-button {
-  justify-self: center;
+.joker-mini-button {
+  flex-shrink: 0;
   appearance: none;
-  border: none;
-  background: none;
-  padding: 4px 8px;
+  min-height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--joker-border);
+  border-radius: 999px;
+  background: #fff;
   color: var(--joker-muted);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  text-decoration: underline;
-  text-underline-offset: 3px;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.joker-link-button:hover {
+.joker-mini-button:hover {
+  border-color: #b8b8b8;
   color: var(--joker-text);
+  background: #f5f5f5;
 }
 
 /* ---------- Order list ---------- */
