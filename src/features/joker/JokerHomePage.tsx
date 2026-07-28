@@ -76,8 +76,11 @@ export function JokerHomePage() {
     setIsMenuOpen(false);
   }
 
-  function handleAddClient(name: string) {
-    setClients((current) => [...current, { id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name }]);
+  function handleAddClient(name: string, phone?: string) {
+    setClients((current) => [
+      ...current,
+      { id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name, phone: phone?.trim() || undefined }
+    ]);
   }
 
   function handleRegisterAccountEntry(entry: JokerAccountEntry) {

@@ -4,7 +4,7 @@ import type { JokerAccountEntry, JokerClient } from "../joker.types";
 type CuentaCorrienteScreenProps = {
   clients: JokerClient[];
   accountEntries: JokerAccountEntry[];
-  onAddClient: (name: string) => void;
+  onAddClient: (name: string, phone?: string) => void;
 };
 
 function formatPrice(amount: number) {
@@ -24,26 +24,32 @@ function formatEntryItems(entry: JokerAccountEntry) {
 
 export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient }: CuentaCorrienteScreenProps) {
   const [newClientName, setNewClientName] = useState("");
+  const [newClientPhone, setNewClientPhone] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+
+  function debtFor(clientId: string) {
+    return accountEntries.filter((entry) => entry.clientId === clientId).reduce((sum, entry) => sum + entry.total, 0);
+  }
 
   const filteredClients = clients.filter((client) => client.name.toLowerCase().includes(searchQuery.trim().toLowerCase()));
   const selectedClient = clients.find((client) => client.id === selectedClientId) ?? null;
   const selectedClientEntries = selectedClient
     ? accountEntries.filter((entry) => entry.clientId === selectedClient.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     : [];
-  const selectedClientDebt = selectedClientEntries.reduce((sum, entry) => sum + entry.total, 0);
+  const selectedClientDebt = selectedClient ? debtFor(selectedClient.id) : 0;
 
   function handleAddClient() {
     const trimmed = newClientName.trim();
     if (!trimmed) return;
-    onAddClient(trimmed);
+    onAddClient(trimmed, newClientPhone);
     setNewClientName("");
+    setNewClientPhone("");
   }
 
   return (
     <div className="joker-columns-3">
-      <section className="joker-panel">
+      <section className="joker-panel joker-cc-card">
         <div className="joker-panel__heading">
           <p className="joker-eyebrow">Cuenta corriente</p>
           <h2>Alta rapida</h2>
@@ -58,15 +64,27 @@ export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient }: 
             placeholder="Ej: Juan Perez"
           />
         </label>
+        <label className="joker-form-field">
+          <span>Telefono</span>
+          <input
+            type="tel"
+            value={newClientPhone}
+            onChange={(event) => setNewClientPhone(event.target.value)}
+            placeholder="099 000 000"
+          />
+        </label>
         <button type="button" className="joker-button joker-button--primary joker-button--auto" onClick={handleAddClient}>
           Agregar cliente
         </button>
       </section>
 
-      <section className="joker-panel">
-        <div className="joker-panel__heading">
-          <p className="joker-eyebrow">Listado</p>
-          <h2>Clientes</h2>
+      <section className="joker-panel joker-cc-card">
+        <div className="joker-panel__heading joker-panel__heading--row">
+          <div>
+            <p className="joker-eyebrow">Listado</p>
+            <h2>Clientes</h2>
+          </div>
+          <span className="joker-cc-badge">{clients.length}</span>
         </div>
 
         <input
@@ -78,17 +96,18 @@ export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient }: 
         />
 
         {filteredClients.length ? (
-          <ul className="joker-order-list top-gap">
+          <ul className="joker-cc-list top-gap">
             {filteredClients.map((client) => (
               <li key={client.id}>
                 <button
                   type="button"
-                  className={`joker-order-item joker-order-item--flat joker-order-item--clickable${
-                    selectedClientId === client.id ? " is-selected" : ""
-                  }`}
+                  className={`joker-cc-list-item${selectedClientId === client.id ? " is-active" : ""}`}
                   onClick={() => setSelectedClientId(client.id)}
                 >
-                  <strong>{client.name}</strong>
+                  <span className="joker-cc-list-item__name">{client.name}</span>
+                  <span className="joker-cc-list-item__meta">
+                    {client.phone ? `${client.phone} · ` : ""}Debe {formatPrice(debtFor(client.id))}
+                  </span>
                 </button>
               </li>
             ))}
@@ -98,7 +117,7 @@ export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient }: 
         )}
       </section>
 
-      <section className="joker-panel">
+      <section className="joker-panel joker-cc-card">
         <div className="joker-panel__heading">
           <p className="joker-eyebrow">Detalle</p>
           <h2>{selectedClient ? selectedClient.name : "Estado del cliente"}</h2>
@@ -106,11 +125,13 @@ export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient }: 
 
         {selectedClient ? (
           <>
-            <div className="joker-stat-grid">
-              <div className="joker-stat-tile">
-                <span className="joker-stat-tile__label">Debe</span>
-                <strong className="joker-stat-tile__value joker-amount-plus">+{formatPrice(selectedClientDebt)}</strong>
+            <div className="joker-cc-hero">
+              <div>
+                <span className="joker-cc-hero__label">Saldo actual</span>
+                <strong className="joker-cc-hero__name">{selectedClient.name}</strong>
+                {selectedClient.phone ? <span className="joker-cc-hero__phone">{selectedClient.phone}</span> : null}
               </div>
+              <strong className="joker-cc-hero__debt">{formatPrice(selectedClientDebt)}</strong>
             </div>
 
             <div className="joker-panel__heading top-gap">
@@ -118,14 +139,14 @@ export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient }: 
             </div>
 
             {selectedClientEntries.length ? (
-              <ul className="joker-order-list">
+              <ul className="joker-cc-history">
                 {selectedClientEntries.map((entry) => (
-                  <li key={entry.id} className="joker-order-item joker-order-item--stacked">
-                    <div className="joker-order-item joker-order-item--flat">
-                      <strong>{formatDateTime(entry.createdAt)}</strong>
+                  <li key={entry.id} className="joker-cc-history-row">
+                    <div className="joker-cc-history-row__head">
                       <strong className="joker-amount-plus">+{formatPrice(entry.total)}</strong>
+                      <span className="joker-order-item__excluded">{formatDateTime(entry.createdAt)}</span>
                     </div>
-                    <p className="joker-order-item__excluded">{formatEntryItems(entry)}</p>
+                    <p className="joker-cc-history-row__items">{formatEntryItems(entry)}</p>
                   </li>
                 ))}
               </ul>

@@ -40,6 +40,7 @@ export type JokerOrderRecord = {
 export type JokerClient = {
   id: string;
   name: string;
+  phone?: string;
 };
 
 export type JokerAccountEntry = {
