@@ -6,6 +6,7 @@ import type { JokerOrderRecord, JokerPaymentMethod } from "../joker.types";
 
 const PROFIT_RATE = 0.3;
 const PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "cuenta"];
+const MOVEMENTS_PREVIEW_COUNT = 3;
 
 function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
@@ -60,6 +61,7 @@ export function PanelScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [isResetting, setIsResetting] = useState(false);
+  const [showAllMovements, setShowAllMovements] = useState(false);
 
   useEffect(() => {
     void loadOrders();
@@ -99,6 +101,8 @@ export function PanelScreen() {
   const ganancia = totalVendido * PROFIT_RATE;
   const ranking = buildRanking(orders);
   const paymentTotals = buildPaymentTotals(orders);
+  const visibleOrders = showAllMovements ? orders : orders.slice(0, MOVEMENTS_PREVIEW_COUNT);
+  const hasHiddenMovements = orders.length > MOVEMENTS_PREVIEW_COUNT;
 
   if (isLoading) {
     return <p className="joker-empty-state">Cargando panel...</p>;
@@ -172,7 +176,7 @@ export function PanelScreen() {
 
         {orders.length ? (
           <ul className="joker-order-list">
-            {orders.map((order) => (
+            {visibleOrders.map((order) => (
               <li key={order.id} className="joker-order-item joker-order-item--stacked">
                 <button
                   type="button"
@@ -207,6 +211,16 @@ export function PanelScreen() {
         ) : (
           <p className="joker-empty-state">Todavia no hay pedidos impresos hoy.</p>
         )}
+
+        {hasHiddenMovements ? (
+          <button
+            type="button"
+            className="joker-link-button"
+            onClick={() => setShowAllMovements((current) => !current)}
+          >
+            {showAllMovements ? "Ver menos" : `Ver todos (${orders.length})`}
+          </button>
+        ) : null}
       </section>
 
       <section className="joker-panel">

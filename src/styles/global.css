@@ -574,6 +574,25 @@ textarea {
   text-align: center;
 }
 
+.joker-link-button {
+  justify-self: center;
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 4px 8px;
+  color: var(--joker-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.joker-link-button:hover {
+  color: var(--joker-text);
+}
+
 /* ---------- Order list ---------- */
 
 .joker-order-list {
