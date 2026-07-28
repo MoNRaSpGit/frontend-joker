@@ -486,11 +486,20 @@ textarea {
 }
 
 .joker-order-item--clickable {
+  appearance: none;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   text-align: left;
   cursor: pointer;
   font: inherit;
   color: inherit;
+}
+
+.joker-order-item--clickable .joker-amount-plus {
+  margin-left: auto;
 }
 
 .joker-order-detail-list {
