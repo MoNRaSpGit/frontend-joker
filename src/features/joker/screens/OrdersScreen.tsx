@@ -4,6 +4,7 @@ import { CustomizeProductModal } from "../components/CustomizeProductModal";
 import { OrderList } from "../components/OrderList";
 import { ProductGrid } from "../components/ProductGrid";
 import { useJokerOrder } from "../hooks/useJokerOrder";
+import { createOrder } from "../joker.api";
 import { printOrderTicket } from "../services/joker.print";
 import type { JokerOrderItem, JokerProduct } from "../joker.types";
 
@@ -31,8 +32,21 @@ export function OrdersScreen({ products, isLoading, loadError, onReload }: Order
       clearOrder();
     } catch (printError) {
       toast.error(printError instanceof Error ? `No se pudo imprimir: ${printError.message}` : "No se pudo imprimir el pedido.");
-    } finally {
       setIsPrinting(false);
+      return;
+    }
+    setIsPrinting(false);
+
+    // El ticket ya salio de la impresora en este punto: si guardar el
+    // pedido para el panel falla, se avisa pero no se revierte nada.
+    try {
+      await createOrder(order, orderAddress);
+    } catch (saveError) {
+      toast.error(
+        saveError instanceof Error
+          ? `El pedido se imprimio pero no se guardo en el panel: ${saveError.message}`
+          : "El pedido se imprimio pero no se guardo en el panel."
+      );
     }
   }
 

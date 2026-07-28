@@ -13,3 +13,17 @@ export type JokerOrderItem = {
   detail: string;
   quantity: number;
 };
+
+export type JokerOrderRecord = {
+  id: number;
+  total: number;
+  address: string;
+  items: Array<{
+    productId: number;
+    productName: string;
+    unitPrice: number;
+    quantity: number;
+    detail?: string;
+  }>;
+  createdAt: string;
+};

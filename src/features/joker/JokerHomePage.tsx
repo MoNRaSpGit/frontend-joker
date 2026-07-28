@@ -5,9 +5,10 @@ import { getPreferredPrinterName } from "./services/joker.qzPrint";
 import { primeUsbPrinterConnection } from "./services/joker.webusbPrint";
 import type { JokerProduct } from "./joker.types";
 import { OrdersScreen } from "./screens/OrdersScreen";
+import { PanelScreen } from "./screens/PanelScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
 
-type JokerTab = "pedidos" | "productos";
+type JokerTab = "pedidos" | "productos" | "panel";
 
 export function JokerHomePage() {
   const [activeTab, setActiveTab] = useState<JokerTab>("pedidos");
@@ -48,7 +49,9 @@ export function JokerHomePage() {
             <span className="joker-brand__mark">🃏</span>
             <div>
               <p className="joker-brand__kicker">El Joker</p>
-              <h1 className="joker-brand__title">{activeTab === "pedidos" ? "Armar pedido" : "Productos"}</h1>
+              <h1 className="joker-brand__title">
+                {activeTab === "pedidos" ? "Armar pedido" : activeTab === "productos" ? "Productos" : "Panel"}
+              </h1>
             </div>
           </div>
 
@@ -68,6 +71,13 @@ export function JokerHomePage() {
               >
                 Productos
               </button>
+              <button
+                type="button"
+                className={`joker-tab${activeTab === "panel" ? " is-active" : ""}`}
+                onClick={() => setActiveTab("panel")}
+              >
+                Panel
+              </button>
             </nav>
 
             <button type="button" className="joker-printer-btn" onClick={() => setIsPrinterModalOpen(true)}>
@@ -80,8 +90,10 @@ export function JokerHomePage() {
       <main className="joker-shell">
         {activeTab === "pedidos" ? (
           <OrdersScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
-        ) : (
+        ) : activeTab === "productos" ? (
           <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
+        ) : (
+          <PanelScreen />
         )}
       </main>
 
