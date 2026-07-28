@@ -161,7 +161,7 @@ export function PanelScreen() {
 
         <div className="joker-stat-grid">
           {PAYMENT_METHODS.map((method) => (
-            <div key={method} className="joker-stat-tile">
+            <div key={method} className={`joker-stat-tile joker-stat-tile--${method}`}>
               <span className="joker-stat-tile__label">{JOKER_PAYMENT_METHOD_LABELS[method]}</span>
               <strong className="joker-stat-tile__value joker-amount-plus">+{formatPrice(paymentTotals[method])}</strong>
             </div>

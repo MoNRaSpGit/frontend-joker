@@ -638,6 +638,18 @@ textarea {
   background: #f7f7f7;
 }
 
+.joker-stat-tile--efectivo {
+  border-color: #2f5233;
+}
+
+.joker-stat-tile--tarjeta {
+  border-color: #1f4e79;
+}
+
+.joker-stat-tile--cuenta {
+  border-color: #6b1b23;
+}
+
 .joker-stat-tile__label {
   font-size: 12px;
   font-weight: 700;
