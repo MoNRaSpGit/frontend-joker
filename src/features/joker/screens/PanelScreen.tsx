@@ -170,8 +170,17 @@ export function PanelScreen() {
       </section>
 
       <section className="joker-panel">
-        <div className="joker-panel__heading">
+        <div className="joker-panel__heading joker-panel__heading--row">
           <p className="joker-eyebrow">Movimientos</p>
+          {hasHiddenMovements ? (
+            <button
+              type="button"
+              className="joker-link-button"
+              onClick={() => setShowAllMovements((current) => !current)}
+            >
+              {showAllMovements ? "Ver menos" : `Ver todos (${orders.length})`}
+            </button>
+          ) : null}
         </div>
 
         {orders.length ? (
@@ -211,16 +220,6 @@ export function PanelScreen() {
         ) : (
           <p className="joker-empty-state">Todavia no hay pedidos impresos hoy.</p>
         )}
-
-        {hasHiddenMovements ? (
-          <button
-            type="button"
-            className="joker-link-button"
-            onClick={() => setShowAllMovements((current) => !current)}
-          >
-            {showAllMovements ? "Ver menos" : `Ver todos (${orders.length})`}
-          </button>
-        ) : null}
       </section>
 
       <section className="joker-panel">
