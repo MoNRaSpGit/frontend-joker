@@ -30,7 +30,7 @@ export function PaymentMethodModal({ isSubmitting, onClose, onConfirm }: Payment
             <button
               key={method}
               type="button"
-              className={`joker-category-chip${selected === method ? " is-active" : ""}`}
+              className={`joker-category-chip joker-category-chip--${method}${selected === method ? " is-active" : ""}`}
               onClick={() => setSelected(method)}
             >
               {JOKER_PAYMENT_METHOD_LABELS[method]}

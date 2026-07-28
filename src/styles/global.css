@@ -346,8 +346,20 @@ textarea {
 
 .joker-category-chip.is-active {
   border-color: transparent;
-  background: var(--joker-accent);
+  background: #6b1b23;
   color: #fff;
+}
+
+.joker-category-chip--efectivo.is-active {
+  background: #2f5233;
+}
+
+.joker-category-chip--tarjeta.is-active {
+  background: #1f4e79;
+}
+
+.joker-category-chip--cuenta.is-active {
+  background: #6b1b23;
 }
 
 /* ---------- Product grid ---------- */
