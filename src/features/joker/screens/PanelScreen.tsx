@@ -127,29 +127,23 @@ export function PanelScreen() {
       <section className="joker-panel">
         <div className="joker-panel__heading">
           <p className="joker-eyebrow">Movimientos</p>
-          <h2>Pedidos de hoy</h2>
         </div>
 
         {orders.length ? (
           <ul className="joker-order-list">
             {orders.map((order) => (
               <li key={order.id} className="joker-order-item joker-order-item--stacked">
-                <div className="joker-order-item joker-order-item--flat">
+                <button
+                  type="button"
+                  className="joker-order-item joker-order-item--flat joker-order-item--clickable"
+                  onClick={() => setExpandedOrderId((current) => (current === order.id ? null : order.id))}
+                >
                   <div className="joker-order-item__info">
                     <strong>Pedido #{order.id}</strong>
                     <span className="joker-order-item__excluded">{formatTime(order.createdAt)}</span>
                   </div>
-                  <div className="joker-product-row-actions">
-                    <strong className="joker-amount-plus">+{formatPrice(order.total)}</strong>
-                    <button
-                      type="button"
-                      className="joker-button joker-button--ghost joker-button--auto"
-                      onClick={() => setExpandedOrderId((current) => (current === order.id ? null : order.id))}
-                    >
-                      {expandedOrderId === order.id ? "Ocultar" : "Detalle"}
-                    </button>
-                  </div>
-                </div>
+                  <strong className="joker-amount-plus">+{formatPrice(order.total)}</strong>
+                </button>
 
                 {expandedOrderId === order.id ? (
                   <ul className="joker-order-detail-list">

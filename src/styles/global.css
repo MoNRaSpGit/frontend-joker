@@ -485,6 +485,14 @@ textarea {
   background: none;
 }
 
+.joker-order-item--clickable {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
 .joker-order-detail-list {
   display: grid;
   gap: 8px;
