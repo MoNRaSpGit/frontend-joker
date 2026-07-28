@@ -748,6 +748,19 @@ textarea {
   color: var(--joker-text);
 }
 
+.joker-product-list-name {
+  flex: 1;
+  min-width: 0;
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
 .joker-order-item__remove {
   flex-shrink: 0;
   width: 32px;

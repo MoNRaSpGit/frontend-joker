@@ -19,8 +19,16 @@ export function ProductsScreen({ products, isLoading, loadError, onReload }: Pro
   const [editingProduct, setEditingProduct] = useState<JokerProduct | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const categories = Array.from(new Set(products.map((product) => product.category))).sort();
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredProducts = normalizedQuery
+    ? products.filter(
+        (product) =>
+          product.name.toLowerCase().includes(normalizedQuery) || product.category.toLowerCase().includes(normalizedQuery)
+      )
+    : [];
 
   function openNewProductForm() {
     setEditingProduct(null);
@@ -81,35 +89,44 @@ export function ProductsScreen({ products, isLoading, loadError, onReload }: Pro
             Reintentar
           </button>
         </div>
-      ) : products.length ? (
-        <ul className="joker-order-list">
-          {products.map((product) => (
-            <li key={product.id} className="joker-order-item">
-              <div>
-                <strong>{product.name}</strong>
-                <p className="joker-order-item__excluded joker-order-item__excluded--full">
-                  {product.category} · {formatPrice(product.price)}
-                </p>
-              </div>
-              <div className="joker-product-row-actions">
-                <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => openEditProductForm(product)}>
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  className="joker-order-item__remove"
-                  onClick={() => handleDelete(product)}
-                  disabled={deletingId === product.id}
-                  aria-label={`Eliminar ${product.name}`}
-                >
-                  x
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
       ) : (
-        <p className="joker-empty-state">Todavia no hay productos cargados.</p>
+        <>
+          <input
+            type="search"
+            className="joker-search-input"
+            placeholder="Buscar producto o categoria..."
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+
+          {filteredProducts.length ? (
+            <ul className="joker-order-list top-gap">
+              {filteredProducts.map((product) => (
+                <li key={product.id} className="joker-order-item">
+                  <button type="button" className="joker-product-list-name" onClick={() => openEditProductForm(product)}>
+                    <strong>{product.name}</strong>
+                    <p className="joker-order-item__excluded joker-order-item__excluded--full">
+                      {product.category} · {formatPrice(product.price)}
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    className="joker-order-item__remove"
+                    onClick={() => handleDelete(product)}
+                    disabled={deletingId === product.id}
+                    aria-label={`Eliminar ${product.name}`}
+                  >
+                    x
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="joker-empty-state top-gap">
+              {normalizedQuery ? "No se encontraron productos." : "Busca un producto para editarlo."}
+            </p>
+          )}
+        </>
       )}
 
       {isFormOpen ? (
