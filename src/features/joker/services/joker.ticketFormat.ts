@@ -1,4 +1,5 @@
-import type { JokerOrderItem } from "../joker.types";
+import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
+import type { JokerOrderItem, JokerPaymentMethod } from "../joker.types";
 
 const TICKET_WIDTH = 48;
 const STORE_NAME = "EL JOKER";
@@ -36,8 +37,13 @@ const CUT_PAPER = "\x1D\x56\x41\x00";
 
 // copies: cuantas veces se repite el ticket completo en el mismo trabajo
 // (cada copia ya trae su propio corte de papel al final).
-export function buildOrderTicketLines(order: JokerOrderItem[], orderAddress: string, copies: number) {
-  const singleTicket = buildSingleTicketLines(order, orderAddress);
+export function buildOrderTicketLines(
+  order: JokerOrderItem[],
+  orderAddress: string,
+  copies: number,
+  paymentMethod: JokerPaymentMethod
+) {
+  const singleTicket = buildSingleTicketLines(order, orderAddress, paymentMethod);
   const lines: string[] = [];
 
   for (let copyIndex = 0; copyIndex < copies; copyIndex += 1) {
@@ -47,7 +53,7 @@ export function buildOrderTicketLines(order: JokerOrderItem[], orderAddress: str
   return lines;
 }
 
-function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string) {
+function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string, paymentMethod: JokerPaymentMethod) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
@@ -96,6 +102,7 @@ function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string) {
   lines.push(BOLD_ON);
   lines.push(`${rightAlignedLine("Total ", formatMoney(total))}\n`);
   lines.push(BOLD_OFF);
+  lines.push(`${rightAlignedLine("Pago ", JOKER_PAYMENT_METHOD_LABELS[paymentMethod])}\n`);
   lines.push("\n");
 
   // Pie centrado, otra vez dejando que lo centre la impresora sola.

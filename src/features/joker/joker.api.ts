@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "../../shared/config/api";
-import type { JokerOrderItem, JokerOrderRecord, JokerProduct } from "./joker.types";
+import type { JokerOrderItem, JokerOrderRecord, JokerPaymentMethod, JokerProduct } from "./joker.types";
 
 type ProductListResponse = {
   items: JokerProduct[];
@@ -67,12 +67,17 @@ export async function deleteProduct(productId: number): Promise<void> {
   await readJson<{ ok: true }>(response);
 }
 
-export async function createOrder(order: JokerOrderItem[], address: string): Promise<OrderResponse> {
+export async function createOrder(
+  order: JokerOrderItem[],
+  address: string,
+  paymentMethod: JokerPaymentMethod
+): Promise<OrderResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       address,
+      paymentMethod,
       items: order.map((item) => ({
         productId: item.productId,
         productName: item.productName,

@@ -706,6 +706,10 @@ textarea {
   gap: 0.6rem;
 }
 
+.joker-modal-card__actions--top-gap {
+  margin-top: 1rem;
+}
+
 /* ---------- Printer list ---------- */
 
 .joker-printer-list {

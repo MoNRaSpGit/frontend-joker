@@ -2,11 +2,12 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { CustomizeProductModal } from "../components/CustomizeProductModal";
 import { OrderList } from "../components/OrderList";
+import { PaymentMethodModal } from "../components/PaymentMethodModal";
 import { ProductGrid } from "../components/ProductGrid";
 import { useJokerOrder } from "../hooks/useJokerOrder";
 import { createOrder } from "../joker.api";
 import { printOrderTicket } from "../services/joker.print";
-import type { JokerOrderItem, JokerProduct } from "../joker.types";
+import type { JokerOrderItem, JokerPaymentMethod, JokerProduct } from "../joker.types";
 
 type OrdersScreenProps = {
   products: JokerProduct[];
@@ -20,14 +21,15 @@ export function OrdersScreen({ products, isLoading, loadError, onReload }: Order
   const [editingItem, setEditingItem] = useState<JokerOrderItem | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const [ticketCopies, setTicketCopies] = useState<1 | 3>(3);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const { order, orderAddress, setOrderAddress, addItem, updateItem, removeItem, clearOrder } = useJokerOrder();
 
-  async function handlePrint() {
+  async function handleConfirmPayment(paymentMethod: JokerPaymentMethod) {
     if (!order.length || isPrinting) return;
 
     setIsPrinting(true);
     try {
-      await printOrderTicket(order, orderAddress, ticketCopies);
+      await printOrderTicket(order, orderAddress, ticketCopies, paymentMethod);
       toast.success("Pedido impreso.");
       clearOrder();
     } catch (printError) {
@@ -36,11 +38,12 @@ export function OrdersScreen({ products, isLoading, loadError, onReload }: Order
       return;
     }
     setIsPrinting(false);
+    setIsPaymentModalOpen(false);
 
     // El ticket ya salio de la impresora en este punto: si guardar el
     // pedido para el panel falla, se avisa pero no se revierte nada.
     try {
-      await createOrder(order, orderAddress);
+      await createOrder(order, orderAddress, paymentMethod);
     } catch (saveError) {
       toast.error(
         saveError instanceof Error
@@ -73,8 +76,16 @@ export function OrdersScreen({ products, isLoading, loadError, onReload }: Order
         onTicketCopiesChange={setTicketCopies}
         onEditItem={setEditingItem}
         onRemoveItem={removeItem}
-        onPrint={handlePrint}
+        onPrint={() => setIsPaymentModalOpen(true)}
       />
+
+      {isPaymentModalOpen ? (
+        <PaymentMethodModal
+          isSubmitting={isPrinting}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onConfirm={handleConfirmPayment}
+        />
+      ) : null}
 
       {selectedProduct ? (
         <CustomizeProductModal

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { listOrders } from "../joker.api";
-import type { JokerOrderRecord } from "../joker.types";
+import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
+import type { JokerOrderRecord, JokerPaymentMethod } from "../joker.types";
 
 const PROFIT_RATE = 0.3;
+const PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "cuenta"];
 
 function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
@@ -22,6 +24,16 @@ function getTodayLabel() {
     month: "2-digit",
     day: "2-digit"
   }).format(new Date());
+}
+
+function buildPaymentTotals(orders: JokerOrderRecord[]) {
+  const totals: Record<JokerPaymentMethod, number> = { efectivo: 0, tarjeta: 0, cuenta: 0 };
+
+  for (const order of orders) {
+    totals[order.paymentMethod] += order.total;
+  }
+
+  return totals;
 }
 
 function buildRanking(orders: JokerOrderRecord[]) {
@@ -64,6 +76,7 @@ export function PanelScreen() {
   const totalVendido = orders.reduce((sum, order) => sum + order.total, 0);
   const ganancia = totalVendido * PROFIT_RATE;
   const ranking = buildRanking(orders);
+  const paymentTotals = buildPaymentTotals(orders);
 
   if (isLoading) {
     return <p className="joker-empty-state">Cargando panel...</p>;
@@ -106,25 +119,18 @@ export function PanelScreen() {
 
       <section className="joker-panel">
         <div className="joker-panel__heading">
-          <p className="joker-eyebrow">Ranking</p>
-          <h2>Productos mas vendidos</h2>
+          <p className="joker-eyebrow">Hoy</p>
+          <h2>Tipo de pagos</h2>
         </div>
 
-        {ranking.length ? (
-          <ul className="joker-order-list">
-            {ranking.map((entry, index) => (
-              <li key={entry.productName} className="joker-order-item">
-                <div className="joker-order-item__info">
-                  <span className="joker-qty-badge">#{index + 1}</span>
-                  <strong>{entry.productName}</strong>
-                </div>
-                <span className="joker-qty-badge">{entry.quantity}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="joker-empty-state">Todavia no hay pedidos impresos hoy.</p>
-        )}
+        <div className="joker-stat-grid">
+          {PAYMENT_METHODS.map((method) => (
+            <div key={method} className="joker-stat-tile">
+              <span className="joker-stat-tile__label">{JOKER_PAYMENT_METHOD_LABELS[method]}</span>
+              <strong className="joker-stat-tile__value joker-amount-plus">+{formatPrice(paymentTotals[method])}</strong>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="joker-panel">
@@ -148,7 +154,9 @@ export function PanelScreen() {
                 {expandedOrderId === order.id ? (
                   <ul className="joker-order-detail-list">
                     <li className="joker-order-detail-list__meta">
-                      <span className="joker-order-item__excluded">{formatDateTime(order.createdAt)}</span>
+                      <span className="joker-order-item__excluded">
+                        {formatDateTime(order.createdAt)} · {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}
+                      </span>
                     </li>
                     {order.items.map((item, index) => (
                       <li key={`${order.id}-${index}`}>
@@ -161,6 +169,29 @@ export function PanelScreen() {
                     ))}
                   </ul>
                 ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="joker-empty-state">Todavia no hay pedidos impresos hoy.</p>
+        )}
+      </section>
+
+      <section className="joker-panel">
+        <div className="joker-panel__heading">
+          <p className="joker-eyebrow">Ranking</p>
+          <h2>Productos mas vendidos</h2>
+        </div>
+
+        {ranking.length ? (
+          <ul className="joker-order-list">
+            {ranking.map((entry, index) => (
+              <li key={entry.productName} className="joker-order-item">
+                <div className="joker-order-item__info">
+                  <span className="joker-qty-badge">#{index + 1}</span>
+                  <strong>{entry.productName}</strong>
+                </div>
+                <span className="joker-qty-badge">{entry.quantity}</span>
               </li>
             ))}
           </ul>

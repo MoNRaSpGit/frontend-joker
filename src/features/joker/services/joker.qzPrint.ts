@@ -1,6 +1,6 @@
 import qz from "qz-tray";
 import { buildOrderTicketLines } from "./joker.ticketFormat";
-import type { JokerOrderItem } from "../joker.types";
+import type { JokerOrderItem, JokerPaymentMethod } from "../joker.types";
 
 const PREFERRED_PRINTER_STORAGE_KEY = "joker.qz.preferredPrinter";
 
@@ -37,14 +37,19 @@ export async function listQzPrinters() {
   return Array.isArray(printers) ? printers : [];
 }
 
-export async function printOrderTicketByQz(order: JokerOrderItem[], orderAddress: string, copies: number) {
+export async function printOrderTicketByQz(
+  order: JokerOrderItem[],
+  orderAddress: string,
+  copies: number,
+  paymentMethod: JokerPaymentMethod
+) {
   await ensureQzConnected();
 
   if (!cachedPrinterName) {
     throw new Error("Todavia no elegiste una impresora. Toca \"Impresora\" para elegirla.");
   }
 
-  const data = buildOrderTicketLines(order, orderAddress, copies);
+  const data = buildOrderTicketLines(order, orderAddress, copies, paymentMethod);
   const config = qz.configs.create(cachedPrinterName, { encoding: "CP437" });
 
   try {
