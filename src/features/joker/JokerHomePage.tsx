@@ -1,20 +1,23 @@
 import { Menu, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PrinterSettingsModal } from "./components/PrinterSettingsModal";
+import { DEMO_CLIENTS } from "./joker.clients";
 import { listProducts } from "./joker.api";
 import { getPreferredPrinterName } from "./services/joker.qzPrint";
 import { primeUsbPrinterConnection } from "./services/joker.webusbPrint";
-import type { JokerProduct } from "./joker.types";
+import type { JokerAccountEntry, JokerClient, JokerProduct } from "./joker.types";
+import { CuentaCorrienteScreen } from "./screens/CuentaCorrienteScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { PanelScreen } from "./screens/PanelScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
 
-type JokerTab = "pedidos" | "productos" | "panel";
+type JokerTab = "pedidos" | "productos" | "panel" | "cuenta";
 
 const TAB_TITLES: Record<JokerTab, string> = {
   pedidos: "Armar pedido",
   productos: "Productos",
-  panel: "Panel"
+  panel: "Panel",
+  cuenta: "Cuenta corriente"
 };
 
 export function JokerHomePage() {
@@ -26,6 +29,11 @@ export function JokerHomePage() {
   const [preferredPrinterName, setPreferredPrinterNameState] = useState<string | null>(() => getPreferredPrinterName());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Cuenta corriente: solo en memoria por ahora (sin backend), se
+  // pierde al refrescar la pagina. Los clientes arrancan precargados.
+  const [clients, setClients] = useState<JokerClient[]>(DEMO_CLIENTS);
+  const [accountEntries, setAccountEntries] = useState<JokerAccountEntry[]>([]);
 
   // Reconecta en silencio la impresora USB ya autorizada en una sesion
   // anterior (no pide permiso de nuevo, solo la vuelve a encontrar).
@@ -66,6 +74,14 @@ export function JokerHomePage() {
   function goToTab(tab: JokerTab) {
     setActiveTab(tab);
     setIsMenuOpen(false);
+  }
+
+  function handleAddClient(name: string) {
+    setClients((current) => [...current, { id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name }]);
+  }
+
+  function handleRegisterAccountEntry(entry: JokerAccountEntry) {
+    setAccountEntries((current) => [...current, entry]);
   }
 
   return (
@@ -115,6 +131,13 @@ export function JokerHomePage() {
                 >
                   Panel
                 </button>
+                <button
+                  type="button"
+                  className={`joker-user-dropdown-item${activeTab === "cuenta" ? " is-active" : ""}`}
+                  onClick={() => goToTab("cuenta")}
+                >
+                  Cuenta corriente
+                </button>
                 <div className="joker-user-dropdown-divider" />
                 <button
                   type="button"
@@ -134,11 +157,20 @@ export function JokerHomePage() {
 
       <main className="joker-shell">
         {activeTab === "pedidos" ? (
-          <OrdersScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
+          <OrdersScreen
+            products={products}
+            isLoading={isLoadingProducts}
+            loadError={loadError}
+            onReload={loadProducts}
+            clients={clients}
+            onRegisterAccountEntry={handleRegisterAccountEntry}
+          />
         ) : activeTab === "productos" ? (
           <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
-        ) : (
+        ) : activeTab === "panel" ? (
           <PanelScreen />
+        ) : (
+          <CuentaCorrienteScreen clients={clients} accountEntries={accountEntries} onAddClient={handleAddClient} />
         )}
       </main>
 

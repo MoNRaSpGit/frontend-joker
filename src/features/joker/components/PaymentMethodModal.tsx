@@ -1,17 +1,22 @@
 import { useState } from "react";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerPaymentMethod } from "../joker.types";
+import type { JokerClient, JokerPaymentMethod } from "../joker.types";
 
 const PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "cuenta"];
 
 type PaymentMethodModalProps = {
+  clients: JokerClient[];
   isSubmitting: boolean;
   onClose: () => void;
-  onConfirm: (paymentMethod: JokerPaymentMethod) => void;
+  onConfirm: (paymentMethod: JokerPaymentMethod, clientId?: string) => void;
 };
 
-export function PaymentMethodModal({ isSubmitting, onClose, onConfirm }: PaymentMethodModalProps) {
+export function PaymentMethodModal({ clients, isSubmitting, onClose, onConfirm }: PaymentMethodModalProps) {
   const [selected, setSelected] = useState<JokerPaymentMethod>("efectivo");
+  const [clientId, setClientId] = useState("");
+
+  const needsClient = selected === "cuenta";
+  const canConfirm = !needsClient || clientId !== "";
 
   return (
     <div className="joker-modal-overlay" role="dialog" aria-modal="true" aria-label="Metodo de pago">
@@ -38,12 +43,26 @@ export function PaymentMethodModal({ isSubmitting, onClose, onConfirm }: Payment
           ))}
         </div>
 
+        {needsClient ? (
+          <label className="joker-form-field joker-modal-card__actions--top-gap">
+            <span>Cliente</span>
+            <select value={clientId} onChange={(event) => setClientId(event.target.value)}>
+              <option value="">Elegir cliente...</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+
         <div className="joker-modal-card__actions joker-modal-card__actions--top-gap">
           <button
             type="button"
             className="joker-button joker-button--primary"
-            onClick={() => onConfirm(selected)}
-            disabled={isSubmitting}
+            onClick={() => onConfirm(selected, needsClient ? clientId : undefined)}
+            disabled={isSubmitting || !canConfirm}
           >
             {isSubmitting ? "Imprimiendo..." : "Imprimir"}
           </button>

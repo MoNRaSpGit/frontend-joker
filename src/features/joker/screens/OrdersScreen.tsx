@@ -7,16 +7,18 @@ import { ProductGrid } from "../components/ProductGrid";
 import { useJokerOrder } from "../hooks/useJokerOrder";
 import { createOrder } from "../joker.api";
 import { printOrderTicket } from "../services/joker.print";
-import type { JokerOrderItem, JokerPaymentMethod, JokerProduct } from "../joker.types";
+import type { JokerAccountEntry, JokerClient, JokerOrderItem, JokerPaymentMethod, JokerProduct } from "../joker.types";
 
 type OrdersScreenProps = {
   products: JokerProduct[];
   isLoading: boolean;
   loadError: string | null;
   onReload: () => void;
+  clients: JokerClient[];
+  onRegisterAccountEntry: (entry: JokerAccountEntry) => void;
 };
 
-export function OrdersScreen({ products, isLoading, loadError, onReload }: OrdersScreenProps) {
+export function OrdersScreen({ products, isLoading, loadError, onReload, clients, onRegisterAccountEntry }: OrdersScreenProps) {
   const [selectedProduct, setSelectedProduct] = useState<JokerProduct | null>(null);
   const [editingItem, setEditingItem] = useState<JokerOrderItem | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
@@ -24,7 +26,7 @@ export function OrdersScreen({ products, isLoading, loadError, onReload }: Order
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const { order, orderAddress, setOrderAddress, addItem, updateItem, removeItem, clearOrder } = useJokerOrder();
 
-  async function handleConfirmPayment(paymentMethod: JokerPaymentMethod) {
+  async function handleConfirmPayment(paymentMethod: JokerPaymentMethod, clientId?: string) {
     if (!order.length || isPrinting) return;
 
     setIsPrinting(true);
@@ -39,6 +41,16 @@ export function OrdersScreen({ products, isLoading, loadError, onReload }: Order
     }
     setIsPrinting(false);
     setIsPaymentModalOpen(false);
+
+    if (paymentMethod === "cuenta" && clientId) {
+      onRegisterAccountEntry({
+        id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        clientId,
+        createdAt: new Date().toISOString(),
+        total: order.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
+        items: order.map((item) => ({ productName: item.productName, quantity: item.quantity }))
+      });
+    }
 
     // El ticket ya salio de la impresora en este punto: si guardar el
     // pedido para el panel falla, se avisa pero no se revierte nada.
@@ -81,6 +93,7 @@ export function OrdersScreen({ products, isLoading, loadError, onReload }: Order
 
       {isPaymentModalOpen ? (
         <PaymentMethodModal
+          clients={clients}
           isSubmitting={isPrinting}
           onClose={() => setIsPaymentModalOpen(false)}
           onConfirm={handleConfirmPayment}

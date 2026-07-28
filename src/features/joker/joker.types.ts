@@ -36,3 +36,16 @@ export type JokerOrderRecord = {
   }>;
   createdAt: string;
 };
+
+export type JokerClient = {
+  id: string;
+  name: string;
+};
+
+export type JokerAccountEntry = {
+  id: string;
+  clientId: string;
+  createdAt: string;
+  total: number;
+  items: Array<{ productName: string; quantity: number }>;
+};

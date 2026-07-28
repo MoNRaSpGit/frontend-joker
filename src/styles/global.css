@@ -291,7 +291,8 @@ textarea {
   color: var(--joker-muted);
 }
 
-.joker-form-field input {
+.joker-form-field input,
+.joker-form-field select {
   min-height: 46px;
   padding: 0 14px;
   border: 1px solid var(--joker-border);
@@ -514,6 +515,30 @@ textarea {
 
 .joker-order-item--clickable .joker-amount-plus {
   margin-left: auto;
+}
+
+.joker-order-item--flat.is-selected {
+  padding: 12px 14px;
+  border: 1px solid var(--joker-text);
+  border-radius: var(--joker-radius-md);
+  background: #f0f0f0;
+}
+
+.form-inline {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.form-inline .joker-form-field {
+  flex: 1;
+  min-width: 200px;
+  margin: 0;
+}
+
+.top-gap {
+  margin-top: 16px;
 }
 
 .joker-order-detail-list {
