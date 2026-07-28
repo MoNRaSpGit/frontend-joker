@@ -4,9 +4,9 @@
   --joker-border: #dcdcdc;
   --joker-text: #111111;
   --joker-muted: #6f6f6f;
-  --joker-accent: #d61f26;
-  --joker-accent-dark: #a3141a;
-  --joker-accent-2: #d61f26;
+  --joker-accent: #6b1b23;
+  --joker-accent-dark: #4a1218;
+  --joker-accent-2: #6b1b23;
   --joker-danger: #d61f26;
   --joker-success: #111111;
   --joker-radius-lg: 20px;
@@ -83,7 +83,7 @@ textarea {
   border-radius: 12px;
   font-size: 22px;
   background: var(--joker-accent);
-  box-shadow: 0 6px 18px rgba(214, 31, 38, 0.45);
+  box-shadow: 0 6px 18px rgba(107, 27, 35, 0.45);
 }
 
 .joker-brand__kicker {
@@ -406,12 +406,12 @@ textarea {
   border: none;
   background: var(--joker-accent);
   color: #fff;
-  box-shadow: 0 8px 18px rgba(214, 31, 38, 0.32);
+  box-shadow: 0 8px 18px rgba(107, 27, 35, 0.32);
 }
 
 .joker-button--primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(214, 31, 38, 0.4);
+  box-shadow: 0 10px 22px rgba(107, 27, 35, 0.4);
 }
 
 .joker-button--primary:disabled,
@@ -457,7 +457,7 @@ textarea {
   outline: none;
   border-color: var(--joker-accent);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(214, 31, 38, 0.14);
+  box-shadow: 0 0 0 3px rgba(107, 27, 35, 0.14);
 }
 
 .joker-search-input {
@@ -791,13 +791,13 @@ textarea {
   border: none;
   border-radius: var(--joker-radius-sm);
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(214, 31, 38, 0.35);
+  box-shadow: 0 10px 24px rgba(107, 27, 35, 0.35);
   transition: transform 0.1s ease, box-shadow 0.15s ease;
 }
 
 .joker-print-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(214, 31, 38, 0.42);
+  box-shadow: 0 14px 28px rgba(107, 27, 35, 0.42);
 }
 
 .joker-print-btn:disabled {
