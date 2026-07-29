@@ -62,11 +62,20 @@ export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
   // Prioriza la categoria cuyo nombre coincide con lo buscado (ej. buscar
   // "hamb" muestra primero "Hamburguesas" y despues otras categorias que
   // solo matchean por el nombre de un producto suelto, como "Carnes y
-  // Anexos" por "Hamburguesas Centenario").
-  const groups = groupByCategory(visibleProducts).sort(([categoryA], [categoryB]) => {
+  // Anexos" por "Hamburguesas Centenario"). Si varias categorias matchean
+  // por igual (ej. "cerveza" matchea "Cerveza Industrial" y "Cerveza
+  // Artesanal"), la que tiene mas productos va primero.
+  const groups = groupByCategory(visibleProducts).sort(([categoryA, groupsA], [categoryB, groupsB]) => {
     const aMatches = normalizeForSearch(categoryA).includes(normalizedSearch);
     const bMatches = normalizeForSearch(categoryB).includes(normalizedSearch);
     if (aMatches !== bMatches) return aMatches ? -1 : 1;
+
+    if (aMatches && bMatches) {
+      const countA = groupsA.reduce((sum, group) => sum + group.variants.length, 0);
+      const countB = groupsB.reduce((sum, group) => sum + group.variants.length, 0);
+      if (countA !== countB) return countB - countA;
+    }
+
     return categoryA.localeCompare(categoryB, "es");
   });
 
