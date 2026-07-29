@@ -122,7 +122,7 @@ export function CustomizeProductModal({
           </button>
         </div>
 
-        {hasVariants ? (
+        {hasVariants && isDev ? (
           <>
             <p className="joker-modal-card__hint">Elegí una opción</p>
             <div className="joker-category-chips">
@@ -226,7 +226,7 @@ export function CustomizeProductModal({
           value={detail}
           onChange={(event) => setDetail(event.target.value)}
           placeholder={isDev ? "Otra aclaracion si hace falta..." : "Escribi aca el detalle..."}
-          autoFocus={!hasVariants && !isDev}
+          autoFocus={!isDev || !hasVariants}
         />
 
         <div className="joker-modal-card__actions">
