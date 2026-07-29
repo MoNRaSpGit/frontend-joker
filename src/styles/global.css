@@ -549,8 +549,8 @@ textarea {
 
 .joker-product-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.14);
-  border-color: var(--joker-text);
+  box-shadow: 0 14px 26px rgba(107, 27, 35, 0.16);
+  border-color: var(--joker-accent);
   background: #fff;
 }
 
@@ -560,9 +560,9 @@ textarea {
 }
 
 .joker-product-card__price {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 800;
-  color: var(--joker-text);
+  color: #1e5b3e;
 }
 
 .joker-empty-state {
