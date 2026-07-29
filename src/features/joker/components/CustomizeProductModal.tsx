@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { parseChoiceOptions, parseIngredientList, splitVariantLabel } from "../joker.variants";
+import { parseChoiceGroups, parseIngredientList, splitVariantLabel } from "../joker.variants";
 import type { JokerProduct } from "../joker.types";
 
 type CustomizeMode = "cliente" | "dev";
@@ -34,7 +34,7 @@ export function CustomizeProductModal({
   const [quantity, setQuantity] = useState(initialQuantity);
   const [excludedIngredients, setExcludedIngredients] = useState<Set<string>>(new Set());
   const [selectedExtraIds, setSelectedExtraIds] = useState<Set<number>>(new Set());
-  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const [selectedChoices, setSelectedChoices] = useState<Record<string, string | null>>({});
 
   const selectedVariant = variants[selectedIndex];
   const { baseName } = splitVariantLabel(selectedVariant.name);
@@ -42,7 +42,7 @@ export function CustomizeProductModal({
   const isDev = mode === "dev";
 
   const ingredientList = isDev ? parseIngredientList(selectedVariant.ingredients) : [];
-  const choiceInfo = isDev ? parseChoiceOptions(selectedVariant.observations) : null;
+  const choiceGroups = isDev ? parseChoiceGroups(selectedVariant.observations) : [];
   const extrasForCategory = isDev
     ? allProducts.filter(
         (product) =>
@@ -59,7 +59,7 @@ export function CustomizeProductModal({
   useEffect(() => {
     setExcludedIngredients(new Set());
     setSelectedExtraIds(new Set());
-    setSelectedChoice(null);
+    setSelectedChoices({});
   }, [selectedIndex]);
 
   function toggleIngredient(ingredient: string) {
@@ -91,7 +91,10 @@ export function CustomizeProductModal({
       const parts: string[] = [];
       if (excludedIngredients.size) parts.push(`Sin ${Array.from(excludedIngredients).join(", ")}`);
       if (selectedExtras.length) parts.push(`Con ${selectedExtras.map((extra) => extra.name).join(", ")}`);
-      if (choiceInfo && selectedChoice) parts.push(`${choiceInfo.label}: ${selectedChoice}`);
+      for (const group of choiceGroups) {
+        const choice = selectedChoices[group.label];
+        if (choice) parts.push(`${group.label}: ${choice}`);
+      }
       if (detail.trim()) parts.push(detail.trim());
 
       onConfirm({ ...selectedVariant, price: totalPrice }, parts.join(" · "), quantity);
@@ -174,23 +177,30 @@ export function CustomizeProductModal({
           </>
         ) : null}
 
-        {isDev && choiceInfo ? (
-          <>
-            <p className="joker-modal-card__hint">{choiceInfo.label}</p>
-            <div className="joker-category-chips">
-              {choiceInfo.options.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className={`joker-category-chip${selectedChoice === option ? " is-active" : ""}`}
-                  onClick={() => setSelectedChoice(option === selectedChoice ? null : option)}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </>
-        ) : null}
+        {isDev
+          ? choiceGroups.map((group) => (
+              <div key={group.label}>
+                <p className="joker-modal-card__hint">{group.label}</p>
+                <div className="joker-category-chips">
+                  {group.options.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`joker-category-chip${selectedChoices[group.label] === option ? " is-active" : ""}`}
+                      onClick={() =>
+                        setSelectedChoices((current) => ({
+                          ...current,
+                          [group.label]: current[group.label] === option ? null : option
+                        }))
+                      }
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))
+          : null}
 
         {isDev && extrasTotal > 0 ? <p className="joker-product-card__price">Total: {formatPrice(totalPrice)}</p> : null}
 

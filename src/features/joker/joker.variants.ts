@@ -23,22 +23,29 @@ export function parseIngredientList(ingredients: string | null | undefined): str
     .filter(Boolean);
 }
 
-// Algunas observaciones documentan un set de elecciones sin costo extra,
-// con el patron "X disponibles: A, B, C." (ej. "Salsas disponibles: 4Q,
-// Champiñones, Cheddar." o "Rellenos disponibles: Verdura, Jamón y
-// Queso, Pollo, Ricota."). Esto las convierte en chips seleccionables.
-export function parseChoiceOptions(observations: string | null | undefined): { label: string; options: string[] } | null {
-  if (!observations) return null;
+export type ChoiceGroup = { label: string; options: string[] };
 
-  const match = observations.match(/(\p{L}+)\s+disponibles:\s*([^.]+)/iu);
-  if (!match) return null;
+// Algunas observaciones documentan uno o mas sets de elecciones sin
+// costo extra, con el patron "X disponibles: A, B, C." (ej. "Salsas
+// disponibles: 4Q, Champiñones, Cheddar. Guarnición disponible: Mixta,
+// Fritas."). Esto las convierte en grupos de chips seleccionables, uno
+// por cada "X disponible(s): ..." encontrado.
+export function parseChoiceGroups(observations: string | null | undefined): ChoiceGroup[] {
+  if (!observations) return [];
 
-  const options = match[2]
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const matches = observations.matchAll(/(\p{L}+)\s+disponibles?:\s*([^.]+)/giu);
+  const groups: ChoiceGroup[] = [];
 
-  if (!options.length) return null;
+  for (const match of matches) {
+    const options = match[2]
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
 
-  return { label: match[1], options };
+    if (options.length) {
+      groups.push({ label: match[1], options });
+    }
+  }
+
+  return groups;
 }
