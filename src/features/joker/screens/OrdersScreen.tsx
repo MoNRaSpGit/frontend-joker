@@ -88,6 +88,7 @@ export function OrdersScreen({ products, isLoading, loadError, onReload, clients
       <OrderList
         order={order}
         orderAddress={orderAddress}
+        onAddressChange={setOrderAddress}
         isPrinting={isPrinting}
         ticketCopies={ticketCopies}
         onTicketCopiesChange={setTicketCopies}
@@ -108,10 +109,8 @@ export function OrdersScreen({ products, isLoading, loadError, onReload, clients
       {selectedVariants ? (
         <CustomizeProductModal
           variants={selectedVariants}
-          initialAddress={orderAddress}
           onClose={() => setSelectedVariants(null)}
-          onConfirm={(variant, address, detail, quantity) => {
-            setOrderAddress(address);
+          onConfirm={(variant, detail, quantity) => {
             addItem(variant, detail, quantity);
           }}
         />
@@ -122,13 +121,11 @@ export function OrdersScreen({ products, isLoading, loadError, onReload, clients
           variants={[
             { id: editingItem.productId, name: editingItem.productName, category: "", price: editingItem.unitPrice }
           ]}
-          initialAddress={orderAddress}
           initialDetail={editingItem.detail}
           initialQuantity={editingItem.quantity}
           isEditing
           onClose={() => setEditingItem(null)}
-          onConfirm={(_variant, address, detail, quantity) => {
-            setOrderAddress(address);
+          onConfirm={(_variant, detail, quantity) => {
             updateItem(editingItem.lineId, detail, quantity);
           }}
         />

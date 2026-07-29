@@ -4,12 +4,11 @@ import type { JokerProduct } from "../joker.types";
 
 type CustomizeProductModalProps = {
   variants: JokerProduct[];
-  initialAddress?: string;
   initialDetail?: string;
   initialQuantity?: number;
   isEditing?: boolean;
   onClose: () => void;
-  onConfirm: (variant: JokerProduct, address: string, detail: string, quantity: number) => void;
+  onConfirm: (variant: JokerProduct, detail: string, quantity: number) => void;
 };
 
 function formatPrice(price: number) {
@@ -18,7 +17,6 @@ function formatPrice(price: number) {
 
 export function CustomizeProductModal({
   variants,
-  initialAddress = "",
   initialDetail = "",
   initialQuantity = 1,
   isEditing = false,
@@ -26,7 +24,6 @@ export function CustomizeProductModal({
   onConfirm
 }: CustomizeProductModalProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [address, setAddress] = useState(initialAddress);
   const [detail, setDetail] = useState(initialDetail);
   const [quantity, setQuantity] = useState(initialQuantity);
 
@@ -35,7 +32,7 @@ export function CustomizeProductModal({
   const hasVariants = variants.length > 1;
 
   function handleConfirm() {
-    onConfirm(selectedVariant, address.trim(), detail.trim(), quantity);
+    onConfirm(selectedVariant, detail.trim(), quantity);
     onClose();
   }
 
@@ -91,17 +88,6 @@ export function CustomizeProductModal({
           </button>
         </div>
 
-        <label className="joker-form-field">
-          <span>Direccion del pedido (si es delivery)</span>
-          <input
-            type="text"
-            value={address}
-            onChange={(event) => setAddress(event.target.value)}
-            placeholder="Ej: Av. 18 de Julio 1234"
-            autoFocus={!hasVariants}
-          />
-        </label>
-
         <p className="joker-modal-card__hint">Detalle del pedido (ej: Sin lechuga, con doble queso).</p>
 
         <textarea
@@ -110,6 +96,7 @@ export function CustomizeProductModal({
           value={detail}
           onChange={(event) => setDetail(event.target.value)}
           placeholder="Escribi aca el detalle..."
+          autoFocus
         />
 
         <div className="joker-modal-card__actions">

@@ -3,6 +3,7 @@ import type { JokerOrderItem } from "../joker.types";
 type OrderListProps = {
   order: JokerOrderItem[];
   orderAddress: string;
+  onAddressChange: (address: string) => void;
   isPrinting: boolean;
   ticketCopies: 1 | 3;
   onTicketCopiesChange: (copies: 1 | 3) => void;
@@ -18,6 +19,7 @@ function formatPrice(price: number) {
 export function OrderList({
   order,
   orderAddress,
+  onAddressChange,
   isPrinting,
   ticketCopies,
   onTicketCopiesChange,
@@ -34,7 +36,15 @@ export function OrderList({
         <h2>Ticket a imprimir{order.length ? ` (${order.length})` : ""}</h2>
       </div>
 
-      {orderAddress ? <p className="joker-order-item__excluded">Direccion: {orderAddress}</p> : null}
+      <label className="joker-form-field">
+        <span>Direccion del pedido (si es delivery)</span>
+        <input
+          type="text"
+          value={orderAddress}
+          onChange={(event) => onAddressChange(event.target.value)}
+          placeholder="Ej: Av. 18 de Julio 1234"
+        />
+      </label>
 
       {order.length ? (
         <ul className="joker-order-list">
