@@ -19,7 +19,7 @@ type OrdersScreenProps = {
 };
 
 export function OrdersScreen({ products, isLoading, loadError, onReload, clients, onRegisterAccountEntry }: OrdersScreenProps) {
-  const [selectedProduct, setSelectedProduct] = useState<JokerProduct | null>(null);
+  const [selectedVariants, setSelectedVariants] = useState<JokerProduct[] | null>(null);
   const [editingItem, setEditingItem] = useState<JokerOrderItem | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const [ticketCopies, setTicketCopies] = useState<1 | 3>(3);
@@ -82,7 +82,7 @@ export function OrdersScreen({ products, isLoading, loadError, onReload, clients
           </button>
         </div>
       ) : (
-        <ProductGrid products={orderableProducts} onSelectProduct={setSelectedProduct} />
+        <ProductGrid products={orderableProducts} onSelectProduct={setSelectedVariants} />
       )}
 
       <OrderList
@@ -105,27 +105,29 @@ export function OrdersScreen({ products, isLoading, loadError, onReload, clients
         />
       ) : null}
 
-      {selectedProduct ? (
+      {selectedVariants ? (
         <CustomizeProductModal
-          product={selectedProduct}
+          variants={selectedVariants}
           initialAddress={orderAddress}
-          onClose={() => setSelectedProduct(null)}
-          onConfirm={(address, detail, quantity) => {
+          onClose={() => setSelectedVariants(null)}
+          onConfirm={(variant, address, detail, quantity) => {
             setOrderAddress(address);
-            addItem(selectedProduct, detail, quantity);
+            addItem(variant, detail, quantity);
           }}
         />
       ) : null}
 
       {editingItem ? (
         <CustomizeProductModal
-          product={{ id: editingItem.productId, name: editingItem.productName, category: "", price: editingItem.unitPrice }}
+          variants={[
+            { id: editingItem.productId, name: editingItem.productName, category: "", price: editingItem.unitPrice }
+          ]}
           initialAddress={orderAddress}
           initialDetail={editingItem.detail}
           initialQuantity={editingItem.quantity}
           isEditing
           onClose={() => setEditingItem(null)}
-          onConfirm={(address, detail, quantity) => {
+          onConfirm={(_variant, address, detail, quantity) => {
             setOrderAddress(address);
             updateItem(editingItem.lineId, detail, quantity);
           }}

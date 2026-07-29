@@ -1,9 +1,15 @@
 import { useState } from "react";
+import { splitVariantLabel } from "../joker.variants";
 import type { JokerProduct } from "../joker.types";
 
 type ProductGridProps = {
   products: JokerProduct[];
-  onSelectProduct: (product: JokerProduct) => void;
+  onSelectProduct: (variants: JokerProduct[]) => void;
+};
+
+type ProductGroup = {
+  baseName: string;
+  variants: JokerProduct[];
 };
 
 function formatPrice(price: number) {
@@ -20,16 +26,25 @@ function normalizeForSearch(value: string) {
     .trim();
 }
 
+// Agrupa por categoria y, dentro de cada categoria, por el nombre base
+// del producto (sin la variante) — asi "Pizza con Muzzarella (Metro)",
+// "(Medio metro)", etc. quedan como una sola tarjeta con sus opciones
+// adentro, en vez de una tarjeta por cada tamaño.
 function groupByCategory(products: JokerProduct[]) {
-  const groups = new Map<string, JokerProduct[]>();
+  const categories = new Map<string, Map<string, ProductGroup>>();
 
   for (const product of products) {
-    const existing = groups.get(product.category) ?? [];
-    existing.push(product);
-    groups.set(product.category, existing);
+    const { baseName } = splitVariantLabel(product.name);
+    const groups = categories.get(product.category) ?? new Map<string, ProductGroup>();
+    const group = groups.get(baseName) ?? { baseName, variants: [] };
+    group.variants.push(product);
+    groups.set(baseName, group);
+    categories.set(product.category, groups);
   }
 
-  return Array.from(groups.entries());
+  return Array.from(categories.entries()).map(
+    ([category, groups]) => [category, Array.from(groups.values())] as [string, ProductGroup[]]
+  );
 }
 
 export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
@@ -72,21 +87,29 @@ export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
       />
 
       {groups.length ? (
-        groups.map(([category, categoryProducts]) => (
+        groups.map(([category, categoryGroups]) => (
           <div key={category} className="joker-product-category">
             <h3 className="joker-product-category__title">{category}</h3>
             <div className="joker-product-grid">
-              {categoryProducts.map((product) => (
-                <button
-                  key={product.id}
-                  type="button"
-                  className="joker-product-card"
-                  onClick={() => onSelectProduct(product)}
-                >
-                  <strong>{product.name}</strong>
-                  <span className="joker-product-card__price">{formatPrice(product.price)}</span>
-                </button>
-              ))}
+              {categoryGroups.map((group) => {
+                const hasVariants = group.variants.length > 1;
+                const prices = group.variants.map((variant) => variant.price);
+                const minPrice = Math.min(...prices);
+
+                return (
+                  <button
+                    key={group.baseName}
+                    type="button"
+                    className="joker-product-card"
+                    onClick={() => onSelectProduct(group.variants)}
+                  >
+                    <strong>{group.baseName}</strong>
+                    <span className="joker-product-card__price">
+                      {hasVariants ? `Desde ${formatPrice(minPrice)}` : formatPrice(group.variants[0].price)}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         ))

@@ -1,18 +1,23 @@
 import { useState } from "react";
+import { splitVariantLabel } from "../joker.variants";
 import type { JokerProduct } from "../joker.types";
 
 type CustomizeProductModalProps = {
-  product: JokerProduct;
+  variants: JokerProduct[];
   initialAddress?: string;
   initialDetail?: string;
   initialQuantity?: number;
   isEditing?: boolean;
   onClose: () => void;
-  onConfirm: (address: string, detail: string, quantity: number) => void;
+  onConfirm: (variant: JokerProduct, address: string, detail: string, quantity: number) => void;
 };
 
+function formatPrice(price: number) {
+  return price.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
+}
+
 export function CustomizeProductModal({
-  product,
+  variants,
   initialAddress = "",
   initialDetail = "",
   initialQuantity = 1,
@@ -20,12 +25,17 @@ export function CustomizeProductModal({
   onClose,
   onConfirm
 }: CustomizeProductModalProps) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [address, setAddress] = useState(initialAddress);
   const [detail, setDetail] = useState(initialDetail);
   const [quantity, setQuantity] = useState(initialQuantity);
 
+  const selectedVariant = variants[selectedIndex];
+  const { baseName } = splitVariantLabel(selectedVariant.name);
+  const hasVariants = variants.length > 1;
+
   function handleConfirm() {
-    onConfirm(address.trim(), detail.trim(), quantity);
+    onConfirm(selectedVariant, address.trim(), detail.trim(), quantity);
     onClose();
   }
 
@@ -38,14 +48,36 @@ export function CustomizeProductModal({
   }
 
   return (
-    <div className="joker-modal-overlay" role="dialog" aria-modal="true" aria-label={`Personalizar ${product.name}`}>
+    <div className="joker-modal-overlay" role="dialog" aria-modal="true" aria-label={`Personalizar ${baseName}`}>
       <div className="joker-modal-card">
         <div className="joker-modal-card__header">
-          <h2>{product.name}</h2>
+          <h2>{baseName}</h2>
           <button type="button" className="joker-modal-close" onClick={onClose}>
             Cerrar
           </button>
         </div>
+
+        {hasVariants ? (
+          <>
+            <p className="joker-modal-card__hint">Elegí una opción</p>
+            <div className="joker-category-chips">
+              {variants.map((variant, index) => {
+                const { variantLabel } = splitVariantLabel(variant.name);
+                return (
+                  <button
+                    key={variant.id}
+                    type="button"
+                    className={`joker-category-chip${index === selectedIndex ? " is-active" : ""}`}
+                    onClick={() => setSelectedIndex(index)}
+                  >
+                    {variantLabel ?? variant.name}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="joker-product-card__price">{formatPrice(selectedVariant.price)}</p>
+          </>
+        ) : null}
 
         <p className="joker-modal-card__hint">Cantidad</p>
 
@@ -66,7 +98,7 @@ export function CustomizeProductModal({
             value={address}
             onChange={(event) => setAddress(event.target.value)}
             placeholder="Ej: Av. 18 de Julio 1234"
-            autoFocus
+            autoFocus={!hasVariants}
           />
         </label>
 
