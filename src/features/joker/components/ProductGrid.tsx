@@ -44,7 +44,16 @@ export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
       )
     : [];
 
-  const groups = groupByCategory(visibleProducts);
+  // Prioriza la categoria cuyo nombre coincide con lo buscado (ej. buscar
+  // "hamb" muestra primero "Hamburguesas" y despues otras categorias que
+  // solo matchean por el nombre de un producto suelto, como "Carnes y
+  // Anexos" por "Hamburguesas Centenario").
+  const groups = groupByCategory(visibleProducts).sort(([categoryA], [categoryB]) => {
+    const aMatches = normalizeForSearch(categoryA).includes(normalizedSearch);
+    const bMatches = normalizeForSearch(categoryB).includes(normalizedSearch);
+    if (aMatches !== bMatches) return aMatches ? -1 : 1;
+    return categoryA.localeCompare(categoryB, "es");
+  });
 
   return (
     <section className="joker-panel">
