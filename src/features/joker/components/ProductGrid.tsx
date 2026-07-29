@@ -26,6 +26,15 @@ function normalizeForSearch(value: string) {
     .trim();
 }
 
+// Matchea por palabra en vez de frase exacta: "refresco chico" tiene que
+// encontrar "Refrescos Chicos" aunque "chicos" y "chico" no sean la misma
+// palabra exacta ni "refresco"/"refrescos" tampoco — cada palabra buscada
+// alcanza con aparecer en algun lado del texto, no en orden ni pegadas.
+function matchesSearchWords(searchWords: string[], haystack: string) {
+  const normalizedHaystack = normalizeForSearch(haystack);
+  return searchWords.every((word) => normalizedHaystack.includes(word));
+}
+
 // Agrupa por categoria y, dentro de cada categoria, por el nombre base
 // del producto (sin la variante) — asi "Pizza con Muzzarella (Metro)",
 // "(Medio metro)", etc. quedan como una sola tarjeta con sus opciones
@@ -51,12 +60,9 @@ export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
   const [search, setSearch] = useState("");
 
   const normalizedSearch = normalizeForSearch(search);
-  const visibleProducts = normalizedSearch
-    ? products.filter(
-        (product) =>
-          normalizeForSearch(product.name).includes(normalizedSearch) ||
-          normalizeForSearch(product.category).includes(normalizedSearch)
-      )
+  const searchWords = normalizedSearch.split(/\s+/).filter(Boolean);
+  const visibleProducts = searchWords.length
+    ? products.filter((product) => matchesSearchWords(searchWords, `${product.name} ${product.category}`))
     : [];
 
   // Prioriza la categoria cuyo nombre coincide con lo buscado (ej. buscar
@@ -66,8 +72,8 @@ export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
   // por igual (ej. "cerveza" matchea "Cerveza Industrial" y "Cerveza
   // Artesanal"), la que tiene mas productos va primero.
   const groups = groupByCategory(visibleProducts).sort(([categoryA, groupsA], [categoryB, groupsB]) => {
-    const aMatches = normalizeForSearch(categoryA).includes(normalizedSearch);
-    const bMatches = normalizeForSearch(categoryB).includes(normalizedSearch);
+    const aMatches = matchesSearchWords(searchWords, categoryA);
+    const bMatches = matchesSearchWords(searchWords, categoryB);
     if (aMatches !== bMatches) return aMatches ? -1 : 1;
 
     if (aMatches && bMatches) {
@@ -124,7 +130,7 @@ export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
         ))
       ) : (
         <p className="joker-empty-state">
-          {normalizedSearch ? "No se encontraron productos." : "Busca un producto o una categoria para empezar."}
+          {searchWords.length ? "No se encontraron productos." : "Busca un producto o una categoria para empezar."}
         </p>
       )}
     </section>
