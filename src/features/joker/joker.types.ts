@@ -5,6 +5,8 @@ export type JokerProduct = {
   price: number;
   status?: "draft" | "published";
   productType?: "simple" | "extra";
+  ingredients?: string | null;
+  observations?: string | null;
 };
 
 export type JokerOrderItem = {

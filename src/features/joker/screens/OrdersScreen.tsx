@@ -16,9 +16,18 @@ type OrdersScreenProps = {
   onReload: () => void;
   clients: JokerClient[];
   onRegisterAccountEntry: (entry: JokerAccountEntry) => void;
+  customizeMode: "cliente" | "dev";
 };
 
-export function OrdersScreen({ products, isLoading, loadError, onReload, clients, onRegisterAccountEntry }: OrdersScreenProps) {
+export function OrdersScreen({
+  products,
+  isLoading,
+  loadError,
+  onReload,
+  clients,
+  onRegisterAccountEntry,
+  customizeMode
+}: OrdersScreenProps) {
   const [selectedVariants, setSelectedVariants] = useState<JokerProduct[] | null>(null);
   const [editingItem, setEditingItem] = useState<JokerOrderItem | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
@@ -109,6 +118,8 @@ export function OrdersScreen({ products, isLoading, loadError, onReload, clients
       {selectedVariants ? (
         <CustomizeProductModal
           variants={selectedVariants}
+          allProducts={products}
+          mode={customizeMode}
           onClose={() => setSelectedVariants(null)}
           onConfirm={(variant, detail, quantity) => {
             addItem(variant, detail, quantity);

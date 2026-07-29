@@ -12,6 +12,9 @@ import { PanelScreen } from "./screens/PanelScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
 
 type JokerTab = "pedidos" | "productos" | "panel" | "cuenta";
+type CustomizeMode = "cliente" | "dev";
+
+const CUSTOMIZE_MODE_STORAGE_KEY = "joker.customizeMode";
 
 const TAB_TITLES: Record<JokerTab, string> = {
   pedidos: "Armar pedido",
@@ -29,6 +32,15 @@ export function JokerHomePage() {
   const [preferredPrinterName, setPreferredPrinterNameState] = useState<string | null>(() => getPreferredPrinterName());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Alterna entre la version "Cliente" (detalle en texto libre, lo que
+  // pidio el cliente) y "Dev" (checklist de ingredientes/extras/salsa,
+  // para mostrarle las dos opciones en vivo). Se guarda en el navegador,
+  // no afecta a otros dispositivos ni al backend.
+  const [customizeMode, setCustomizeMode] = useState<CustomizeMode>(() => {
+    if (typeof window === "undefined") return "cliente";
+    return window.localStorage.getItem(CUSTOMIZE_MODE_STORAGE_KEY) === "dev" ? "dev" : "cliente";
+  });
 
   // Cuenta corriente: solo en memoria por ahora (sin backend), se
   // pierde al refrescar la pagina. Los clientes arrancan precargados.
@@ -73,6 +85,15 @@ export function JokerHomePage() {
 
   function goToTab(tab: JokerTab) {
     setActiveTab(tab);
+    setIsMenuOpen(false);
+  }
+
+  function toggleCustomizeMode() {
+    setCustomizeMode((current) => {
+      const next = current === "cliente" ? "dev" : "cliente";
+      window.localStorage.setItem(CUSTOMIZE_MODE_STORAGE_KEY, next);
+      return next;
+    });
     setIsMenuOpen(false);
   }
 
@@ -142,6 +163,9 @@ export function JokerHomePage() {
                   Cuenta corriente
                 </button>
                 <div className="joker-user-dropdown-divider" />
+                <button type="button" className="joker-user-dropdown-item" onClick={toggleCustomizeMode}>
+                  ⚙️ Modo: {customizeMode === "dev" ? "Dev" : "Cliente"}
+                </button>
                 <button
                   type="button"
                   className="joker-user-dropdown-item"
@@ -167,6 +191,7 @@ export function JokerHomePage() {
             onReload={loadProducts}
             clients={clients}
             onRegisterAccountEntry={handleRegisterAccountEntry}
+            customizeMode={customizeMode}
           />
         ) : activeTab === "productos" ? (
           <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />

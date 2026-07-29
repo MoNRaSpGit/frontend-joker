@@ -934,6 +934,35 @@ textarea {
   font-weight: 800;
 }
 
+.joker-checklist {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 1.2rem;
+}
+
+.joker-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--joker-border);
+  border-radius: var(--joker-radius-sm);
+  background: #f7f7f7;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.joker-checklist-item input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--joker-accent);
+  cursor: pointer;
+}
+
+.joker-checklist-item .joker-amount-plus {
+  margin-left: auto;
+}
+
 .joker-detail-input {
   width: 100%;
   margin: 0 0 1.2rem;
