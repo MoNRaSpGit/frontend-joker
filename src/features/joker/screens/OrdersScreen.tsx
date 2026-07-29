@@ -26,6 +26,11 @@ export function OrdersScreen({ products, isLoading, loadError, onReload, clients
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const { order, orderAddress, setOrderAddress, addItem, updateItem, removeItem, clearOrder } = useJokerOrder();
 
+  // Los productos en borrador (sin precio confirmado) y los extras (que
+  // se muestran dentro de la personalizacion de su producto base, no
+  // como resultado propio) no aparecen en el buscador de pedidos.
+  const orderableProducts = products.filter((product) => product.status !== "draft" && product.productType !== "extra");
+
   async function handleConfirmPayment(paymentMethod: JokerPaymentMethod, clientId?: string) {
     if (!order.length || isPrinting) return;
 
@@ -77,7 +82,7 @@ export function OrdersScreen({ products, isLoading, loadError, onReload, clients
           </button>
         </div>
       ) : (
-        <ProductGrid products={products} onSelectProduct={setSelectedProduct} />
+        <ProductGrid products={orderableProducts} onSelectProduct={setSelectedProduct} />
       )}
 
       <OrderList

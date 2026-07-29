@@ -3,6 +3,8 @@ export type JokerProduct = {
   name: string;
   category: string;
   price: number;
+  status?: "draft" | "published";
+  productType?: "simple" | "extra";
 };
 
 export type JokerOrderItem = {
