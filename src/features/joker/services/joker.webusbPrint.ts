@@ -141,7 +141,8 @@ export async function printOrderTicketByWebUsb(
   order: JokerOrderItem[],
   orderAddress: string,
   copies: number,
-  paymentMethod: JokerPaymentMethod
+  paymentMethod: JokerPaymentMethod,
+  customerName: string
 ) {
   const usb = getUsbApi();
   if (!usb) {
@@ -160,7 +161,13 @@ export async function printOrderTicketByWebUsb(
     detail: stripAccents(item.detail)
   }));
 
-  const lines = buildOrderTicketLines(sanitizedOrder, stripAccents(orderAddress), copies, paymentMethod);
+  const lines = buildOrderTicketLines(
+    sanitizedOrder,
+    stripAccents(orderAddress),
+    copies,
+    paymentMethod,
+    stripAccents(customerName)
+  );
   const { device, path } = await connectPrinter(cachedUsbPrinter);
 
   try {

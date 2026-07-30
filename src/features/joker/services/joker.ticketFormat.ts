@@ -49,15 +49,16 @@ export function buildOrderTicketLines(
   order: JokerOrderItem[],
   orderAddress: string,
   copies: number,
-  paymentMethod: JokerPaymentMethod
+  paymentMethod: JokerPaymentMethod,
+  customerName: string
 ) {
   const lines: string[] = [];
 
   if (copies === 1) {
-    return buildKitchenTicketLines(order, orderAddress, paymentMethod);
+    return buildKitchenTicketLines(order, orderAddress, paymentMethod, customerName);
   }
 
-  const singleTicket = buildSingleTicketLines(order, orderAddress, paymentMethod);
+  const singleTicket = buildSingleTicketLines(order, orderAddress, paymentMethod, customerName);
   const customerCopies = copies === 3 ? 2 : copies;
 
   for (let copyIndex = 0; copyIndex < customerCopies; copyIndex += 1) {
@@ -65,7 +66,7 @@ export function buildOrderTicketLines(
   }
 
   if (copies === 3) {
-    lines.push(...buildKitchenTicketLines(order, orderAddress, paymentMethod));
+    lines.push(...buildKitchenTicketLines(order, orderAddress, paymentMethod, customerName));
   }
 
   return lines;
@@ -86,21 +87,26 @@ function pushHeader(lines: string[], heading: string, paymentMethod: JokerPaymen
 }
 
 // Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
-// incluso sin direccion (retiro en el local).
-function pushCustomerSection(lines: string[], orderAddress: string) {
+// incluso sin nombre ni direccion (retiro en el local, sin nombre cargado).
+function pushCustomerSection(lines: string[], orderAddress: string, customerName: string) {
   lines.push(ALIGN_LEFT);
   lines.push(`${decorativeBorder()}\n`);
-  lines.push("Cliente:\n");
+  lines.push(`Cliente: ${customerName.trim() || "-"}\n`);
   lines.push(`${orderAddress.trim() || "Retira en local"}\n`);
   lines.push(`${decorativeBorder()}\n`);
 }
 
-function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string, paymentMethod: JokerPaymentMethod) {
+function buildSingleTicketLines(
+  order: JokerOrderItem[],
+  orderAddress: string,
+  paymentMethod: JokerPaymentMethod,
+  customerName: string
+) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
   pushHeader(lines, STORE_NAME, paymentMethod);
-  pushCustomerSection(lines, orderAddress);
+  pushCustomerSection(lines, orderAddress, customerName);
 
   let total = 0;
 
@@ -151,12 +157,17 @@ function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string, p
 // le sirven a cocina). El nombre del producto y el detalle van en letra
 // grande (doble ancho y alto: aca no comparte linea con ningun precio, asi
 // que no hay riesgo de que quede apretado como pasaba en el ticket normal).
-function buildKitchenTicketLines(order: JokerOrderItem[], orderAddress: string, paymentMethod: JokerPaymentMethod) {
+function buildKitchenTicketLines(
+  order: JokerOrderItem[],
+  orderAddress: string,
+  paymentMethod: JokerPaymentMethod,
+  customerName: string
+) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
   pushHeader(lines, "COMANDA", paymentMethod);
-  pushCustomerSection(lines, orderAddress);
+  pushCustomerSection(lines, orderAddress, customerName);
 
   order.forEach((item, index) => {
     const itemNumber = index + 1;

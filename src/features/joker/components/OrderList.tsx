@@ -4,6 +4,8 @@ type OrderListProps = {
   order: JokerOrderItem[];
   orderAddress: string;
   onAddressChange: (address: string) => void;
+  orderCustomerName: string;
+  onCustomerNameChange: (customerName: string) => void;
   isPrinting: boolean;
   ticketCopies: 1 | 3;
   onTicketCopiesChange: (copies: 1 | 3) => void;
@@ -20,6 +22,8 @@ export function OrderList({
   order,
   orderAddress,
   onAddressChange,
+  orderCustomerName,
+  onCustomerNameChange,
   isPrinting,
   ticketCopies,
   onTicketCopiesChange,
@@ -35,6 +39,16 @@ export function OrderList({
         <p className="joker-eyebrow">Pedido</p>
         <h2>Ticket a imprimir{order.length ? ` (${order.length})` : ""}</h2>
       </div>
+
+      <label className="joker-form-field">
+        <span>Nombre del cliente</span>
+        <input
+          type="text"
+          value={orderCustomerName}
+          onChange={(event) => onCustomerNameChange(event.target.value)}
+          placeholder="Ej: Juan Perez"
+        />
+      </label>
 
       <label className="joker-form-field">
         <span>Direccion del pedido (si es delivery)</span>

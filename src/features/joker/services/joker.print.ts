@@ -8,15 +8,16 @@ export async function printOrderTicket(
   order: JokerOrderItem[],
   orderAddress: string,
   copies: number,
-  paymentMethod: JokerPaymentMethod
+  paymentMethod: JokerPaymentMethod,
+  customerName: string
 ) {
   try {
-    await printOrderTicketByWebUsb(order, orderAddress, copies, paymentMethod);
+    await printOrderTicketByWebUsb(order, orderAddress, copies, paymentMethod, customerName);
     return { method: "webusb" as const };
   } catch (webUsbError) {
     console.warn("[joker-print] WebUSB fallo, probando QZ.", webUsbError);
   }
 
-  await printOrderTicketByQz(order, orderAddress, copies, paymentMethod);
+  await printOrderTicketByQz(order, orderAddress, copies, paymentMethod, customerName);
   return { method: "qz" as const };
 }

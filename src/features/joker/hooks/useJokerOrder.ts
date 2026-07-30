@@ -4,6 +4,7 @@ import type { JokerOrderItem, JokerProduct } from "../joker.types";
 export function useJokerOrder() {
   const [order, setOrder] = useState<JokerOrderItem[]>([]);
   const [orderAddress, setOrderAddress] = useState("");
+  const [orderCustomerName, setOrderCustomerName] = useState("");
 
   function addItem(product: JokerProduct, detail: string, quantity: number) {
     const lineId = `${product.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -32,7 +33,18 @@ export function useJokerOrder() {
   function clearOrder() {
     setOrder([]);
     setOrderAddress("");
+    setOrderCustomerName("");
   }
 
-  return { order, orderAddress, setOrderAddress, addItem, updateItem, removeItem, clearOrder };
+  return {
+    order,
+    orderAddress,
+    setOrderAddress,
+    orderCustomerName,
+    setOrderCustomerName,
+    addItem,
+    updateItem,
+    removeItem,
+    clearOrder
+  };
 }

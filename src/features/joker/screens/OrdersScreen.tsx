@@ -33,7 +33,17 @@ export function OrdersScreen({
   const [isPrinting, setIsPrinting] = useState(false);
   const [ticketCopies, setTicketCopies] = useState<1 | 3>(3);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const { order, orderAddress, setOrderAddress, addItem, updateItem, removeItem, clearOrder } = useJokerOrder();
+  const {
+    order,
+    orderAddress,
+    setOrderAddress,
+    orderCustomerName,
+    setOrderCustomerName,
+    addItem,
+    updateItem,
+    removeItem,
+    clearOrder
+  } = useJokerOrder();
 
   // Los productos en borrador (sin precio confirmado) y los extras (que
   // se muestran dentro de la personalizacion de su producto base, no
@@ -45,7 +55,7 @@ export function OrdersScreen({
 
     setIsPrinting(true);
     try {
-      await printOrderTicket(order, orderAddress, ticketCopies, paymentMethod);
+      await printOrderTicket(order, orderAddress, ticketCopies, paymentMethod, orderCustomerName);
       toast.success("Pedido impreso.");
       clearOrder();
     } catch (printError) {
@@ -98,6 +108,8 @@ export function OrdersScreen({
         order={order}
         orderAddress={orderAddress}
         onAddressChange={setOrderAddress}
+        orderCustomerName={orderCustomerName}
+        onCustomerNameChange={setOrderCustomerName}
         isPrinting={isPrinting}
         ticketCopies={ticketCopies}
         onTicketCopiesChange={setTicketCopies}
