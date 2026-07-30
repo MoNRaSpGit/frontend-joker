@@ -10,9 +10,8 @@ import { CuentaCorrienteScreen } from "./screens/CuentaCorrienteScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { PanelScreen } from "./screens/PanelScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
-import { ServicesScreen } from "./screens/ServicesScreen";
 
-type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "servicios";
+type JokerTab = "pedidos" | "productos" | "panel" | "cuenta";
 type CustomizeMode = "cliente" | "dev";
 
 const CUSTOMIZE_MODE_STORAGE_KEY = "joker.customizeMode";
@@ -21,8 +20,7 @@ const TAB_TITLES: Record<JokerTab, string> = {
   pedidos: "Armar pedido",
   productos: "Productos",
   panel: "Panel",
-  cuenta: "Cuenta corriente",
-  servicios: "Servicios"
+  cuenta: "Cuenta corriente"
 };
 
 export function JokerHomePage() {
@@ -164,13 +162,6 @@ export function JokerHomePage() {
                 >
                   Cuenta corriente
                 </button>
-                <button
-                  type="button"
-                  className={`joker-user-dropdown-item${activeTab === "servicios" ? " is-active" : ""}`}
-                  onClick={() => goToTab("servicios")}
-                >
-                  Servicios
-                </button>
                 <div className="joker-user-dropdown-divider" />
                 <button type="button" className="joker-user-dropdown-item" onClick={toggleCustomizeMode}>
                   ⚙️ Modo: {customizeMode === "dev" ? "Dev" : "Cliente"}
@@ -206,10 +197,8 @@ export function JokerHomePage() {
           <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
         ) : activeTab === "panel" ? (
           <PanelScreen />
-        ) : activeTab === "cuenta" ? (
-          <CuentaCorrienteScreen clients={clients} accountEntries={accountEntries} onAddClient={handleAddClient} />
         ) : (
-          <ServicesScreen />
+          <CuentaCorrienteScreen clients={clients} accountEntries={accountEntries} onAddClient={handleAddClient} />
         )}
       </main>
 
