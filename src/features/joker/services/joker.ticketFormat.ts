@@ -33,16 +33,13 @@ const BOLD_ON = "\x1B\x45\x01";
 const BOLD_OFF = "\x1B\x45\x00";
 const DOUBLE_SIZE_ON = "\x1D\x21\x11";
 const DOUBLE_SIZE_OFF = "\x1D\x21\x00";
-// Solo duplica la altura (no el ancho), para que el nombre del producto y el
-// detalle se vean mas grandes sin correr el alineado de precios a la derecha
-// (eso rompe si tambien se duplica el ancho, porque cambia cuantos
-// caracteres entran por linea).
-const TALL_BODY_ON = "\x1D\x21\x10";
-const TALL_BODY_OFF = "\x1D\x21\x00";
 const CUT_PAPER = "\x1D\x56\x41\x00";
 
 // copies: cuantas veces se repite el ticket completo en el mismo trabajo
-// (cada copia ya trae su propio corte de papel al final).
+// (cada copia ya trae su propio corte de papel al final). Cuando son 3
+// copias, las primeras 2 son iguales (mostrador) y la ultima se reemplaza
+// por la comanda de cocina: sin precio ni pago, solo producto y detalle,
+// en letra bien grande, para que se lea facil en la cocina.
 export function buildOrderTicketLines(
   order: JokerOrderItem[],
   orderAddress: string,
@@ -51,9 +48,14 @@ export function buildOrderTicketLines(
 ) {
   const singleTicket = buildSingleTicketLines(order, orderAddress, paymentMethod);
   const lines: string[] = [];
+  const customerCopies = copies === 3 ? 2 : copies;
 
-  for (let copyIndex = 0; copyIndex < copies; copyIndex += 1) {
+  for (let copyIndex = 0; copyIndex < customerCopies; copyIndex += 1) {
     lines.push(...singleTicket);
+  }
+
+  if (copies === 3) {
+    lines.push(...buildKitchenTicketLines(order));
   }
 
   return lines;
@@ -87,11 +89,10 @@ function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string, p
     const lineTotal = item.unitPrice * item.quantity;
     total += lineTotal;
 
-    lines.push(BOLD_ON, TALL_BODY_ON);
+    lines.push(BOLD_ON);
     lines.push(`${rightAlignedLine(`${itemNumber}) ${item.quantity}x ${item.productName} `, formatMoney(lineTotal))}\n`);
-    lines.push(TALL_BODY_OFF, BOLD_OFF);
+    lines.push(BOLD_OFF);
 
-    lines.push(TALL_BODY_ON);
     const detailLines = item.detail ? item.detail.split("\n").filter((line) => line.trim().length > 0) : [];
     if (detailLines.length) {
       detailLines.forEach((detailLine, detailIndex) =>
@@ -100,7 +101,6 @@ function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string, p
     } else {
       lines.push("   Detalle: sin detalle\n");
     }
-    lines.push(TALL_BODY_OFF);
 
     if (index < order.length - 1) {
       lines.push(`${divider()}\n`);
@@ -121,6 +121,53 @@ function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string, p
 
   lines.push("\n\n\n");
   lines.push(ALIGN_LEFT);
+  lines.push(CUT_PAPER);
+
+  return lines;
+}
+
+// Comanda de cocina: sin precio ni forma de pago (no le sirve a cocina),
+// solo producto y detalle, en letra grande (doble ancho y alto: aca no
+// comparte linea con ningun precio, asi que no hay riesgo de que quede
+// apretado como en el ticket normal).
+function buildKitchenTicketLines(order: JokerOrderItem[]) {
+  const lines: string[] = [];
+
+  lines.push(ESC_INIT);
+
+  lines.push(ALIGN_CENTER);
+  lines.push(BOLD_ON, DOUBLE_SIZE_ON);
+  lines.push(`${STORE_NAME}\n`);
+  lines.push("COCINA\n");
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+  lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
+
+  lines.push(ALIGN_LEFT);
+  lines.push(`${decorativeBorder()}\n`);
+
+  order.forEach((item, index) => {
+    const itemNumber = index + 1;
+
+    lines.push(BOLD_ON, DOUBLE_SIZE_ON);
+    lines.push(`${itemNumber}) ${item.quantity}x ${item.productName}\n`);
+
+    const detailLines = item.detail ? item.detail.split("\n").filter((line) => line.trim().length > 0) : [];
+    if (detailLines.length) {
+      detailLines.forEach((detailLine, detailIndex) =>
+        lines.push(`${detailIndex === 0 ? "Detalle: " : ""}${detailLine}\n`)
+      );
+    } else {
+      lines.push("Sin detalle\n");
+    }
+    lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+
+    if (index < order.length - 1) {
+      lines.push(`${divider()}\n`);
+    }
+  });
+
+  lines.push(`${decorativeBorder()}\n`);
+  lines.push("\n\n\n");
   lines.push(CUT_PAPER);
 
   return lines;
