@@ -3,6 +3,8 @@ import type { JokerOrderItem, JokerPaymentMethod } from "../joker.types";
 
 const TICKET_WIDTH = 48;
 const STORE_NAME = "EL JOKER";
+// Placeholder: falta la direccion real del local, se completa despues.
+const STORE_ADDRESS = "Bvar. Artigas 2450";
 const FOOTER_MESSAGE = "Muito obrigado.";
 const DECORATIVE_CHAR = "=";
 const DIVIDER_CHAR = "-";
@@ -38,8 +40,8 @@ const CUT_PAPER = "\x1D\x56\x41\x00";
 // copies: cuantas veces se repite el ticket completo en el mismo trabajo
 // (cada copia ya trae su propio corte de papel al final). Cuando son 3
 // copias, las primeras 2 son iguales (mostrador) y la ultima se reemplaza
-// por la comanda de cocina: sin precio ni pago, solo producto y detalle,
-// en letra bien grande, para que se lea facil en la cocina.
+// por la comanda de cocina: mismo encabezado y seccion de cliente, pero sin
+// precios, en letra bien grande, para que se lea facil en la cocina.
 export function buildOrderTicketLines(
   order: JokerOrderItem[],
   orderAddress: string,
@@ -55,32 +57,40 @@ export function buildOrderTicketLines(
   }
 
   if (copies === 3) {
-    lines.push(...buildKitchenTicketLines(order));
+    lines.push(...buildKitchenTicketLines(order, orderAddress, paymentMethod));
   }
 
   return lines;
+}
+
+// Encabezado comun a los dos tipos de ticket: nombre (o "COMANDA"),
+// direccion del local, fecha/hora y forma de pago.
+function pushHeader(lines: string[], heading: string, paymentMethod: JokerPaymentMethod) {
+  lines.push(ALIGN_CENTER);
+  lines.push(BOLD_ON, DOUBLE_SIZE_ON);
+  lines.push(`${heading}\n`);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+  lines.push(`${STORE_ADDRESS}\n`);
+  lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
+  lines.push(`Pago: ${JOKER_PAYMENT_METHOD_LABELS[paymentMethod]}\n`);
+}
+
+// Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
+// incluso sin direccion (retiro en el local).
+function pushCustomerSection(lines: string[], orderAddress: string) {
+  lines.push(ALIGN_LEFT);
+  lines.push(`${decorativeBorder()}\n`);
+  lines.push("Cliente:\n");
+  lines.push(`${orderAddress.trim() || "Retira en local"}\n`);
+  lines.push(`${decorativeBorder()}\n`);
 }
 
 function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string, paymentMethod: JokerPaymentMethod) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
-
-  // Cabecera centrada: la centra la propia impresora (ESC a 1), no
-  // relleno manual con espacios (eso duplicaba el efecto y lo corria).
-  lines.push(ALIGN_CENTER);
-  lines.push(BOLD_ON, DOUBLE_SIZE_ON);
-  lines.push(`${STORE_NAME}\n`);
-  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-  if (orderAddress.trim()) {
-    lines.push(`Direccion: ${orderAddress.trim()}\n`);
-  }
-  lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
-  lines.push(`Pago: ${JOKER_PAYMENT_METHOD_LABELS[paymentMethod]}\n`);
-
-  // Cuerpo del pedido: alineado a la izquierda, como una lista normal.
-  lines.push(ALIGN_LEFT);
-  lines.push(`${decorativeBorder()}\n`);
+  pushHeader(lines, STORE_NAME, paymentMethod);
+  pushCustomerSection(lines, orderAddress);
 
   let total = 0;
 
@@ -126,24 +136,17 @@ function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string, p
   return lines;
 }
 
-// Comanda de cocina: sin precio ni forma de pago (no le sirve a cocina),
-// solo producto y detalle, en letra grande (doble ancho y alto: aca no
-// comparte linea con ningun precio, asi que no hay riesgo de que quede
-// apretado como en el ticket normal).
-function buildKitchenTicketLines(order: JokerOrderItem[]) {
+// Comanda de cocina: mismo encabezado y seccion de cliente que el ticket
+// normal, pero dice "COMANDA" en vez de "EL JOKER" y no lleva precios (no
+// le sirven a cocina). El nombre del producto y el detalle van en letra
+// grande (doble ancho y alto: aca no comparte linea con ningun precio, asi
+// que no hay riesgo de que quede apretado como pasaba en el ticket normal).
+function buildKitchenTicketLines(order: JokerOrderItem[], orderAddress: string, paymentMethod: JokerPaymentMethod) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
-
-  lines.push(ALIGN_CENTER);
-  lines.push(BOLD_ON, DOUBLE_SIZE_ON);
-  lines.push(`${STORE_NAME}\n`);
-  lines.push("COCINA\n");
-  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-  lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
-
-  lines.push(ALIGN_LEFT);
-  lines.push(`${decorativeBorder()}\n`);
+  pushHeader(lines, "COMANDA", paymentMethod);
+  pushCustomerSection(lines, orderAddress);
 
   order.forEach((item, index) => {
     const itemNumber = index + 1;
