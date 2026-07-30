@@ -55,9 +55,10 @@ const CUT_PAPER = "\x1D\x56\x41\x00";
 
 // copies: cuantas veces se repite el ticket completo en el mismo trabajo
 // (cada copia ya trae su propio corte de papel al final). Con 3 copias
-// salen 2 tickets de mostrador iguales mas la comanda de cocina al final.
-// Con 1 copia sale directo la comanda (es el caso de uso mas comun: solo
-// hace falta que la vea cocina).
+// salen 2 tickets de mostrador iguales, mas la comanda de cocina, mas una
+// copia identica a la comanda pero titulada "ARCHIVO" (para que quede en
+// el local). Con 1 copia sale directo la comanda (es el caso de uso mas
+// comun: solo hace falta que la vea cocina).
 export function buildOrderTicketLines(
   order: JokerOrderItem[],
   orderAddress: string,
@@ -68,7 +69,7 @@ export function buildOrderTicketLines(
   const lines: string[] = [];
 
   if (copies === 1) {
-    return buildKitchenTicketLines(order, orderAddress, paymentMethod, customerName);
+    return buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "COMANDA");
   }
 
   const singleTicket = buildSingleTicketLines(order, orderAddress, paymentMethod, customerName);
@@ -79,7 +80,8 @@ export function buildOrderTicketLines(
   }
 
   if (copies === 3) {
-    lines.push(...buildKitchenTicketLines(order, orderAddress, paymentMethod, customerName));
+    lines.push(...buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "COMANDA"));
+    lines.push(...buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "ARCHIVO"));
   }
 
   return lines;
@@ -112,20 +114,20 @@ function pushHeader(
 
 // Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
 // incluso sin nombre ni direccion (retiro en el local, sin nombre cargado).
-// En la comanda el nombre va en letra grande (emphasizeCustomerName), la
-// direccion se queda en tamano normal en los dos tipos de ticket.
+// En la comanda/archivo el nombre y la direccion van en letra grande
+// (emphasize), en el ticket de mostrador se quedan en tamano normal.
 function pushCustomerSection(
   lines: string[],
   orderAddress: string,
   customerName: string,
-  emphasizeCustomerName: boolean
+  emphasize: boolean
 ) {
   lines.push(ALIGN_LEFT);
   lines.push(`${decorativeBorder()}\n`);
-  if (emphasizeCustomerName) lines.push(DOUBLE_SIZE_ON);
+  if (emphasize) lines.push(DOUBLE_SIZE_ON);
   lines.push(`Cliente: ${customerName.trim() || "-"}\n`);
-  if (emphasizeCustomerName) lines.push(DOUBLE_SIZE_OFF);
   lines.push(orderAddress.trim() ? `Direccion: ${orderAddress.trim()}\n` : "Retira en local\n");
+  if (emphasize) lines.push(DOUBLE_SIZE_OFF);
   lines.push(`${decorativeBorder()}\n`);
 }
 
@@ -185,21 +187,24 @@ function buildSingleTicketLines(
   return lines;
 }
 
-// Comanda de cocina: mismo encabezado y seccion de cliente que el ticket
-// normal, pero dice "COMANDA" en vez de "EL JOKER" y no lleva precios (no
-// le sirven a cocina). El nombre del producto y el detalle van en letra
-// grande (doble ancho y alto: aca no comparte linea con ningun precio, asi
-// que no hay riesgo de que quede apretado como pasaba en el ticket normal).
-function buildKitchenTicketLines(
+// Formato "compacto": lo usan la comanda de cocina y el archivo, mismo
+// encabezado y seccion de cliente que el ticket normal pero con el heading
+// que se le pase ("COMANDA" o "ARCHIVO") en vez de "EL JOKER", y sin
+// precios (no le sirven ni a cocina ni al archivo). El nombre del producto
+// y el detalle van en letra grande (doble ancho y alto: aca no comparte
+// linea con ningun precio, asi que no hay riesgo de que quede apretado
+// como pasaba en el ticket normal).
+function buildCompactTicketLines(
   order: JokerOrderItem[],
   orderAddress: string,
   paymentMethod: JokerPaymentMethod,
-  customerName: string
+  customerName: string,
+  heading: string
 ) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
-  pushHeader(lines, "COMANDA", paymentMethod, false);
+  pushHeader(lines, heading, paymentMethod, false);
   pushCustomerSection(lines, orderAddress, customerName, true);
 
   order.forEach((item, index) => {
