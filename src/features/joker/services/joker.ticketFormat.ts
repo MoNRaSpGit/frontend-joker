@@ -3,8 +3,11 @@ import type { JokerOrderItem, JokerPaymentMethod } from "../joker.types";
 
 const TICKET_WIDTH = 48;
 const STORE_NAME = "EL JOKER";
-// Placeholder: falta la direccion real del local, se completa despues.
+// Placeholders: falta la direccion y el telefono reales del local, se
+// completan despues.
 const STORE_ADDRESS = "Bvar. Artigas 2450";
+const STORE_PHONE = "Tel: 099 123 456";
+const INTERNAL_USE_NOTE = "Uso interno";
 const FOOTER_MESSAGE = "Muito obrigado.";
 const DECORATIVE_CHAR = "=";
 const DIVIDER_CHAR = "-";
@@ -71,8 +74,10 @@ function pushHeader(lines: string[], heading: string, paymentMethod: JokerPaymen
   lines.push(`${heading}\n`);
   lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
   lines.push(`${STORE_ADDRESS}\n`);
+  lines.push(`${STORE_PHONE}\n`);
   lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
   lines.push(`Pago: ${JOKER_PAYMENT_METHOD_LABELS[paymentMethod]}\n`);
+  lines.push(`${INTERNAL_USE_NOTE}\n`);
 }
 
 // Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
