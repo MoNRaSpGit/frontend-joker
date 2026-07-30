@@ -19,6 +19,12 @@ function formatPrice(price: number) {
   return price.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
 }
 
+// Acepta tanto coma como punto decimal (58,35 o 58.35): los precios
+// editados a mano suelen quedar con fraccion, ej. despues de un descuento.
+function parsePriceInput(value: string) {
+  return Number(value.trim().replace(",", "."));
+}
+
 export function CustomizeProductModal({
   variants,
   allProducts = [],
@@ -95,7 +101,7 @@ export function CustomizeProductModal({
     let finalPrice = isDev ? totalPrice : selectedVariant.price;
 
     if (isEditing) {
-      const parsedPrice = Number(manualPrice);
+      const parsedPrice = parsePriceInput(manualPrice);
       if (!manualPrice.trim() || Number.isNaN(parsedPrice) || parsedPrice < 0) {
         setPriceError("El precio tiene que ser un numero valido.");
         return;
@@ -227,9 +233,9 @@ export function CustomizeProductModal({
           <label className="joker-form-field">
             <span>Precio unitario</span>
             <input
-              type="number"
-              min="0"
-              step="1"
+              type="text"
+              inputMode="decimal"
+              placeholder="Ej: 58,35"
               value={manualPrice}
               onChange={(event) => {
                 setManualPrice(event.target.value);
@@ -254,7 +260,7 @@ export function CustomizeProductModal({
 
         {isEditing ? (
           <p className="joker-product-card__price">
-            Total linea: {formatPrice((Number(manualPrice) || 0) * quantity)}
+            Total linea: {formatPrice((parsePriceInput(manualPrice) || 0) * quantity)}
           </p>
         ) : null}
 

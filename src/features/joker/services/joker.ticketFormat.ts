@@ -18,8 +18,12 @@ function divider() {
   return DIVIDER_CHAR.repeat(TICKET_WIDTH);
 }
 
+// Redondea a centesimos y solo muestra decimales cuando realmente los hay
+// (un precio editado a mano puede quedar fraccionado, ej. 58,35).
 function formatMoney(amount: number) {
-  return `$ ${Math.round(amount)}`;
+  const rounded = Math.round(amount * 100) / 100;
+  const value = Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(2).replace(".", ",");
+  return `$ ${value}`;
 }
 
 // Abreviaciones de nombres de producto, solo para la comanda de cocina (en
