@@ -33,6 +33,12 @@ const BOLD_ON = "\x1B\x45\x01";
 const BOLD_OFF = "\x1B\x45\x00";
 const DOUBLE_SIZE_ON = "\x1D\x21\x11";
 const DOUBLE_SIZE_OFF = "\x1D\x21\x00";
+// Solo duplica la altura (no el ancho), para que el nombre del producto y el
+// detalle se vean mas grandes sin correr el alineado de precios a la derecha
+// (eso rompe si tambien se duplica el ancho, porque cambia cuantos
+// caracteres entran por linea).
+const TALL_BODY_ON = "\x1D\x21\x10";
+const TALL_BODY_OFF = "\x1D\x21\x00";
 const CUT_PAPER = "\x1D\x56\x41\x00";
 
 // copies: cuantas veces se repite el ticket completo en el mismo trabajo
@@ -81,10 +87,11 @@ function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string, p
     const lineTotal = item.unitPrice * item.quantity;
     total += lineTotal;
 
-    lines.push(BOLD_ON);
+    lines.push(BOLD_ON, TALL_BODY_ON);
     lines.push(`${rightAlignedLine(`${itemNumber}) ${item.quantity}x ${item.productName} `, formatMoney(lineTotal))}\n`);
-    lines.push(BOLD_OFF);
+    lines.push(TALL_BODY_OFF, BOLD_OFF);
 
+    lines.push(TALL_BODY_ON);
     const detailLines = item.detail ? item.detail.split("\n").filter((line) => line.trim().length > 0) : [];
     if (detailLines.length) {
       detailLines.forEach((detailLine, detailIndex) =>
@@ -93,6 +100,7 @@ function buildSingleTicketLines(order: JokerOrderItem[], orderAddress: string, p
     } else {
       lines.push("   Detalle: sin detalle\n");
     }
+    lines.push(TALL_BODY_OFF);
 
     if (index < order.length - 1) {
       lines.push(`${divider()}\n`);
