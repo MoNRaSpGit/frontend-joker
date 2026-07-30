@@ -35,6 +35,11 @@ export function CustomizeProductModal({
   const [excludedIngredients, setExcludedIngredients] = useState<Set<string>>(new Set());
   const [selectedExtraIds, setSelectedExtraIds] = useState<Set<number>>(new Set());
   const [selectedChoices, setSelectedChoices] = useState<Record<string, string | null>>({});
+  // Solo se usa (y se muestra) al editar un item ya agregado al pedido:
+  // permite corregir el precio a mano, por ejemplo si se cargo mal o si
+  // se pacto un precio distinto con el cliente.
+  const [manualPrice, setManualPrice] = useState(() => String(variants[0]?.price ?? 0));
+  const [priceError, setPriceError] = useState<string | null>(null);
 
   const selectedVariant = variants[selectedIndex];
   const { baseName } = splitVariantLabel(selectedVariant.name);
@@ -87,6 +92,18 @@ export function CustomizeProductModal({
   }
 
   function handleConfirm() {
+    let finalPrice = isDev ? totalPrice : selectedVariant.price;
+
+    if (isEditing) {
+      const parsedPrice = Number(manualPrice);
+      if (!manualPrice.trim() || Number.isNaN(parsedPrice) || parsedPrice < 0) {
+        setPriceError("El precio tiene que ser un numero valido.");
+        return;
+      }
+      setPriceError(null);
+      finalPrice = parsedPrice;
+    }
+
     if (isDev) {
       const parts: string[] = [];
       if (excludedIngredients.size) {
@@ -99,9 +116,9 @@ export function CustomizeProductModal({
       }
       if (detail.trim()) parts.push(detail.trim());
 
-      onConfirm({ ...selectedVariant, price: totalPrice }, parts.join(" · "), quantity);
+      onConfirm({ ...selectedVariant, price: finalPrice }, parts.join(" · "), quantity);
     } else {
-      onConfirm(selectedVariant, detail.trim(), quantity);
+      onConfirm({ ...selectedVariant, price: finalPrice }, detail.trim(), quantity);
     }
     onClose();
   }
@@ -206,6 +223,23 @@ export function CustomizeProductModal({
 
         {isDev && extrasTotal > 0 ? <p className="joker-product-card__price">Total: {formatPrice(totalPrice)}</p> : null}
 
+        {isEditing ? (
+          <label className="joker-form-field">
+            <span>Precio unitario</span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={manualPrice}
+              onChange={(event) => {
+                setManualPrice(event.target.value);
+                setPriceError(null);
+              }}
+            />
+          </label>
+        ) : null}
+        {priceError ? <p className="joker-order-item__excluded">{priceError}</p> : null}
+
         <p className="joker-modal-card__hint">Cantidad</p>
 
         <div className="joker-quantity-stepper">
@@ -217,6 +251,12 @@ export function CustomizeProductModal({
             +
           </button>
         </div>
+
+        {isEditing ? (
+          <p className="joker-product-card__price">
+            Total linea: {formatPrice((Number(manualPrice) || 0) * quantity)}
+          </p>
+        ) : null}
 
         <p className="joker-modal-card__hint">
           {isDev ? "Notas adicionales (opcional)" : "Detalle del pedido (ej: Sin lechuga, con doble queso)."}

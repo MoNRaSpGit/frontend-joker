@@ -22,8 +22,10 @@ export function useJokerOrder() {
     ]);
   }
 
-  function updateItem(lineId: string, detail: string, quantity: number) {
-    setOrder((current) => current.map((item) => (item.lineId === lineId ? { ...item, detail, quantity } : item)));
+  function updateItem(lineId: string, detail: string, quantity: number, unitPrice: number) {
+    setOrder((current) =>
+      current.map((item) => (item.lineId === lineId ? { ...item, detail, quantity, unitPrice } : item))
+    );
   }
 
   function removeItem(lineId: string) {

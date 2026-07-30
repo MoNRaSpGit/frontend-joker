@@ -148,8 +148,8 @@ export function OrdersScreen({
           initialQuantity={editingItem.quantity}
           isEditing
           onClose={() => setEditingItem(null)}
-          onConfirm={(_variant, detail, quantity) => {
-            updateItem(editingItem.lineId, detail, quantity);
+          onConfirm={(variant, detail, quantity) => {
+            updateItem(editingItem.lineId, detail, quantity, variant.price);
           }}
         />
       ) : null}
