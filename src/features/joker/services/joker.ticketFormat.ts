@@ -153,6 +153,7 @@ function buildKitchenTicketLines(order: JokerOrderItem[], orderAddress: string, 
 
     lines.push(BOLD_ON, DOUBLE_SIZE_ON);
     lines.push(`${itemNumber}) ${item.quantity}x ${item.productName}\n`);
+    lines.push(BOLD_OFF);
 
     const detailLines = item.detail ? item.detail.split("\n").filter((line) => line.trim().length > 0) : [];
     if (detailLines.length) {
@@ -162,7 +163,7 @@ function buildKitchenTicketLines(order: JokerOrderItem[], orderAddress: string, 
     } else {
       lines.push("Sin detalle\n");
     }
-    lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+    lines.push(DOUBLE_SIZE_OFF);
 
     if (index < order.length - 1) {
       lines.push(`${divider()}\n`);
