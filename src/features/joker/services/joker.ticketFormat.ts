@@ -55,9 +55,9 @@ const CUT_PAPER = "\x1D\x56\x41\x00";
 
 // copies: cuantas veces se repite el ticket completo en el mismo trabajo
 // (cada copia ya trae su propio corte de papel al final). Con 3 copias
-// salen 2 tickets de mostrador iguales, mas la comanda de cocina, mas una
-// copia identica a la comanda pero titulada "ARCHIVO" (para que quede en
-// el local). Con 1 copia sale directo la comanda (es el caso de uso mas
+// salen 3 tickets fisicos en total: 1 de mostrador, la comanda de cocina, y
+// una copia identica a la comanda pero titulada "ARCHIVO" (para que quede
+// en el local). Con 1 copia sale directo la comanda (es el caso de uso mas
 // comun: solo hace falta que la vea cocina).
 export function buildOrderTicketLines(
   order: JokerOrderItem[],
@@ -72,12 +72,7 @@ export function buildOrderTicketLines(
     return buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "COMANDA");
   }
 
-  const singleTicket = buildSingleTicketLines(order, orderAddress, paymentMethod, customerName);
-  const customerCopies = copies === 3 ? 2 : copies;
-
-  for (let copyIndex = 0; copyIndex < customerCopies; copyIndex += 1) {
-    lines.push(...singleTicket);
-  }
+  lines.push(...buildSingleTicketLines(order, orderAddress, paymentMethod, customerName));
 
   if (copies === 3) {
     lines.push(...buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "COMANDA"));
