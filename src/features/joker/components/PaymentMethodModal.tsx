@@ -2,7 +2,7 @@ import { useState } from "react";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerClient, JokerPaymentMethod } from "../joker.types";
 
-const PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "cuenta"];
+const PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "cuenta"];
 
 type PaymentMethodModalProps = {
   clients: JokerClient[];

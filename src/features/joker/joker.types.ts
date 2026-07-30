@@ -18,11 +18,12 @@ export type JokerOrderItem = {
   quantity: number;
 };
 
-export type JokerPaymentMethod = "efectivo" | "tarjeta" | "cuenta";
+export type JokerPaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "cuenta";
 
 export const JOKER_PAYMENT_METHOD_LABELS: Record<JokerPaymentMethod, string> = {
   efectivo: "Efectivo",
-  tarjeta: "Tarjeta",
+  tarjeta: "POS",
+  transferencia: "Transferencia",
   cuenta: "Cuenta"
 };
 

@@ -5,7 +5,7 @@ import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerOrderRecord, JokerPaymentMethod } from "../joker.types";
 
 const PROFIT_RATE = 0.3;
-const PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "cuenta"];
+const PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "cuenta"];
 const MOVEMENTS_PREVIEW_COUNT = 3;
 
 function formatPrice(amount: number) {
@@ -29,7 +29,7 @@ function getTodayLabel() {
 }
 
 function buildPaymentTotals(orders: JokerOrderRecord[]) {
-  const totals: Record<JokerPaymentMethod, number> = { efectivo: 0, tarjeta: 0, cuenta: 0 };
+  const totals: Record<JokerPaymentMethod, number> = { efectivo: 0, tarjeta: 0, transferencia: 0, cuenta: 0 };
 
   for (const order of orders) {
     totals[order.paymentMethod] += order.total;

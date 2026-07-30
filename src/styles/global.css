@@ -507,6 +507,10 @@ textarea {
   background: #1f4e79;
 }
 
+.joker-category-chip--transferencia.is-active {
+  background: #5b3a8e;
+}
+
 .joker-category-chip--cuenta.is-active {
   background: #6b1b23;
 }
@@ -646,6 +650,10 @@ textarea {
 
 .joker-stat-tile--tarjeta {
   border-color: #1f4e79;
+}
+
+.joker-stat-tile--transferencia {
+  border-color: #5b3a8e;
 }
 
 .joker-stat-tile--cuenta {
