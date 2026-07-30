@@ -92,7 +92,7 @@ function pushCustomerSection(lines: string[], orderAddress: string, customerName
   lines.push(ALIGN_LEFT);
   lines.push(`${decorativeBorder()}\n`);
   lines.push(`Cliente: ${customerName.trim() || "-"}\n`);
-  lines.push(`${orderAddress.trim() || "Retira en local"}\n`);
+  lines.push(orderAddress.trim() ? `Direccion: ${orderAddress.trim()}\n` : "Retira en local\n");
   lines.push(`${decorativeBorder()}\n`);
 }
 
