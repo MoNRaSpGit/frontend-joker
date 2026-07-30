@@ -24,6 +24,21 @@ function formatMoney(amount: number) {
   return `$ ${Math.round(amount)}`;
 }
 
+// Abreviaciones de nombres de producto, solo para la comanda de cocina (en
+// letra grande ocupan mas lugar, asi entran mas comodas). Agregar aca
+// cuando haga falta otra.
+const KITCHEN_NAME_ABBREVIATIONS: Array<[RegExp, string]> = [
+  [/\bhamburguesas?\b/gi, "Hamb."],
+  [/\bmilanesas?\b/gi, "Mila."]
+];
+
+function abbreviateForKitchen(productName: string) {
+  return KITCHEN_NAME_ABBREVIATIONS.reduce(
+    (name, [pattern, replacement]) => name.replace(pattern, replacement),
+    productName
+  );
+}
+
 // Arma una linea con el label a la izquierda y el valor pegado a la derecha,
 // rellenando el medio con espacios.
 function rightAlignedLine(label: string, value: string) {
@@ -88,10 +103,19 @@ function pushHeader(lines: string[], heading: string, paymentMethod: JokerPaymen
 
 // Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
 // incluso sin nombre ni direccion (retiro en el local, sin nombre cargado).
-function pushCustomerSection(lines: string[], orderAddress: string, customerName: string) {
+// En la comanda el nombre va en letra grande (emphasizeCustomerName), la
+// direccion se queda en tamano normal en los dos tipos de ticket.
+function pushCustomerSection(
+  lines: string[],
+  orderAddress: string,
+  customerName: string,
+  emphasizeCustomerName: boolean
+) {
   lines.push(ALIGN_LEFT);
   lines.push(`${decorativeBorder()}\n`);
+  if (emphasizeCustomerName) lines.push(DOUBLE_SIZE_ON);
   lines.push(`Cliente: ${customerName.trim() || "-"}\n`);
+  if (emphasizeCustomerName) lines.push(DOUBLE_SIZE_OFF);
   lines.push(orderAddress.trim() ? `Direccion: ${orderAddress.trim()}\n` : "Retira en local\n");
   lines.push(`${decorativeBorder()}\n`);
 }
@@ -106,7 +130,7 @@ function buildSingleTicketLines(
 
   lines.push(ESC_INIT);
   pushHeader(lines, STORE_NAME, paymentMethod);
-  pushCustomerSection(lines, orderAddress, customerName);
+  pushCustomerSection(lines, orderAddress, customerName, false);
 
   let total = 0;
 
@@ -167,13 +191,13 @@ function buildKitchenTicketLines(
 
   lines.push(ESC_INIT);
   pushHeader(lines, "COMANDA", paymentMethod);
-  pushCustomerSection(lines, orderAddress, customerName);
+  pushCustomerSection(lines, orderAddress, customerName, true);
 
   order.forEach((item, index) => {
     const itemNumber = index + 1;
 
     lines.push(BOLD_ON, DOUBLE_SIZE_ON);
-    lines.push(`${itemNumber}) ${item.quantity}x ${item.productName}\n`);
+    lines.push(`${itemNumber}) ${item.quantity}x ${abbreviateForKitchen(item.productName)}\n`);
     lines.push(BOLD_OFF);
 
     const detailLines = item.detail ? item.detail.split("\n").filter((line) => line.trim().length > 0) : [];
