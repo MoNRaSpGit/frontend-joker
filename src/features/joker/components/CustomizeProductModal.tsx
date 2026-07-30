@@ -89,7 +89,9 @@ export function CustomizeProductModal({
   function handleConfirm() {
     if (isDev) {
       const parts: string[] = [];
-      if (excludedIngredients.size) parts.push(`Sin ${Array.from(excludedIngredients).join(", ")}`);
+      if (excludedIngredients.size) {
+        parts.push(Array.from(excludedIngredients).map((ingredient) => `Sin ${ingredient}`).join(", "));
+      }
       if (selectedExtras.length) parts.push(`Con ${selectedExtras.map((extra) => extra.name).join(", ")}`);
       for (const group of choiceGroups) {
         const choice = selectedChoices[group.label];

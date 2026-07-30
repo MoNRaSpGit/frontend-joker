@@ -171,7 +171,15 @@ function buildKitchenTicketLines(order: JokerOrderItem[], orderAddress: string, 
   });
 
   lines.push(`${decorativeBorder()}\n`);
+  lines.push("\n");
+
+  lines.push(ALIGN_CENTER);
+  lines.push(BOLD_ON);
+  lines.push(`${FOOTER_MESSAGE}\n`);
+  lines.push(BOLD_OFF);
+
   lines.push("\n\n\n");
+  lines.push(ALIGN_LEFT);
   lines.push(CUT_PAPER);
 
   return lines;
