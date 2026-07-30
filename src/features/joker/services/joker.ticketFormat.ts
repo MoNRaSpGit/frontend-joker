@@ -3,10 +3,8 @@ import type { JokerOrderItem, JokerPaymentMethod } from "../joker.types";
 
 const TICKET_WIDTH = 48;
 const STORE_NAME = "EL JOKER";
-// Placeholders: falta la direccion y el telefono reales del local, se
-// completan despues.
-const STORE_ADDRESS = "Bvar. Artigas 2450";
-const STORE_PHONE = "Tel: 099 123 456";
+const STORE_ADDRESS = "Elias Abdo 115";
+const STORE_PHONE = "Tel: 099 238 454";
 const INTERNAL_USE_NOTE = "Uso interno";
 const FOOTER_MESSAGE = "Muito obrigado.";
 const DECORATIVE_CHAR = "=";
