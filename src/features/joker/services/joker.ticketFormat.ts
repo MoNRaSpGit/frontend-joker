@@ -88,8 +88,9 @@ export function buildOrderTicketLines(
 }
 
 // Encabezado del ticket. En el mostrador va completo: nombre, direccion,
-// telefono, fecha/hora, forma de pago y "Uso interno". En la comanda
-// (includeStoreDetails = false) solo va el titulo y la fecha/hora.
+// telefono, fecha/hora y forma de pago. En la comanda (includeStoreDetails
+// = false) solo va el titulo y la fecha/hora. "Uso interno" va siempre en
+// los dos tipos de ticket.
 function pushHeader(
   lines: string[],
   heading: string,
@@ -107,8 +108,8 @@ function pushHeader(
   lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
   if (includeStoreDetails) {
     lines.push(`Pago: ${JOKER_PAYMENT_METHOD_LABELS[paymentMethod]}\n`);
-    lines.push(`${INTERNAL_USE_NOTE}\n`);
   }
+  lines.push(`${INTERNAL_USE_NOTE}\n`);
 }
 
 // Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
