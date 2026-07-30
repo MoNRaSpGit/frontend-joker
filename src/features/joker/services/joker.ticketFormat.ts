@@ -87,18 +87,28 @@ export function buildOrderTicketLines(
   return lines;
 }
 
-// Encabezado comun a los dos tipos de ticket: nombre (o "COMANDA"),
-// direccion del local, fecha/hora y forma de pago.
-function pushHeader(lines: string[], heading: string, paymentMethod: JokerPaymentMethod) {
+// Encabezado del ticket. En el mostrador va completo: nombre, direccion,
+// telefono, fecha/hora, forma de pago y "Uso interno". En la comanda
+// (includeStoreDetails = false) solo va el titulo y la fecha/hora.
+function pushHeader(
+  lines: string[],
+  heading: string,
+  paymentMethod: JokerPaymentMethod,
+  includeStoreDetails: boolean
+) {
   lines.push(ALIGN_CENTER);
   lines.push(BOLD_ON, DOUBLE_SIZE_ON);
   lines.push(`${heading}\n`);
   lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-  lines.push(`${STORE_ADDRESS}\n`);
-  lines.push(`${STORE_PHONE}\n`);
+  if (includeStoreDetails) {
+    lines.push(`${STORE_ADDRESS}\n`);
+    lines.push(`${STORE_PHONE}\n`);
+  }
   lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
-  lines.push(`Pago: ${JOKER_PAYMENT_METHOD_LABELS[paymentMethod]}\n`);
-  lines.push(`${INTERNAL_USE_NOTE}\n`);
+  if (includeStoreDetails) {
+    lines.push(`Pago: ${JOKER_PAYMENT_METHOD_LABELS[paymentMethod]}\n`);
+    lines.push(`${INTERNAL_USE_NOTE}\n`);
+  }
 }
 
 // Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
@@ -129,7 +139,7 @@ function buildSingleTicketLines(
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
-  pushHeader(lines, STORE_NAME, paymentMethod);
+  pushHeader(lines, STORE_NAME, paymentMethod, true);
   pushCustomerSection(lines, orderAddress, customerName, false);
 
   let total = 0;
@@ -166,7 +176,7 @@ function buildSingleTicketLines(
   // Pie centrado, otra vez dejando que lo centre la impresora sola.
   lines.push(ALIGN_CENTER);
   lines.push(BOLD_ON);
-  lines.push(`* ${FOOTER_MESSAGE} *\n`);
+  lines.push(`${FOOTER_MESSAGE}\n`);
   lines.push(BOLD_OFF);
 
   lines.push("\n\n\n");
@@ -190,7 +200,7 @@ function buildKitchenTicketLines(
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
-  pushHeader(lines, "COMANDA", paymentMethod);
+  pushHeader(lines, "COMANDA", paymentMethod, false);
   pushCustomerSection(lines, orderAddress, customerName, true);
 
   order.forEach((item, index) => {
