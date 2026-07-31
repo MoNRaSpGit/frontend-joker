@@ -1,6 +1,6 @@
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import { getNextTicketNumber } from "./joker.ticketCounter";
-import type { JokerOrderItem, JokerPaymentMethod } from "../joker.types";
+import type { JokerAccountEntry, JokerClient, JokerOrderItem, JokerPaymentMethod } from "../joker.types";
 
 const TICKET_WIDTH = 48;
 const STORE_NAME = "EL JOKER";
@@ -246,6 +246,78 @@ function buildCompactTicketLines(
   });
 
   lines.push(`${decorativeBorder()}\n`);
+  lines.push("\n");
+
+  lines.push(ALIGN_CENTER);
+  lines.push(BOLD_ON);
+  lines.push(`${FOOTER_MESSAGE}\n`);
+  lines.push(BOLD_OFF);
+
+  lines.push("\n\n\n");
+  lines.push(ALIGN_LEFT);
+  lines.push(CUT_PAPER);
+
+  return lines;
+}
+
+// Comprobante de pago de cuenta corriente: se usa desde "Pago" e
+// "Imprimir" en el detalle del cliente. Muestra el listado de consumos
+// pendientes y el total. No usa forma de pago (no aplica aca: esto es lo
+// que se esta saldando, no un pedido nuevo).
+export function buildAccountStatementTicketLines(client: JokerClient, entries: JokerAccountEntry[]) {
+  const lines: string[] = [];
+  const total = entries.reduce((sum, entry) => sum + entry.total, 0);
+
+  lines.push(ESC_INIT);
+  lines.push(ALIGN_CENTER);
+  lines.push(BOLD_ON, DOUBLE_SIZE_ON);
+  lines.push(`${STORE_NAME}\n`);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+  lines.push(`${STORE_ADDRESS}\n`);
+  lines.push(`${STORE_PHONE}\n`);
+  lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
+  lines.push(`${INTERNAL_USE_NOTE}\n`);
+
+  lines.push(ALIGN_LEFT);
+  lines.push(`${decorativeBorder()}\n`);
+  lines.push(DOUBLE_SIZE_ON);
+  lines.push(`Cliente: ${client.name}\n`);
+  lines.push(client.address?.trim() ? `Direccion: ${client.address.trim()}\n` : "-\n");
+  lines.push(DOUBLE_SIZE_OFF);
+  lines.push(`${decorativeBorder()}\n`);
+
+  lines.push(BOLD_ON);
+  lines.push("Comprobante de cuenta corriente\n");
+  lines.push(BOLD_OFF);
+  lines.push(`${divider()}\n`);
+
+  if (entries.length) {
+    entries.forEach((entry, index) => {
+      const dateLabel = new Date(entry.createdAt).toLocaleDateString("es-UY", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      });
+      const itemsSummary = entry.items.map((item) => `${item.quantity}x ${item.productName}`).join(", ");
+
+      lines.push(`${dateLabel}\n`);
+      lines.push(`${itemsSummary}\n`);
+      lines.push(BOLD_ON);
+      lines.push(`${rightAlignedLine("", formatMoney(entry.total))}\n`);
+      lines.push(BOLD_OFF);
+
+      if (index < entries.length - 1) {
+        lines.push(`${divider()}\n`);
+      }
+    });
+  } else {
+    lines.push("Sin consumos pendientes.\n");
+  }
+
+  lines.push(`${decorativeBorder()}\n`);
+  lines.push(BOLD_ON);
+  lines.push(`${rightAlignedLine("Total ", formatMoney(total))}\n`);
+  lines.push(BOLD_OFF);
   lines.push("\n");
 
   lines.push(ALIGN_CENTER);

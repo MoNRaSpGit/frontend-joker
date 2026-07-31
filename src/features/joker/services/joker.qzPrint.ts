@@ -37,25 +37,20 @@ export async function listQzPrinters() {
   return Array.isArray(printers) ? printers : [];
 }
 
-export async function printOrderTicketByQz(
-  order: JokerOrderItem[],
-  orderAddress: string,
-  copies: number,
-  paymentMethod: JokerPaymentMethod,
-  customerName: string,
-  deliveryCost: string
-) {
+// Envia lineas ya armadas (por buildOrderTicketLines o cualquier otro
+// formato de ticket) directo a la impresora via QZ Tray. Reusable por
+// cualquier tipo de ticket, no solo pedidos.
+export async function printRawLinesByQz(lines: string[]) {
   await ensureQzConnected();
 
   if (!cachedPrinterName) {
     throw new Error("Todavia no elegiste una impresora. Toca \"Impresora\" para elegirla.");
   }
 
-  const data = buildOrderTicketLines(order, orderAddress, copies, paymentMethod, customerName, deliveryCost);
   const config = qz.configs.create(cachedPrinterName, { encoding: "CP437" });
 
   try {
-    await qz.print(config, data);
+    await qz.print(config, lines);
   } catch (error) {
     // Si la impresora guardada ya no existe (se cambio de equipo), se
     // avisa claro en vez de reintentar con una elegida al azar.
@@ -67,4 +62,16 @@ export async function printOrderTicketByQz(
   }
 
   return { printerName: cachedPrinterName };
+}
+
+export async function printOrderTicketByQz(
+  order: JokerOrderItem[],
+  orderAddress: string,
+  copies: number,
+  paymentMethod: JokerPaymentMethod,
+  customerName: string,
+  deliveryCost: string
+) {
+  const data = buildOrderTicketLines(order, orderAddress, copies, paymentMethod, customerName, deliveryCost);
+  return printRawLinesByQz(data);
 }

@@ -116,6 +116,13 @@ export function JokerHomePage() {
     setAccountEntries((current) => current.filter((entry) => entry.clientId !== clientId));
   }
 
+  // "Pago": salda la cuenta del cliente, pero a diferencia de eliminar el
+  // cliente, el cliente en si se queda (solo se borra su historial de
+  // consumos, que ya se cobro).
+  function handleSettleAccount(clientId: string) {
+    setAccountEntries((current) => current.filter((entry) => entry.clientId !== clientId));
+  }
+
   function handleRegisterAccountEntry(entry: JokerAccountEntry) {
     setAccountEntries((current) => [...current, entry]);
   }
@@ -215,6 +222,7 @@ export function JokerHomePage() {
             accountEntries={accountEntries}
             onAddClient={handleAddClient}
             onDeleteClient={handleDeleteClient}
+            onSettleAccount={handleSettleAccount}
           />
         )}
       </main>

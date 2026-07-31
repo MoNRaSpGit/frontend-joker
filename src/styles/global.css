@@ -1001,6 +1001,12 @@ textarea {
   gap: 0.6rem;
 }
 
+.joker-cc-detail-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .joker-modal-card__actions--top-gap {
   margin-top: 1rem;
 }

@@ -137,14 +137,10 @@ export async function primeUsbPrinterConnection() {
   }
 }
 
-export async function printOrderTicketByWebUsb(
-  order: JokerOrderItem[],
-  orderAddress: string,
-  copies: number,
-  paymentMethod: JokerPaymentMethod,
-  customerName: string,
-  deliveryCost: string
-) {
+// Envia lineas ya armadas (por buildOrderTicketLines o cualquier otro
+// formato de ticket) directo a la impresora USB. Reusable por cualquier
+// tipo de ticket, no solo pedidos.
+export async function printRawLinesByWebUsb(lines: string[]) {
   const usb = getUsbApi();
   if (!usb) {
     throw new Error("WebUSB no esta disponible en este navegador.");
@@ -156,26 +152,12 @@ export async function printOrderTicketByWebUsb(
     cachedUsbPrinter = await usb.requestDevice({ filters: [{ classCode: 7 }] });
   }
 
-  const sanitizedOrder = order.map((item) => ({
-    ...item,
-    productName: stripAccents(item.productName),
-    detail: stripAccents(item.detail)
-  }));
-
-  const lines = buildOrderTicketLines(
-    sanitizedOrder,
-    stripAccents(orderAddress),
-    copies,
-    paymentMethod,
-    stripAccents(customerName),
-    deliveryCost
-  );
   const { device, path } = await connectPrinter(cachedUsbPrinter);
 
   try {
     for (const line of lines) {
       if (!line) continue;
-      await device.transferOut(path.endpointNumber, encodeAsBytes(line));
+      await device.transferOut(path.endpointNumber, encodeAsBytes(stripAccents(line)));
     }
   } catch (error) {
     cachedUsbPrinter = null;
@@ -190,4 +172,16 @@ export async function printOrderTicketByWebUsb(
   }
 
   return { deviceName: device?.productName || device?.manufacturerName || "USB printer" };
+}
+
+export async function printOrderTicketByWebUsb(
+  order: JokerOrderItem[],
+  orderAddress: string,
+  copies: number,
+  paymentMethod: JokerPaymentMethod,
+  customerName: string,
+  deliveryCost: string
+) {
+  const lines = buildOrderTicketLines(order, orderAddress, copies, paymentMethod, customerName, deliveryCost);
+  return printRawLinesByWebUsb(lines);
 }
