@@ -1,4 +1,5 @@
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
+import { getNextTicketNumber } from "./joker.ticketCounter";
 import type { JokerOrderItem, JokerPaymentMethod } from "../joker.types";
 
 const TICKET_WIDTH = 48;
@@ -81,14 +82,17 @@ export function buildOrderTicketLines(
   const lines: string[] = [];
 
   if (copies === 1) {
-    return buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "COMANDA");
+    return buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "COMANDA", getNextTicketNumber());
   }
 
   lines.push(...buildSingleTicketLines(order, orderAddress, paymentMethod, customerName, deliveryCost));
 
   if (copies === 3) {
-    lines.push(...buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "COMANDA"));
-    lines.push(...buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "ARCHIVO"));
+    // Mismo numero en los dos, para que se relacionen como parte del mismo
+    // pedido (si se pidiera uno por llamada quedarian desincronizados).
+    const ticketNumber = getNextTicketNumber();
+    lines.push(...buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "COMANDA", ticketNumber));
+    lines.push(...buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "ARCHIVO", ticketNumber));
   }
 
   return lines;
@@ -209,12 +213,14 @@ function buildCompactTicketLines(
   orderAddress: string,
   paymentMethod: JokerPaymentMethod,
   customerName: string,
-  heading: string
+  heading: string,
+  ticketNumber: number
 ) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
   pushHeader(lines, heading, paymentMethod, false);
+  lines.push(`Pedido #${ticketNumber}\n`);
   pushCustomerSection(lines, orderAddress, customerName);
 
   order.forEach((item, index) => {
