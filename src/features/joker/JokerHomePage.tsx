@@ -1,8 +1,14 @@
 import { Menu, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PrinterSettingsModal } from "./components/PrinterSettingsModal";
-import { DEMO_CLIENTS } from "./joker.clients";
-import { listProducts } from "./joker.api";
+import {
+  createClient,
+  deleteClient,
+  listAccountEntries,
+  listClients,
+  listProducts,
+  settleAccount
+} from "./joker.api";
 import { getPreferredPrinterName } from "./services/joker.qzPrint";
 import { primeUsbPrinterConnection } from "./services/joker.webusbPrint";
 import type { JokerAccountEntry, JokerClient, JokerProduct } from "./joker.types";
@@ -42,9 +48,9 @@ export function JokerHomePage() {
     return window.localStorage.getItem(CUSTOMIZE_MODE_STORAGE_KEY) === "dev" ? "dev" : "cliente";
   });
 
-  // Cuenta corriente: solo en memoria por ahora (sin backend), se
-  // pierde al refrescar la pagina. Los clientes arrancan precargados.
-  const [clients, setClients] = useState<JokerClient[]>(DEMO_CLIENTS);
+  const [clients, setClients] = useState<JokerClient[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
+  const [clientsLoadError, setClientsLoadError] = useState<string | null>(null);
   const [accountEntries, setAccountEntries] = useState<JokerAccountEntry[]>([]);
 
   // Reconecta en silencio la impresora USB ya autorizada en una sesion
@@ -55,6 +61,8 @@ export function JokerHomePage() {
 
   useEffect(() => {
     void loadProducts();
+    void loadClients();
+    void loadAccountEntries();
   }, []);
 
   useEffect(() => {
@@ -83,6 +91,29 @@ export function JokerHomePage() {
     }
   }
 
+  async function loadClients() {
+    setIsLoadingClients(true);
+    setClientsLoadError(null);
+    try {
+      const result = await listClients();
+      setClients(result.items);
+    } catch (fetchError) {
+      setClientsLoadError(fetchError instanceof Error ? fetchError.message : "No se pudieron cargar los clientes.");
+    } finally {
+      setIsLoadingClients(false);
+    }
+  }
+
+  async function loadAccountEntries() {
+    try {
+      const result = await listAccountEntries();
+      setAccountEntries(result.items);
+    } catch {
+      // El desglose de "Debe" se recalcula solo la proxima vez que ande
+      // bien la conexion; no hace falta un estado de error propio aca.
+    }
+  }
+
   function goToTab(tab: JokerTab) {
     setActiveTab(tab);
     setIsMenuOpen(false);
@@ -97,34 +128,24 @@ export function JokerHomePage() {
     setIsMenuOpen(false);
   }
 
-  function handleAddClient(name: string, phone?: string, address?: string) {
-    setClients((current) => [
-      ...current,
-      {
-        id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        name,
-        phone: phone?.trim() || undefined,
-        address: address?.trim() || undefined
-      }
-    ]);
+  async function handleAddClient(name: string, phone?: string, address?: string) {
+    await createClient({ name, phone: phone?.trim() || undefined, address: address?.trim() || undefined });
+    await loadClients();
   }
 
-  // Cuenta corriente es solo en memoria (sin backend): borrar el cliente
-  // tambien borra su historial de consumos, si no quedaria huerfano.
-  function handleDeleteClient(clientId: string) {
-    setClients((current) => current.filter((client) => client.id !== clientId));
-    setAccountEntries((current) => current.filter((entry) => entry.clientId !== clientId));
+  // Borrar el cliente tambien borra su historial de consumos (FK en
+  // cascada del lado del backend), asi que hay que refrescar los dos.
+  async function handleDeleteClient(clientId: number) {
+    await deleteClient(clientId);
+    await Promise.all([loadClients(), loadAccountEntries()]);
   }
 
   // "Pago": salda la cuenta del cliente, pero a diferencia de eliminar el
   // cliente, el cliente en si se queda (solo se borra su historial de
   // consumos, que ya se cobro).
-  function handleSettleAccount(clientId: string) {
-    setAccountEntries((current) => current.filter((entry) => entry.clientId !== clientId));
-  }
-
-  function handleRegisterAccountEntry(entry: JokerAccountEntry) {
-    setAccountEntries((current) => [...current, entry]);
+  async function handleSettleAccount(clientId: number) {
+    await settleAccount(clientId);
+    await loadAccountEntries();
   }
 
   return (
@@ -209,7 +230,7 @@ export function JokerHomePage() {
             loadError={loadError}
             onReload={loadProducts}
             clients={clients}
-            onRegisterAccountEntry={handleRegisterAccountEntry}
+            onAccountEntryRegistered={loadAccountEntries}
             customizeMode={customizeMode}
           />
         ) : activeTab === "productos" ? (
@@ -219,6 +240,9 @@ export function JokerHomePage() {
         ) : (
           <CuentaCorrienteScreen
             clients={clients}
+            isLoadingClients={isLoadingClients}
+            clientsLoadError={clientsLoadError}
+            onReloadClients={loadClients}
             accountEntries={accountEntries}
             onAddClient={handleAddClient}
             onDeleteClient={handleDeleteClient}

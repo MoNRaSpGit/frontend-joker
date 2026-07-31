@@ -8,7 +8,7 @@ type PaymentMethodModalProps = {
   clients: JokerClient[];
   isSubmitting: boolean;
   onClose: () => void;
-  onConfirm: (paymentMethod: JokerPaymentMethod, clientId?: string) => void;
+  onConfirm: (paymentMethod: JokerPaymentMethod, clientId?: number) => void;
 };
 
 export function PaymentMethodModal({ clients, isSubmitting, onClose, onConfirm }: PaymentMethodModalProps) {
@@ -61,7 +61,7 @@ export function PaymentMethodModal({ clients, isSubmitting, onClose, onConfirm }
           <button
             type="button"
             className="joker-button joker-button--primary"
-            onClick={() => onConfirm(selected, needsClient ? clientId : undefined)}
+            onClick={() => onConfirm(selected, needsClient ? Number(clientId) : undefined)}
             disabled={isSubmitting || !canConfirm}
           >
             {isSubmitting ? "Imprimiendo..." : "Imprimir"}

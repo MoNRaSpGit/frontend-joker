@@ -6,10 +6,13 @@ import type { JokerAccountEntry, JokerClient } from "../joker.types";
 
 type CuentaCorrienteScreenProps = {
   clients: JokerClient[];
+  isLoadingClients: boolean;
+  clientsLoadError: string | null;
+  onReloadClients: () => void;
   accountEntries: JokerAccountEntry[];
-  onAddClient: (name: string, phone?: string, address?: string) => void;
-  onDeleteClient: (clientId: string) => void;
-  onSettleAccount: (clientId: string) => void;
+  onAddClient: (name: string, phone?: string, address?: string) => Promise<void>;
+  onDeleteClient: (clientId: number) => Promise<void>;
+  onSettleAccount: (clientId: number) => Promise<void>;
 };
 
 function formatPrice(amount: number) {
@@ -29,6 +32,9 @@ function formatEntryItems(entry: JokerAccountEntry) {
 
 export function CuentaCorrienteScreen({
   clients,
+  isLoadingClients,
+  clientsLoadError,
+  onReloadClients,
   accountEntries,
   onAddClient,
   onDeleteClient,
@@ -37,13 +43,15 @@ export function CuentaCorrienteScreen({
   const [newClientName, setNewClientName] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
   const [newClientAddress, setNewClientAddress] = useState("");
+  const [isSavingClient, setIsSavingClient] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [pendingDeleteClient, setPendingDeleteClient] = useState<JokerClient | null>(null);
+  const [isDeletingClient, setIsDeletingClient] = useState(false);
   const [isConfirmingPago, setIsConfirmingPago] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
 
-  function debtFor(clientId: string) {
+  function debtFor(clientId: number) {
     return accountEntries.filter((entry) => entry.clientId === clientId).reduce((sum, entry) => sum + entry.total, 0);
   }
 
@@ -54,22 +62,40 @@ export function CuentaCorrienteScreen({
     : [];
   const selectedClientDebt = selectedClient ? debtFor(selectedClient.id) : 0;
 
-  function handleAddClient() {
+  async function handleAddClient() {
     const trimmed = newClientName.trim();
-    if (!trimmed) return;
-    onAddClient(trimmed, newClientPhone, newClientAddress);
-    setNewClientName("");
-    setNewClientPhone("");
-    setNewClientAddress("");
+    if (!trimmed || isSavingClient) return;
+
+    setIsSavingClient(true);
+    try {
+      await onAddClient(trimmed, newClientPhone, newClientAddress);
+      setNewClientName("");
+      setNewClientPhone("");
+      setNewClientAddress("");
+      toast.success("Cliente agregado.");
+    } catch (saveError) {
+      toast.error(saveError instanceof Error ? saveError.message : "No se pudo agregar el cliente.");
+    } finally {
+      setIsSavingClient(false);
+    }
   }
 
-  function handleConfirmDeleteClient() {
+  async function handleConfirmDeleteClient() {
     if (!pendingDeleteClient) return;
-    onDeleteClient(pendingDeleteClient.id);
-    if (selectedClientId === pendingDeleteClient.id) {
-      setSelectedClientId(null);
+
+    setIsDeletingClient(true);
+    try {
+      await onDeleteClient(pendingDeleteClient.id);
+      if (selectedClientId === pendingDeleteClient.id) {
+        setSelectedClientId(null);
+      }
+      toast.success("Cliente eliminado.");
+      setPendingDeleteClient(null);
+    } catch (deleteError) {
+      toast.error(deleteError instanceof Error ? deleteError.message : "No se pudo eliminar el cliente.");
+    } finally {
+      setIsDeletingClient(false);
     }
-    setPendingDeleteClient(null);
   }
 
   // Solo imprime, no toca el historial del cliente.
@@ -95,7 +121,7 @@ export function CuentaCorrienteScreen({
     setIsPrinting(true);
     try {
       await printAccountStatementTicket(selectedClient, selectedClientEntries);
-      onSettleAccount(selectedClient.id);
+      await onSettleAccount(selectedClient.id);
       toast.success("Pago confirmado.");
       setIsConfirmingPago(false);
     } catch (printError) {
@@ -120,6 +146,7 @@ export function CuentaCorrienteScreen({
             value={newClientName}
             onChange={(event) => setNewClientName(event.target.value)}
             placeholder="Ej: Juan Perez"
+            disabled={isSavingClient}
           />
         </label>
         <label className="joker-form-field">
@@ -129,6 +156,7 @@ export function CuentaCorrienteScreen({
             value={newClientPhone}
             onChange={(event) => setNewClientPhone(event.target.value)}
             placeholder="099 000 000"
+            disabled={isSavingClient}
           />
         </label>
         <label className="joker-form-field">
@@ -138,10 +166,16 @@ export function CuentaCorrienteScreen({
             value={newClientAddress}
             onChange={(event) => setNewClientAddress(event.target.value)}
             placeholder="Ej: Av. 18 de Julio 1234"
+            disabled={isSavingClient}
           />
         </label>
-        <button type="button" className="joker-button joker-button--primary joker-button--auto" onClick={handleAddClient}>
-          Agregar cliente
+        <button
+          type="button"
+          className="joker-button joker-button--primary joker-button--auto"
+          onClick={handleAddClient}
+          disabled={isSavingClient}
+        >
+          {isSavingClient ? "Agregando..." : "Agregar cliente"}
         </button>
       </section>
 
@@ -162,10 +196,19 @@ export function CuentaCorrienteScreen({
           onChange={(event) => setSearchQuery(event.target.value)}
         />
 
-        {filteredClients.length ? (
+        {isLoadingClients ? (
+          <p className="joker-empty-state top-gap">Cargando clientes...</p>
+        ) : clientsLoadError ? (
+          <div className="top-gap">
+            <p className="joker-order-item__excluded">No se pudieron cargar los clientes: {clientsLoadError}</p>
+            <button type="button" className="joker-button joker-button--ghost" onClick={onReloadClients}>
+              Reintentar
+            </button>
+          </div>
+        ) : filteredClients.length ? (
           <ul className="joker-cc-list top-gap">
             {filteredClients.map((client) => (
-              <li key={client.id}>
+              <li key={client.id} className="joker-cc-list-row">
                 <button
                   type="button"
                   className={`joker-cc-list-item${selectedClientId === client.id ? " is-active" : ""}`}
@@ -176,25 +219,35 @@ export function CuentaCorrienteScreen({
                     {client.phone ? `${client.phone} · ` : ""}Debe {formatPrice(debtFor(client.id))}
                   </span>
                 </button>
+                <button
+                  type="button"
+                  className="joker-cc-list-item__delete"
+                  onClick={() => setPendingDeleteClient(client)}
+                  aria-label={`Eliminar ${client.name}`}
+                  title="Eliminar cliente"
+                >
+                  ×
+                </button>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="joker-empty-state">No hay clientes que coincidan.</p>
+          <p className="joker-empty-state top-gap">No hay clientes que coincidan.</p>
         )}
       </section>
 
       <section className="joker-panel joker-cc-card">
-        <div className="joker-panel__heading joker-panel__heading--row">
-          <div>
-            <p className="joker-eyebrow">Detalle</p>
-            <h2>{selectedClient ? selectedClient.name : "Estado del cliente"}</h2>
-          </div>
-          {selectedClient ? (
+        <div className="joker-panel__heading">
+          <p className="joker-eyebrow">Detalle</p>
+          <h2>{selectedClient ? selectedClient.name : "Estado del cliente"}</h2>
+        </div>
+
+        {selectedClient ? (
+          <>
             <div className="joker-cc-detail-actions">
               <button
                 type="button"
-                className="joker-button joker-button--ghost joker-button--auto"
+                className="joker-button joker-button--ghost"
                 onClick={handlePrintOnly}
                 disabled={isPrinting}
               >
@@ -202,26 +255,15 @@ export function CuentaCorrienteScreen({
               </button>
               <button
                 type="button"
-                className="joker-button joker-button--primary joker-button--auto"
+                className="joker-button joker-button--primary"
                 onClick={() => setIsConfirmingPago(true)}
                 disabled={isPrinting || selectedClientEntries.length === 0}
               >
                 Pago
               </button>
-              <button
-                type="button"
-                className="joker-button joker-button--danger joker-button--auto"
-                onClick={() => setPendingDeleteClient(selectedClient)}
-              >
-                Eliminar cliente
-              </button>
             </div>
-          ) : null}
-        </div>
 
-        {selectedClient ? (
-          <>
-            <div className="joker-cc-hero">
+            <div className="joker-cc-hero top-gap">
               <div>
                 <span className="joker-cc-hero__label">Saldo actual</span>
                 <strong className="joker-cc-hero__name">{selectedClient.name}</strong>
@@ -260,6 +302,7 @@ export function CuentaCorrienteScreen({
         <ConfirmDeleteModal
           title="Eliminar cliente"
           message={`Queres eliminar a "${pendingDeleteClient.name}"? Se borra tambien su historial de cuenta corriente.`}
+          isDeleting={isDeletingClient}
           onCancel={() => setPendingDeleteClient(null)}
           onConfirm={handleConfirmDeleteClient}
         />

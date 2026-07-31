@@ -5,9 +5,9 @@ import { OrderList } from "../components/OrderList";
 import { PaymentMethodModal } from "../components/PaymentMethodModal";
 import { ProductGrid } from "../components/ProductGrid";
 import { useJokerOrder } from "../hooks/useJokerOrder";
-import { createOrder } from "../joker.api";
+import { createAccountEntry, createOrder } from "../joker.api";
 import { printOrderTicket } from "../services/joker.print";
-import type { JokerAccountEntry, JokerClient, JokerOrderItem, JokerPaymentMethod, JokerProduct } from "../joker.types";
+import type { JokerClient, JokerOrderItem, JokerPaymentMethod, JokerProduct } from "../joker.types";
 
 type OrdersScreenProps = {
   products: JokerProduct[];
@@ -15,7 +15,7 @@ type OrdersScreenProps = {
   loadError: string | null;
   onReload: () => void;
   clients: JokerClient[];
-  onRegisterAccountEntry: (entry: JokerAccountEntry) => void;
+  onAccountEntryRegistered: () => void;
   customizeMode: "cliente" | "dev";
 };
 
@@ -25,7 +25,7 @@ export function OrdersScreen({
   loadError,
   onReload,
   clients,
-  onRegisterAccountEntry,
+  onAccountEntryRegistered,
   customizeMode
 }: OrdersScreenProps) {
   const [selectedVariants, setSelectedVariants] = useState<JokerProduct[] | null>(null);
@@ -52,7 +52,7 @@ export function OrdersScreen({
   // como resultado propio) no aparecen en el buscador de pedidos.
   const orderableProducts = products.filter((product) => product.status !== "draft" && product.productType !== "extra");
 
-  async function handleConfirmPayment(paymentMethod: JokerPaymentMethod, clientId?: string) {
+  async function handleConfirmPayment(paymentMethod: JokerPaymentMethod, clientId?: number) {
     if (!order.length || isPrinting) return;
 
     setIsPrinting(true);
@@ -69,13 +69,20 @@ export function OrdersScreen({
     setIsPaymentModalOpen(false);
 
     if (paymentMethod === "cuenta" && clientId) {
-      onRegisterAccountEntry({
-        id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        clientId,
-        createdAt: new Date().toISOString(),
-        total: order.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
-        items: order.map((item) => ({ productName: item.productName, quantity: item.quantity }))
-      });
+      try {
+        await createAccountEntry(
+          clientId,
+          order.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
+          order.map((item) => ({ productName: item.productName, quantity: item.quantity }))
+        );
+        onAccountEntryRegistered();
+      } catch (accountError) {
+        toast.error(
+          accountError instanceof Error
+            ? `El pedido se imprimio pero no se guardo en la cuenta corriente: ${accountError.message}`
+            : "El pedido se imprimio pero no se guardo en la cuenta corriente."
+        );
+      }
     }
 
     // El ticket ya salio de la impresora en este punto: si guardar el

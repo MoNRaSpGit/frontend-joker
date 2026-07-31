@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "../../shared/config/api";
-import type { JokerOrderItem, JokerOrderRecord, JokerPaymentMethod, JokerProduct } from "./joker.types";
+import type { JokerAccountEntry, JokerClient, JokerOrderItem, JokerOrderRecord, JokerPaymentMethod, JokerProduct } from "./joker.types";
 
 type ProductListResponse = {
   items: JokerProduct[];
@@ -99,5 +99,71 @@ export async function listOrders(dateLabel: string): Promise<OrderListResponse> 
 
 export async function resetOrders(): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/joker/orders`, { method: "DELETE" });
+  await readJson<{ ok: true }>(response);
+}
+
+type ClientListResponse = {
+  items: JokerClient[];
+};
+
+type ClientResponse = {
+  item: JokerClient;
+};
+
+export type JokerClientInput = {
+  name: string;
+  phone?: string;
+  address?: string;
+};
+
+export async function listClients(): Promise<ClientListResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/clients`, { cache: "no-store" });
+  return readJson<ClientListResponse>(response);
+}
+
+export async function createClient(input: JokerClientInput): Promise<ClientResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/clients`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+  return readJson<ClientResponse>(response);
+}
+
+export async function deleteClient(clientId: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/joker/clients/${clientId}`, { method: "DELETE" });
+  await readJson<{ ok: true }>(response);
+}
+
+type AccountEntryListResponse = {
+  items: JokerAccountEntry[];
+};
+
+type AccountEntryResponse = {
+  item: JokerAccountEntry;
+};
+
+export async function listAccountEntries(): Promise<AccountEntryListResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/account-entries`, { cache: "no-store" });
+  return readJson<AccountEntryListResponse>(response);
+}
+
+export async function createAccountEntry(
+  clientId: number,
+  total: number,
+  items: Array<{ productName: string; quantity: number }>
+): Promise<AccountEntryResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/account-entries`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clientId, total, items })
+  });
+  return readJson<AccountEntryResponse>(response);
+}
+
+// Salda la cuenta de un cliente (borra su historial de consumos) sin
+// eliminar al cliente.
+export async function settleAccount(clientId: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/joker/account-entries/client/${clientId}`, { method: "DELETE" });
   await readJson<{ ok: true }>(response);
 }

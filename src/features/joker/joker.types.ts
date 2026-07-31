@@ -43,15 +43,16 @@ export type JokerOrderRecord = {
 };
 
 export type JokerClient = {
-  id: string;
+  id: number;
   name: string;
-  phone?: string;
-  address?: string;
+  phone: string | null;
+  address: string | null;
+  createdAt: string;
 };
 
 export type JokerAccountEntry = {
-  id: string;
-  clientId: string;
+  id: number;
+  clientId: number;
   createdAt: string;
   total: number;
   items: Array<{ productName: string; quantity: number }>;
