@@ -41,6 +41,13 @@ function abbreviateForKitchen(productName: string) {
   );
 }
 
+// El costo de envio es opcional (no todos los pedidos son delivery): si
+// esta vacio o no es un numero valido, no se muestra en el ticket.
+function parseDeliveryCost(value: string) {
+  const parsed = Number(value.trim().replace(",", "."));
+  return value.trim() && Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 // Arma una linea con el label a la izquierda y el valor pegado a la derecha,
 // rellenando el medio con espacios.
 function rightAlignedLine(label: string, value: string) {
@@ -68,7 +75,8 @@ export function buildOrderTicketLines(
   orderAddress: string,
   copies: number,
   paymentMethod: JokerPaymentMethod,
-  customerName: string
+  customerName: string,
+  deliveryCost: string
 ) {
   const lines: string[] = [];
 
@@ -76,7 +84,7 @@ export function buildOrderTicketLines(
     return buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "COMANDA");
   }
 
-  lines.push(...buildSingleTicketLines(order, orderAddress, paymentMethod, customerName));
+  lines.push(...buildSingleTicketLines(order, orderAddress, paymentMethod, customerName, deliveryCost));
 
   if (copies === 3) {
     lines.push(...buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "COMANDA"));
@@ -114,18 +122,26 @@ function pushHeader(
 // Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
 // incluso sin nombre ni direccion (retiro en el local, sin nombre cargado).
 // En la comanda/archivo el nombre y la direccion van en letra grande
-// (emphasize), en el ticket de mostrador se quedan en tamano normal.
+// (emphasize), en el ticket de mostrador se quedan en tamano normal. El
+// costo de envio solo se muestra en el ticket de mostrador (deliveryCost
+// distinto de "" solo se pasa desde ahi) y solo si tiene un valor cargado.
 function pushCustomerSection(
   lines: string[],
   orderAddress: string,
   customerName: string,
-  emphasize: boolean
+  emphasize: boolean,
+  deliveryCost: string
 ) {
+  const parsedDeliveryCost = parseDeliveryCost(deliveryCost);
+
   lines.push(ALIGN_LEFT);
   lines.push(`${decorativeBorder()}\n`);
   if (emphasize) lines.push(DOUBLE_SIZE_ON);
   lines.push(`Cliente: ${customerName.trim() || "-"}\n`);
   lines.push(orderAddress.trim() ? `Direccion: ${orderAddress.trim()}\n` : "Retira en local\n");
+  if (parsedDeliveryCost !== null) {
+    lines.push(`Cos. env.: ${formatMoney(parsedDeliveryCost)}\n`);
+  }
   if (emphasize) lines.push(DOUBLE_SIZE_OFF);
   lines.push(`${decorativeBorder()}\n`);
 }
@@ -134,13 +150,14 @@ function buildSingleTicketLines(
   order: JokerOrderItem[],
   orderAddress: string,
   paymentMethod: JokerPaymentMethod,
-  customerName: string
+  customerName: string,
+  deliveryCost: string
 ) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
   pushHeader(lines, STORE_NAME, paymentMethod, true);
-  pushCustomerSection(lines, orderAddress, customerName, false);
+  pushCustomerSection(lines, orderAddress, customerName, false, deliveryCost);
 
   let total = 0;
 
@@ -204,7 +221,7 @@ function buildCompactTicketLines(
 
   lines.push(ESC_INIT);
   pushHeader(lines, heading, paymentMethod, false);
-  pushCustomerSection(lines, orderAddress, customerName, true);
+  pushCustomerSection(lines, orderAddress, customerName, true, "");
 
   order.forEach((item, index) => {
     const itemNumber = index + 1;

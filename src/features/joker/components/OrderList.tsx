@@ -6,6 +6,8 @@ type OrderListProps = {
   onAddressChange: (address: string) => void;
   orderCustomerName: string;
   onCustomerNameChange: (customerName: string) => void;
+  orderDeliveryCost: string;
+  onDeliveryCostChange: (deliveryCost: string) => void;
   isPrinting: boolean;
   ticketCopies: 1 | 3;
   onTicketCopiesChange: (copies: 1 | 3) => void;
@@ -24,6 +26,8 @@ export function OrderList({
   onAddressChange,
   orderCustomerName,
   onCustomerNameChange,
+  orderDeliveryCost,
+  onDeliveryCostChange,
   isPrinting,
   ticketCopies,
   onTicketCopiesChange,
@@ -57,6 +61,17 @@ export function OrderList({
           value={orderAddress}
           onChange={(event) => onAddressChange(event.target.value)}
           placeholder="Ej: Av. 18 de Julio 1234"
+        />
+      </label>
+
+      <label className="joker-form-field">
+        <span>Costo de envio (si corresponde)</span>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={orderDeliveryCost}
+          onChange={(event) => onDeliveryCostChange(event.target.value)}
+          placeholder="Ej: 150"
         />
       </label>
 

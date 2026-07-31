@@ -39,6 +39,8 @@ export function OrdersScreen({
     setOrderAddress,
     orderCustomerName,
     setOrderCustomerName,
+    orderDeliveryCost,
+    setOrderDeliveryCost,
     addItem,
     updateItem,
     removeItem,
@@ -55,7 +57,7 @@ export function OrdersScreen({
 
     setIsPrinting(true);
     try {
-      await printOrderTicket(order, orderAddress, ticketCopies, paymentMethod, orderCustomerName);
+      await printOrderTicket(order, orderAddress, ticketCopies, paymentMethod, orderCustomerName, orderDeliveryCost);
       toast.success("Pedido impreso.");
       clearOrder();
     } catch (printError) {
@@ -110,6 +112,8 @@ export function OrdersScreen({
         onAddressChange={setOrderAddress}
         orderCustomerName={orderCustomerName}
         onCustomerNameChange={setOrderCustomerName}
+        orderDeliveryCost={orderDeliveryCost}
+        onDeliveryCostChange={setOrderDeliveryCost}
         isPrinting={isPrinting}
         ticketCopies={ticketCopies}
         onTicketCopiesChange={setTicketCopies}

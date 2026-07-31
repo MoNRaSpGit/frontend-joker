@@ -147,7 +147,7 @@ export function CustomizeProductModal({
           </button>
         </div>
 
-        {hasVariants && isDev ? (
+        {hasVariants ? (
           <>
             <p className="joker-modal-card__hint">Elegí una opción</p>
             <div className="joker-category-chips">

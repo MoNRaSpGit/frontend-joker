@@ -42,7 +42,8 @@ export async function printOrderTicketByQz(
   orderAddress: string,
   copies: number,
   paymentMethod: JokerPaymentMethod,
-  customerName: string
+  customerName: string,
+  deliveryCost: string
 ) {
   await ensureQzConnected();
 
@@ -50,7 +51,7 @@ export async function printOrderTicketByQz(
     throw new Error("Todavia no elegiste una impresora. Toca \"Impresora\" para elegirla.");
   }
 
-  const data = buildOrderTicketLines(order, orderAddress, copies, paymentMethod, customerName);
+  const data = buildOrderTicketLines(order, orderAddress, copies, paymentMethod, customerName, deliveryCost);
   const config = qz.configs.create(cachedPrinterName, { encoding: "CP437" });
 
   try {
