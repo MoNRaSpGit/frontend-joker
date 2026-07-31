@@ -46,6 +46,7 @@ export type JokerClient = {
   id: string;
   name: string;
   phone?: string;
+  address?: string;
 };
 
 export type JokerAccountEntry = {

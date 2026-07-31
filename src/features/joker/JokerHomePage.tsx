@@ -97,11 +97,23 @@ export function JokerHomePage() {
     setIsMenuOpen(false);
   }
 
-  function handleAddClient(name: string, phone?: string) {
+  function handleAddClient(name: string, phone?: string, address?: string) {
     setClients((current) => [
       ...current,
-      { id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name, phone: phone?.trim() || undefined }
+      {
+        id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name,
+        phone: phone?.trim() || undefined,
+        address: address?.trim() || undefined
+      }
     ]);
+  }
+
+  // Cuenta corriente es solo en memoria (sin backend): borrar el cliente
+  // tambien borra su historial de consumos, si no quedaria huerfano.
+  function handleDeleteClient(clientId: string) {
+    setClients((current) => current.filter((client) => client.id !== clientId));
+    setAccountEntries((current) => current.filter((entry) => entry.clientId !== clientId));
   }
 
   function handleRegisterAccountEntry(entry: JokerAccountEntry) {
@@ -198,7 +210,12 @@ export function JokerHomePage() {
         ) : activeTab === "panel" ? (
           <PanelScreen />
         ) : (
-          <CuentaCorrienteScreen clients={clients} accountEntries={accountEntries} onAddClient={handleAddClient} />
+          <CuentaCorrienteScreen
+            clients={clients}
+            accountEntries={accountEntries}
+            onAddClient={handleAddClient}
+            onDeleteClient={handleDeleteClient}
+          />
         )}
       </main>
 

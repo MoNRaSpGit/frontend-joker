@@ -414,8 +414,21 @@ textarea {
   box-shadow: 0 10px 22px rgba(107, 27, 35, 0.4);
 }
 
+.joker-button--danger {
+  border: none;
+  background: var(--joker-danger);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(214, 31, 38, 0.32);
+}
+
+.joker-button--danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(214, 31, 38, 0.4);
+}
+
 .joker-button--primary:disabled,
-.joker-button--ghost:disabled {
+.joker-button--ghost:disabled,
+.joker-button--danger:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;

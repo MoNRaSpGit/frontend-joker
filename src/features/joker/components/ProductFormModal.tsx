@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 import type { JokerProductInput } from "../joker.api";
 import type { JokerProduct } from "../joker.types";
 
@@ -7,13 +8,16 @@ type ProductFormModalProps = {
   categories: string[];
   onClose: () => void;
   onSave: (input: JokerProductInput) => Promise<void>;
+  onDelete?: (product: JokerProduct) => Promise<boolean>;
 };
 
-export function ProductFormModal({ product, categories, onClose, onSave }: ProductFormModalProps) {
+export function ProductFormModal({ product, categories, onClose, onSave, onDelete }: ProductFormModalProps) {
   const [name, setName] = useState(product?.name ?? "");
   const [category, setCategory] = useState(product?.category ?? "");
   const [price, setPrice] = useState(product ? String(product.price) : "");
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isEditing = Boolean(product);
@@ -44,6 +48,21 @@ export function ProductFormModal({ product, categories, onClose, onSave }: Produ
       setError(saveError instanceof Error ? saveError.message : "No se pudo guardar el producto.");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleConfirmDelete() {
+    if (!product || !onDelete) return;
+
+    setIsDeleting(true);
+    const success = await onDelete(product);
+    setIsDeleting(false);
+
+    // Si fallo, el aviso ya salio por toast (mismo camino que el borrado
+    // desde la lista): se deja el modal de confirmacion abierto por si
+    // quiere reintentar.
+    if (success) {
+      onClose();
     }
   }
 
@@ -101,6 +120,16 @@ export function ProductFormModal({ product, categories, onClose, onSave }: Produ
           {error ? <p className="joker-order-item__excluded">{error}</p> : null}
 
           <div className="joker-modal-card__actions">
+            {isEditing && onDelete ? (
+              <button
+                type="button"
+                className="joker-button joker-button--danger"
+                onClick={() => setIsConfirmingDelete(true)}
+                disabled={isSaving}
+              >
+                Eliminar
+              </button>
+            ) : null}
             <button type="button" className="joker-button joker-button--ghost" onClick={onClose} disabled={isSaving}>
               Cancelar
             </button>
@@ -110,6 +139,16 @@ export function ProductFormModal({ product, categories, onClose, onSave }: Produ
           </div>
         </form>
       </div>
+
+      {isConfirmingDelete && product ? (
+        <ConfirmDeleteModal
+          title="Eliminar producto"
+          message={`Queres eliminar "${product.name}"?`}
+          isDeleting={isDeleting}
+          onCancel={() => setIsConfirmingDelete(false)}
+          onConfirm={handleConfirmDelete}
+        />
+      ) : null}
     </div>
   );
 }

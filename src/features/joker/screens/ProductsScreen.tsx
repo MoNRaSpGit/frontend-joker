@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { ProductFormModal } from "../components/ProductFormModal";
 import { createProduct, deleteProduct, updateProduct, type JokerProductInput } from "../joker.api";
 import type { JokerProduct } from "../joker.types";
@@ -19,6 +20,7 @@ export function ProductsScreen({ products, isLoading, loadError, onReload }: Pro
   const [editingProduct, setEditingProduct] = useState<JokerProduct | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeleteProduct, setPendingDeleteProduct] = useState<JokerProduct | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const categories = Array.from(new Set(products.map((product) => product.category))).sort();
@@ -51,20 +53,30 @@ export function ProductsScreen({ products, isLoading, loadError, onReload }: Pro
     onReload();
   }
 
-  async function handleDelete(product: JokerProduct) {
-    if (!window.confirm(`Eliminar "${product.name}" del menu?`)) {
-      return;
-    }
-
+  // Usado tanto desde el boton "x" de la lista como desde el boton
+  // "Eliminar" dentro del modal de edicion: en los dos casos el que llama
+  // se encarga de mostrar su propio modal de confirmacion antes.
+  async function handleDelete(product: JokerProduct): Promise<boolean> {
     setDeletingId(product.id);
     try {
       await deleteProduct(product.id);
       toast.success("Producto eliminado.");
       onReload();
+      return true;
     } catch (deleteError) {
       toast.error(deleteError instanceof Error ? deleteError.message : "No se pudo eliminar el producto.");
+      return false;
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleConfirmDeleteFromList() {
+    if (!pendingDeleteProduct) return;
+
+    const success = await handleDelete(pendingDeleteProduct);
+    if (success) {
+      setPendingDeleteProduct(null);
     }
   }
 
@@ -112,7 +124,7 @@ export function ProductsScreen({ products, isLoading, loadError, onReload }: Pro
                   <button
                     type="button"
                     className="joker-order-item__remove"
-                    onClick={() => handleDelete(product)}
+                    onClick={() => setPendingDeleteProduct(product)}
                     disabled={deletingId === product.id}
                     aria-label={`Eliminar ${product.name}`}
                   >
@@ -135,6 +147,17 @@ export function ProductsScreen({ products, isLoading, loadError, onReload }: Pro
           categories={categories}
           onClose={() => setIsFormOpen(false)}
           onSave={handleSave}
+          onDelete={handleDelete}
+        />
+      ) : null}
+
+      {pendingDeleteProduct ? (
+        <ConfirmDeleteModal
+          title="Eliminar producto"
+          message={`Queres eliminar "${pendingDeleteProduct.name}"?`}
+          isDeleting={deletingId === pendingDeleteProduct.id}
+          onCancel={() => setPendingDeleteProduct(null)}
+          onConfirm={handleConfirmDeleteFromList}
         />
       ) : null}
     </section>

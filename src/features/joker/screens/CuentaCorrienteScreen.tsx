@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import type { JokerAccountEntry, JokerClient } from "../joker.types";
 
 type CuentaCorrienteScreenProps = {
   clients: JokerClient[];
   accountEntries: JokerAccountEntry[];
-  onAddClient: (name: string, phone?: string) => void;
+  onAddClient: (name: string, phone?: string, address?: string) => void;
+  onDeleteClient: (clientId: string) => void;
 };
 
 function formatPrice(amount: number) {
@@ -22,11 +24,13 @@ function formatEntryItems(entry: JokerAccountEntry) {
   return entry.items.map((item) => `${item.quantity}x ${item.productName}`).join(", ");
 }
 
-export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient }: CuentaCorrienteScreenProps) {
+export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient, onDeleteClient }: CuentaCorrienteScreenProps) {
   const [newClientName, setNewClientName] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
+  const [newClientAddress, setNewClientAddress] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [pendingDeleteClient, setPendingDeleteClient] = useState<JokerClient | null>(null);
 
   function debtFor(clientId: string) {
     return accountEntries.filter((entry) => entry.clientId === clientId).reduce((sum, entry) => sum + entry.total, 0);
@@ -42,9 +46,19 @@ export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient }: 
   function handleAddClient() {
     const trimmed = newClientName.trim();
     if (!trimmed) return;
-    onAddClient(trimmed, newClientPhone);
+    onAddClient(trimmed, newClientPhone, newClientAddress);
     setNewClientName("");
     setNewClientPhone("");
+    setNewClientAddress("");
+  }
+
+  function handleConfirmDeleteClient() {
+    if (!pendingDeleteClient) return;
+    onDeleteClient(pendingDeleteClient.id);
+    if (selectedClientId === pendingDeleteClient.id) {
+      setSelectedClientId(null);
+    }
+    setPendingDeleteClient(null);
   }
 
   return (
@@ -71,6 +85,15 @@ export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient }: 
             value={newClientPhone}
             onChange={(event) => setNewClientPhone(event.target.value)}
             placeholder="099 000 000"
+          />
+        </label>
+        <label className="joker-form-field">
+          <span>Direccion</span>
+          <input
+            type="text"
+            value={newClientAddress}
+            onChange={(event) => setNewClientAddress(event.target.value)}
+            placeholder="Ej: Av. 18 de Julio 1234"
           />
         </label>
         <button type="button" className="joker-button joker-button--primary joker-button--auto" onClick={handleAddClient}>
@@ -118,9 +141,20 @@ export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient }: 
       </section>
 
       <section className="joker-panel joker-cc-card">
-        <div className="joker-panel__heading">
-          <p className="joker-eyebrow">Detalle</p>
-          <h2>{selectedClient ? selectedClient.name : "Estado del cliente"}</h2>
+        <div className="joker-panel__heading joker-panel__heading--row">
+          <div>
+            <p className="joker-eyebrow">Detalle</p>
+            <h2>{selectedClient ? selectedClient.name : "Estado del cliente"}</h2>
+          </div>
+          {selectedClient ? (
+            <button
+              type="button"
+              className="joker-button joker-button--danger joker-button--auto"
+              onClick={() => setPendingDeleteClient(selectedClient)}
+            >
+              Eliminar cliente
+            </button>
+          ) : null}
         </div>
 
         {selectedClient ? (
@@ -130,6 +164,7 @@ export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient }: 
                 <span className="joker-cc-hero__label">Saldo actual</span>
                 <strong className="joker-cc-hero__name">{selectedClient.name}</strong>
                 {selectedClient.phone ? <span className="joker-cc-hero__phone">{selectedClient.phone}</span> : null}
+                {selectedClient.address ? <span className="joker-cc-hero__phone">{selectedClient.address}</span> : null}
               </div>
               <strong className="joker-cc-hero__debt">{formatPrice(selectedClientDebt)}</strong>
             </div>
@@ -158,6 +193,15 @@ export function CuentaCorrienteScreen({ clients, accountEntries, onAddClient }: 
           <p className="joker-empty-state">Selecciona un cliente para ver su saldo.</p>
         )}
       </section>
+
+      {pendingDeleteClient ? (
+        <ConfirmDeleteModal
+          title="Eliminar cliente"
+          message={`Queres eliminar a "${pendingDeleteClient.name}"? Se borra tambien su historial de cuenta corriente.`}
+          onCancel={() => setPendingDeleteClient(null)}
+          onConfirm={handleConfirmDeleteClient}
+        />
+      ) : null}
     </div>
   );
 }
