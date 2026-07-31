@@ -70,8 +70,9 @@ export async function printOrderTicketByQz(
   copies: number,
   paymentMethod: JokerPaymentMethod,
   customerName: string,
-  deliveryCost: string
+  deliveryCost: string,
+  ticketNumber: number
 ) {
-  const data = buildOrderTicketLines(order, orderAddress, copies, paymentMethod, customerName, deliveryCost);
+  const data = buildOrderTicketLines(order, orderAddress, copies, paymentMethod, customerName, deliveryCost, ticketNumber);
   return printRawLinesByQz(data);
 }

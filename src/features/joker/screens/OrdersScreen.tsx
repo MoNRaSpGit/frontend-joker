@@ -56,12 +56,30 @@ export function OrdersScreen({
     if (!order.length || isPrinting) return;
 
     setIsPrinting(true);
+
+    // El numero de pedido lo asigna el backend (id real, secuencial), asi
+    // que primero hay que guardar el pedido y recien con ese numero armar
+    // e imprimir el ticket.
+    let savedOrderId: number;
     try {
-      await printOrderTicket(order, orderAddress, ticketCopies, paymentMethod, orderCustomerName, orderDeliveryCost);
+      const saved = await createOrder(order, orderAddress, paymentMethod);
+      savedOrderId = saved.item.id;
+    } catch (saveError) {
+      toast.error(saveError instanceof Error ? `No se pudo guardar el pedido: ${saveError.message}` : "No se pudo guardar el pedido.");
+      setIsPrinting(false);
+      return;
+    }
+
+    try {
+      await printOrderTicket(order, orderAddress, ticketCopies, paymentMethod, orderCustomerName, orderDeliveryCost, savedOrderId);
       toast.success("Pedido impreso.");
       clearOrder();
     } catch (printError) {
-      toast.error(printError instanceof Error ? `No se pudo imprimir: ${printError.message}` : "No se pudo imprimir el pedido.");
+      toast.error(
+        printError instanceof Error
+          ? `El pedido #${savedOrderId} se guardo pero no se pudo imprimir: ${printError.message}`
+          : `El pedido #${savedOrderId} se guardo pero no se pudo imprimir.`
+      );
       setIsPrinting(false);
       return;
     }
@@ -83,18 +101,6 @@ export function OrdersScreen({
             : "El pedido se imprimio pero no se guardo en la cuenta corriente."
         );
       }
-    }
-
-    // El ticket ya salio de la impresora en este punto: si guardar el
-    // pedido para el panel falla, se avisa pero no se revierte nada.
-    try {
-      await createOrder(order, orderAddress, paymentMethod);
-    } catch (saveError) {
-      toast.error(
-        saveError instanceof Error
-          ? `El pedido se imprimio pero no se guardo en el panel: ${saveError.message}`
-          : "El pedido se imprimio pero no se guardo en el panel."
-      );
     }
   }
 

@@ -180,8 +180,9 @@ export async function printOrderTicketByWebUsb(
   copies: number,
   paymentMethod: JokerPaymentMethod,
   customerName: string,
-  deliveryCost: string
+  deliveryCost: string,
+  ticketNumber: number
 ) {
-  const lines = buildOrderTicketLines(order, orderAddress, copies, paymentMethod, customerName, deliveryCost);
+  const lines = buildOrderTicketLines(order, orderAddress, copies, paymentMethod, customerName, deliveryCost, ticketNumber);
   return printRawLinesByWebUsb(lines);
 }

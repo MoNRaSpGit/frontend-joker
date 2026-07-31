@@ -1,5 +1,4 @@
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import { getNextTicketNumber } from "./joker.ticketCounter";
 import type { JokerAccountEntry, JokerClient, JokerOrderItem, JokerPaymentMethod } from "../joker.types";
 
 const TICKET_WIDTH = 48;
@@ -69,27 +68,27 @@ const CUT_PAPER = "\x1D\x56\x41\x00";
 // (cada copia ya trae su propio corte de papel al final). Con 3 copias
 // salen 3 tickets fisicos en total: 1 de mostrador, la comanda de cocina, y
 // una copia identica a la comanda pero titulada "ARCHIVO" (para que quede
-// en el local). Con 1 copia sale solo el ticket de mostrador.
+// en el local). Con 1 copia sale solo el ticket de mostrador. ticketNumber es
+// el id real del pedido que asigna el backend al guardarlo, asi que sale
+// igual en las 3 versiones del ticket.
 export function buildOrderTicketLines(
   order: JokerOrderItem[],
   orderAddress: string,
   copies: number,
   paymentMethod: JokerPaymentMethod,
   customerName: string,
-  deliveryCost: string
+  deliveryCost: string,
+  ticketNumber: number
 ) {
   const lines: string[] = [];
 
-  lines.push(...buildSingleTicketLines(order, orderAddress, paymentMethod, customerName, deliveryCost));
+  lines.push(...buildSingleTicketLines(order, orderAddress, paymentMethod, customerName, deliveryCost, ticketNumber));
 
   if (copies === 1) {
     return lines;
   }
 
   if (copies === 3) {
-    // Mismo numero en los dos, para que se relacionen como parte del mismo
-    // pedido (si se pidiera uno por llamada quedarian desincronizados).
-    const ticketNumber = getNextTicketNumber();
     lines.push(...buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "COMANDA", ticketNumber));
     lines.push(...buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "ARCHIVO", ticketNumber));
   }
@@ -140,12 +139,14 @@ function buildSingleTicketLines(
   orderAddress: string,
   paymentMethod: JokerPaymentMethod,
   customerName: string,
-  deliveryCost: string
+  deliveryCost: string,
+  ticketNumber: number
 ) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
   pushHeader(lines, STORE_NAME, paymentMethod, true);
+  lines.push(`Pedido #${ticketNumber}\n`);
   pushCustomerSection(lines, orderAddress, customerName);
 
   let total = 0;
