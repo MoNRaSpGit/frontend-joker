@@ -19,13 +19,18 @@ function formatDateTime(isoDate: string) {
   return `${dateLabel} ${timeLabel}`;
 }
 
+// El "dia" del panel arranca a las 5am hora local (no a medianoche), para
+// que quede sincronizado con el corte que usa el backend al filtrar pedidos.
+const STORE_DAY_START_HOUR = 5;
+
 function getTodayLabel() {
+  const shifted = new Date(Date.now() - STORE_DAY_START_HOUR * 60 * 60 * 1000);
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Montevideo",
     year: "numeric",
     month: "2-digit",
     day: "2-digit"
-  }).format(new Date());
+  }).format(shifted);
 }
 
 function buildPaymentTotals(orders: JokerOrderRecord[]) {
