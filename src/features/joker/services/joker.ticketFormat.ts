@@ -121,28 +121,14 @@ function pushHeader(
 
 // Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
 // incluso sin nombre ni direccion (retiro en el local, sin nombre cargado).
-// En la comanda/archivo el nombre y la direccion van en letra grande
-// (emphasize), en el ticket de mostrador se quedan en tamano normal. El
-// costo de envio solo se muestra en el ticket de mostrador (deliveryCost
-// distinto de "" solo se pasa desde ahi) y solo si tiene un valor cargado.
-function pushCustomerSection(
-  lines: string[],
-  orderAddress: string,
-  customerName: string,
-  emphasize: boolean,
-  deliveryCost: string
-) {
-  const parsedDeliveryCost = parseDeliveryCost(deliveryCost);
-
+// El nombre y la direccion van en letra grande en los dos tipos de ticket.
+function pushCustomerSection(lines: string[], orderAddress: string, customerName: string) {
   lines.push(ALIGN_LEFT);
   lines.push(`${decorativeBorder()}\n`);
-  if (emphasize) lines.push(DOUBLE_SIZE_ON);
+  lines.push(DOUBLE_SIZE_ON);
   lines.push(`Cliente: ${customerName.trim() || "-"}\n`);
   lines.push(orderAddress.trim() ? `Direccion: ${orderAddress.trim()}\n` : "Retira en local\n");
-  if (parsedDeliveryCost !== null) {
-    lines.push(`Cos. env.: ${formatMoney(parsedDeliveryCost)}\n`);
-  }
-  if (emphasize) lines.push(DOUBLE_SIZE_OFF);
+  lines.push(DOUBLE_SIZE_OFF);
   lines.push(`${decorativeBorder()}\n`);
 }
 
@@ -157,9 +143,10 @@ function buildSingleTicketLines(
 
   lines.push(ESC_INIT);
   pushHeader(lines, STORE_NAME, paymentMethod, true);
-  pushCustomerSection(lines, orderAddress, customerName, false, deliveryCost);
+  pushCustomerSection(lines, orderAddress, customerName);
 
   let total = 0;
+  const parsedDeliveryCost = parseDeliveryCost(deliveryCost);
 
   order.forEach((item, index) => {
     const itemNumber = index + 1;
@@ -179,10 +166,17 @@ function buildSingleTicketLines(
       lines.push("   Detalle: sin detalle\n");
     }
 
-    if (index < order.length - 1) {
+    if (index < order.length - 1 || parsedDeliveryCost !== null) {
       lines.push(`${divider()}\n`);
     }
   });
+
+  if (parsedDeliveryCost !== null) {
+    total += parsedDeliveryCost;
+    lines.push(BOLD_ON);
+    lines.push(`${rightAlignedLine("Costo de envio ", formatMoney(parsedDeliveryCost))}\n`);
+    lines.push(BOLD_OFF);
+  }
 
   lines.push(`${decorativeBorder()}\n`);
   lines.push(BOLD_ON);
@@ -221,7 +215,7 @@ function buildCompactTicketLines(
 
   lines.push(ESC_INIT);
   pushHeader(lines, heading, paymentMethod, false);
-  pushCustomerSection(lines, orderAddress, customerName, true, "");
+  pushCustomerSection(lines, orderAddress, customerName);
 
   order.forEach((item, index) => {
     const itemNumber = index + 1;
