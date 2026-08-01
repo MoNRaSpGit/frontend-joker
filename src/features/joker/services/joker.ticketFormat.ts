@@ -93,23 +93,19 @@ export function buildOrderTicketLines(
   }
 
   if (copies === 3) {
-    lines.push(...buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "COMANDA", ticketNumber));
-    lines.push(...buildCompactTicketLines(order, orderAddress, paymentMethod, customerName, "ARCHIVO", ticketNumber));
+    lines.push(...buildCompactTicketLines(order, orderAddress, customerName, "COMANDA", ticketNumber));
+    lines.push(...buildCompactTicketLines(order, orderAddress, customerName, "ARCHIVO", ticketNumber));
   }
 
   return lines;
 }
 
 // Encabezado del ticket. En el mostrador va completo: nombre, direccion,
-// telefono, fecha/hora, "Uso interno" y al final la forma de pago (mas
-// grande y en negrita, para que se note). En la comanda (includeStoreDetails
-// = false) solo va el titulo, la fecha/hora y "Uso interno".
-function pushHeader(
-  lines: string[],
-  heading: string,
-  paymentMethod: JokerPaymentMethod,
-  includeStoreDetails: boolean
-) {
+// telefono, fecha/hora y "Uso interno". En la comanda (includeStoreDetails
+// = false) solo va el titulo, la fecha/hora y "Uso interno". La forma de
+// pago no va aca: se muestra junto con Cliente/Direccion en
+// pushCustomerSection, para dejar el encabezado mas limpio.
+function pushHeader(lines: string[], heading: string, includeStoreDetails: boolean) {
   lines.push(ALIGN_CENTER);
   lines.push(BOLD_ON, DOUBLE_SIZE_ON);
   lines.push(`${heading}\n`);
@@ -120,23 +116,30 @@ function pushHeader(
   }
   lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
   lines.push(`${INTERNAL_USE_NOTE}\n`);
-  if (includeStoreDetails) {
-    lines.push(BOLD_ON, TALL_SIZE_ON);
-    lines.push(`Pago: ${JOKER_PAYMENT_METHOD_LABELS[paymentMethod]}\n`);
-    lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-  }
 }
 
 // Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
 // incluso sin nombre ni direccion (retiro en el local, sin nombre cargado).
 // El nombre y la direccion van en letra grande en los dos tipos de ticket.
-function pushCustomerSection(lines: string[], orderAddress: string, customerName: string) {
+// paymentMethod es opcional: solo se pasa (y se muestra) en el ticket de
+// mostrador, no en la comanda/archivo.
+function pushCustomerSection(
+  lines: string[],
+  orderAddress: string,
+  customerName: string,
+  paymentMethod?: JokerPaymentMethod
+) {
   lines.push(ALIGN_LEFT);
   lines.push(`${decorativeBorder()}\n`);
   lines.push(DOUBLE_SIZE_ON);
   lines.push(`Cliente: ${customerName.trim() || "-"}\n`);
   lines.push(orderAddress.trim() ? `Direccion: ${orderAddress.trim()}\n` : "Retira en local\n");
   lines.push(DOUBLE_SIZE_OFF);
+  if (paymentMethod) {
+    lines.push(BOLD_ON, TALL_SIZE_ON);
+    lines.push(`Pago: ${JOKER_PAYMENT_METHOD_LABELS[paymentMethod]}\n`);
+    lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+  }
   lines.push(`${decorativeBorder()}\n`);
 }
 
@@ -151,9 +154,9 @@ function buildSingleTicketLines(
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
-  pushHeader(lines, STORE_NAME, paymentMethod, true);
+  pushHeader(lines, STORE_NAME, true);
   lines.push(`Pedido #${ticketNumber}\n`);
-  pushCustomerSection(lines, orderAddress, customerName);
+  pushCustomerSection(lines, orderAddress, customerName, paymentMethod);
 
   let total = 0;
   const parsedDeliveryCost = parseDeliveryCost(deliveryCost);
@@ -217,7 +220,6 @@ function buildSingleTicketLines(
 function buildCompactTicketLines(
   order: JokerOrderItem[],
   orderAddress: string,
-  paymentMethod: JokerPaymentMethod,
   customerName: string,
   heading: string,
   ticketNumber: number
@@ -225,7 +227,7 @@ function buildCompactTicketLines(
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
-  pushHeader(lines, heading, paymentMethod, false);
+  pushHeader(lines, heading, false);
   lines.push(`Pedido #${ticketNumber}\n`);
   pushCustomerSection(lines, orderAddress, customerName);
 
