@@ -144,6 +144,7 @@ export function ProductsScreen({ products, isLoading, loadError, onReload }: Pro
       {isFormOpen ? (
         <ProductFormModal
           product={editingProduct}
+          products={products}
           categories={categories}
           onClose={() => setIsFormOpen(false)}
           onSave={handleSave}

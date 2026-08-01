@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
+import { splitVariantLabel } from "../joker.variants";
 import type { JokerProductInput } from "../joker.api";
 import type { JokerProduct } from "../joker.types";
 
 type ProductFormModalProps = {
   product: JokerProduct | null;
+  products: JokerProduct[];
   categories: string[];
   onClose: () => void;
   onSave: (input: JokerProductInput) => Promise<void>;
   onDelete?: (product: JokerProduct) => Promise<boolean>;
 };
 
-export function ProductFormModal({ product, categories, onClose, onSave, onDelete }: ProductFormModalProps) {
+export function ProductFormModal({ product, products, categories, onClose, onSave, onDelete }: ProductFormModalProps) {
   const [name, setName] = useState(product?.name ?? "");
   const [category, setCategory] = useState(product?.category ?? "");
   const [price, setPrice] = useState(product ? String(product.price) : "");
@@ -21,6 +23,22 @@ export function ProductFormModal({ product, categories, onClose, onSave, onDelet
   const [error, setError] = useState<string | null>(null);
 
   const isEditing = Boolean(product);
+
+  // Los productos con variantes (ej. "Milanesa Sola (Carne, Para 1
+  // persona)" y "... Para 2 personas)") se agrupan en una sola tarjeta
+  // solo si el texto antes del ultimo parentesis es identico entre ellos.
+  // Si este producto tiene "hermanos" agrupados con el nombre original,
+  // avisamos si el nombre editado los va a separar.
+  const originalBaseName = product ? splitVariantLabel(product.name).baseName : null;
+  const groupedSiblings = product
+    ? products.filter(
+        (candidate) =>
+          candidate.id !== product.id &&
+          candidate.category === product.category &&
+          splitVariantLabel(candidate.name).baseName === originalBaseName
+      )
+    : [];
+  const willBreakGrouping = groupedSiblings.length > 0 && splitVariantLabel(name).baseName !== originalBaseName;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -104,6 +122,14 @@ export function ProductFormModal({ product, categories, onClose, onSave, onDelet
               ))}
             </datalist>
           </label>
+
+          {willBreakGrouping ? (
+            <p className="joker-order-item__excluded">
+              ⚠️ Este producto esta agrupado con {groupedSiblings.map((sibling) => `"${sibling.name}"`).join(", ")} en una
+              sola tarjeta. Con este nombre se va a separar. Para que sigan juntos, deja igual el texto antes del ultimo
+              parentesis en los dos productos.
+            </p>
+          ) : null}
 
           <label className="joker-form-field">
             <span>Precio</span>
