@@ -6,7 +6,7 @@ const STORE_NAME = "EL JOKER";
 const STORE_ADDRESS = "Elias Abdo 115";
 const STORE_PHONE = "Tel: 099 238 454";
 const INTERNAL_USE_NOTE = "Uso interno";
-const FOOTER_MESSAGE = "Muito obrigado.";
+const FOOTER_MESSAGE = "Muito obrigado!!";
 const DECORATIVE_CHAR = "=";
 const DIVIDER_CHAR = "-";
 
@@ -62,6 +62,10 @@ const BOLD_ON = "\x1B\x45\x01";
 const BOLD_OFF = "\x1B\x45\x00";
 const DOUBLE_SIZE_ON = "\x1D\x21\x11";
 const DOUBLE_SIZE_OFF = "\x1D\x21\x00";
+// Tamaño intermedio (solo mas alto, ancho normal): la impresora solo soporta
+// tamaños fijos por multiplos, no puntos intermedios, asi que este es el
+// unico paso entre el tamaño normal y el doble (DOUBLE_SIZE_ON).
+const TALL_SIZE_ON = "\x1D\x21\x01";
 const CUT_PAPER = "\x1D\x56\x41\x00";
 
 // copies: cuantas veces se repite el ticket completo en el mismo trabajo
@@ -97,9 +101,9 @@ export function buildOrderTicketLines(
 }
 
 // Encabezado del ticket. En el mostrador va completo: nombre, direccion,
-// telefono, fecha/hora y forma de pago. En la comanda (includeStoreDetails
-// = false) solo va el titulo y la fecha/hora. "Uso interno" va siempre en
-// los dos tipos de ticket.
+// telefono, fecha/hora, "Uso interno" y al final la forma de pago (mas
+// grande y en negrita, para que se note). En la comanda (includeStoreDetails
+// = false) solo va el titulo, la fecha/hora y "Uso interno".
 function pushHeader(
   lines: string[],
   heading: string,
@@ -115,10 +119,12 @@ function pushHeader(
     lines.push(`${STORE_PHONE}\n`);
   }
   lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
-  if (includeStoreDetails) {
-    lines.push(`Pago: ${JOKER_PAYMENT_METHOD_LABELS[paymentMethod]}\n`);
-  }
   lines.push(`${INTERNAL_USE_NOTE}\n`);
+  if (includeStoreDetails) {
+    lines.push(BOLD_ON, TALL_SIZE_ON);
+    lines.push(`Pago: ${JOKER_PAYMENT_METHOD_LABELS[paymentMethod]}\n`);
+    lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+  }
 }
 
 // Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
@@ -190,9 +196,9 @@ function buildSingleTicketLines(
 
   // Pie centrado, otra vez dejando que lo centre la impresora sola.
   lines.push(ALIGN_CENTER);
-  lines.push(BOLD_ON);
+  lines.push(BOLD_ON, TALL_SIZE_ON);
   lines.push(`${FOOTER_MESSAGE}\n`);
-  lines.push(BOLD_OFF);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
 
   lines.push("\n\n\n");
   lines.push(ALIGN_LEFT);
@@ -226,7 +232,7 @@ function buildCompactTicketLines(
   order.forEach((item, index) => {
     const itemNumber = index + 1;
 
-    lines.push(BOLD_ON, DOUBLE_SIZE_ON);
+    lines.push(BOLD_ON, TALL_SIZE_ON);
     lines.push(`${itemNumber}) ${item.quantity}x ${abbreviateForKitchen(item.productName)}\n`);
     lines.push(BOLD_OFF);
 
@@ -249,9 +255,9 @@ function buildCompactTicketLines(
   lines.push("\n");
 
   lines.push(ALIGN_CENTER);
-  lines.push(BOLD_ON);
+  lines.push(BOLD_ON, TALL_SIZE_ON);
   lines.push(`${FOOTER_MESSAGE}\n`);
-  lines.push(BOLD_OFF);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
 
   lines.push("\n\n\n");
   lines.push(ALIGN_LEFT);
@@ -321,9 +327,9 @@ export function buildAccountStatementTicketLines(client: JokerClient, entries: J
   lines.push("\n");
 
   lines.push(ALIGN_CENTER);
-  lines.push(BOLD_ON);
+  lines.push(BOLD_ON, TALL_SIZE_ON);
   lines.push(`${FOOTER_MESSAGE}\n`);
-  lines.push(BOLD_OFF);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
 
   lines.push("\n\n\n");
   lines.push(ALIGN_LEFT);
