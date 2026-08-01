@@ -31,7 +31,9 @@ function formatMoney(amount: number) {
 // cuando haga falta otra.
 const KITCHEN_NAME_ABBREVIATIONS: Array<[RegExp, string]> = [
   [/\bhamburguesas?\b/gi, "Hamb."],
-  [/\bmilanesas?\b/gi, "Mila."]
+  [/\bmilanesas?\b/gi, "Mila."],
+  [/\bmuzzarella\b/gi, "Muzza."],
+  [/\bdoble\b/gi, "Dob."]
 ];
 
 function abbreviateForKitchen(productName: string) {
