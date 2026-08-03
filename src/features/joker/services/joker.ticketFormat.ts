@@ -194,9 +194,9 @@ function buildSingleTicketLines(
   }
 
   lines.push(`${decorativeBorder()}\n`);
-  lines.push(BOLD_ON);
+  lines.push(BOLD_ON, TALL_SIZE_ON);
   lines.push(`${rightAlignedLine("Total ", formatMoney(total))}\n`);
-  lines.push(BOLD_OFF);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
   lines.push("\n");
 
   // Pie centrado, otra vez dejando que lo centre la impresora sola.
