@@ -1,8 +1,40 @@
 import qz from "qz-tray";
+import { API_BASE_URL } from "../../../shared/config/api";
 import { buildOrderTicketLines } from "./joker.ticketFormat";
 import type { JokerOrderItem, JokerPaymentMethod } from "../joker.types";
 
 const PREFERRED_PRINTER_STORAGE_KEY = "joker.qz.preferredPrinter";
+
+// Firma cada conexion con el certificado del backend (ver
+// joker.service.ts#getQzCertificate / signQzRequest) para que QZ Tray
+// confie en el sitio automaticamente: sin esto, QZ muestra un cartel de
+// "Signature (missing) / Validity (invalid)" en cada conexion y no deja
+// marcar "Recordar esta accion" de forma permanente.
+let qzSecurityConfigured = false;
+
+function configureQzSecurity() {
+  if (qzSecurityConfigured) return;
+  qzSecurityConfigured = true;
+
+  qz.security.setCertificatePromise((resolve, reject) => {
+    fetch(`${API_BASE_URL}/joker/qz-certificate`)
+      .then((response) => (response.ok ? response.text() : Promise.reject(new Error("No se pudo obtener el certificado."))))
+      .then(resolve)
+      .catch(reject);
+  });
+
+  qz.security.setSignatureAlgorithm("SHA512");
+  qz.security.setSignaturePromise((toSign) => (resolve, reject) => {
+    fetch(`${API_BASE_URL}/joker/qz-sign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ toSign })
+    })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("No se pudo firmar la conexion."))))
+      .then((data: { signature: string }) => resolve(data.signature))
+      .catch(reject);
+  });
+}
 
 function readPreferredPrinter(): string | null {
   if (typeof window === "undefined") return null;
@@ -26,6 +58,7 @@ export function clearPreferredPrinterName() {
 }
 
 async function ensureQzConnected() {
+  configureQzSecurity();
   if (!qz.websocket.isActive()) {
     await qz.websocket.connect();
   }
