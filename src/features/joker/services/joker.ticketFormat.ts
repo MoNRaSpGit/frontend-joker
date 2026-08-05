@@ -65,6 +65,9 @@ const BOLD_ON = "\x1B\x45\x01";
 const BOLD_OFF = "\x1B\x45\x00";
 const DOUBLE_SIZE_ON = "\x1D\x21\x11";
 const DOUBLE_SIZE_OFF = "\x1D\x21\x00";
+// Triple tamano (ancho x3, alto x3): para el nombre/detalle de producto en
+// la comanda, un escalon mas grande que DOUBLE_SIZE_ON.
+const TRIPLE_SIZE_ON = "\x1D\x21\x22";
 // Tamaño intermedio (solo mas alto, ancho normal): la impresora solo soporta
 // tamaños fijos por multiplos, no puntos intermedios, asi que este es el
 // unico paso entre el tamaño normal y el doble (DOUBLE_SIZE_ON).
@@ -237,7 +240,7 @@ function buildCompactTicketLines(
   order.forEach((item, index) => {
     const itemNumber = index + 1;
 
-    lines.push(BOLD_ON, DOUBLE_SIZE_ON);
+    lines.push(BOLD_ON, TRIPLE_SIZE_ON);
     lines.push(`${itemNumber}) ${item.quantity}x ${abbreviateForKitchen(item.productName)}\n`);
     lines.push(BOLD_OFF);
 
