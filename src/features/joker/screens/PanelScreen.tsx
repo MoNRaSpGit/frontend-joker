@@ -89,9 +89,20 @@ export function PanelScreen() {
     window.localStorage.setItem(PROFIT_RATE_STORAGE_KEY, String(percent));
   }
 
+  // Se refresca solo cada 15s (en silencio, sin tapar la pantalla con el
+  // spinner) para que si otro dispositivo carga un pedido o cierra/abre la
+  // caja, se vea reflejado aca sin tener que salir y volver a entrar a la
+  // pestana.
   useEffect(() => {
     void loadOrders();
     void loadRegisterState();
+
+    const intervalId = window.setInterval(() => {
+      void loadOrders(true);
+      void loadRegisterState();
+    }, 15000);
+
+    return () => window.clearInterval(intervalId);
   }, []);
 
   async function loadRegisterState() {
@@ -137,16 +148,25 @@ export function PanelScreen() {
     }
   }
 
-  async function loadOrders() {
-    setIsLoading(true);
-    setLoadError(null);
+  // silent = true en las actualizaciones automaticas de fondo: no muestra
+  // el spinner de pantalla completa ni un cartel de error por un problema
+  // de red pasajero, solo actualiza los datos si la llamada sale bien.
+  async function loadOrders(silent = false) {
+    if (!silent) {
+      setIsLoading(true);
+      setLoadError(null);
+    }
     try {
       const result = await listOrders(getTodayLabel());
       setOrders(result.items);
     } catch (fetchError) {
-      setLoadError(fetchError instanceof Error ? fetchError.message : "No se pudo cargar el panel.");
+      if (!silent) {
+        setLoadError(fetchError instanceof Error ? fetchError.message : "No se pudo cargar el panel.");
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   }
 
@@ -165,7 +185,7 @@ export function PanelScreen() {
     return (
       <div className="joker-panel">
         <p className="joker-order-item__excluded">No se pudo cargar el panel: {loadError}</p>
-        <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={loadOrders}>
+        <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => loadOrders()}>
           Reintentar
         </button>
       </div>
