@@ -1,13 +1,23 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { ProfitRateModal } from "../components/ProfitRateModal";
 import { listOrders } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerOrderRecord, JokerPaymentMethod } from "../joker.types";
 
-const PROFIT_RATE = 0.3;
+const PROFIT_RATE_STORAGE_KEY = "joker.profitRatePercent";
+const DEFAULT_PROFIT_RATE_PERCENT = 30;
 const PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "cuenta"];
 const MOVEMENTS_PREVIEW_COUNT = 3;
+
+function getStoredProfitRatePercent() {
+  if (typeof window === "undefined") return DEFAULT_PROFIT_RATE_PERCENT;
+  const raw = window.localStorage.getItem(PROFIT_RATE_STORAGE_KEY);
+  if (raw === null) return DEFAULT_PROFIT_RATE_PERCENT;
+  const stored = Number(raw);
+  return Number.isFinite(stored) && stored >= 0 ? stored : DEFAULT_PROFIT_RATE_PERCENT;
+}
 
 function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
@@ -68,6 +78,13 @@ export function PanelScreen() {
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [showAllMovements, setShowAllMovements] = useState(false);
   const [isClosingRegister, setIsClosingRegister] = useState(false);
+  const [profitRatePercent, setProfitRatePercent] = useState(getStoredProfitRatePercent);
+  const [isEditingProfitRate, setIsEditingProfitRate] = useState(false);
+
+  function handleSaveProfitRate(percent: number) {
+    setProfitRatePercent(percent);
+    window.localStorage.setItem(PROFIT_RATE_STORAGE_KEY, String(percent));
+  }
 
   useEffect(() => {
     void loadOrders();
@@ -101,7 +118,7 @@ export function PanelScreen() {
   }
 
   const totalVendido = orders.reduce((sum, order) => sum + order.total, 0);
-  const ganancia = totalVendido * PROFIT_RATE;
+  const ganancia = totalVendido * (profitRatePercent / 100);
   const ranking = buildRanking(orders);
   const paymentTotals = buildPaymentTotals(orders);
   const visibleOrders = showAllMovements ? orders : orders.slice(0, MOVEMENTS_PREVIEW_COUNT);
@@ -147,10 +164,14 @@ export function PanelScreen() {
             <span className="joker-stat-tile__label">Vendido</span>
             <strong className="joker-stat-tile__value joker-amount-plus">+{formatPrice(totalVendido)}</strong>
           </div>
-          <div className="joker-stat-tile">
-            <span className="joker-stat-tile__label">Ganancia (30%)</span>
+          <button
+            type="button"
+            className="joker-stat-tile joker-stat-tile--clickable"
+            onClick={() => setIsEditingProfitRate(true)}
+          >
+            <span className="joker-stat-tile__label">Ganancia ({profitRatePercent}%)</span>
             <strong className="joker-stat-tile__value joker-amount-plus">+{formatPrice(ganancia)}</strong>
-          </div>
+          </button>
           <div className="joker-stat-tile">
             <span className="joker-stat-tile__label">Pedidos</span>
             <strong className="joker-stat-tile__value">{orders.length}</strong>
@@ -251,6 +272,14 @@ export function PanelScreen() {
           <p className="joker-empty-state">Todavia no hay pedidos impresos hoy.</p>
         )}
       </section>
+
+      {isEditingProfitRate ? (
+        <ProfitRateModal
+          currentPercent={profitRatePercent}
+          onClose={() => setIsEditingProfitRate(false)}
+          onSave={handleSaveProfitRate}
+        />
+      ) : null}
     </>
   );
 }

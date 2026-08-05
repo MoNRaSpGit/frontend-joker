@@ -693,6 +693,14 @@ textarea {
   background: #f7f7f7;
 }
 
+.joker-stat-tile--clickable {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .joker-stat-tile--efectivo {
   border-color: #2f5233;
 }
