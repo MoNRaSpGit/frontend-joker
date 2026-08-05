@@ -106,6 +106,13 @@ export async function listOrders(dateLabel: string): Promise<OrderListResponse> 
   return readJson<OrderListResponse>(response);
 }
 
+// Pedidos del periodo de caja actual (desde el ultimo cierre): lo usa el
+// Panel para que el resumen arranque de nuevo despues de cada cierre.
+export async function listCurrentPeriodOrders(): Promise<OrderListResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/orders/current-period`, { cache: "no-store" });
+  return readJson<OrderListResponse>(response);
+}
+
 export async function resetOrders(): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/joker/orders`, { method: "DELETE" });
   await readJson<{ ok: true }>(response);

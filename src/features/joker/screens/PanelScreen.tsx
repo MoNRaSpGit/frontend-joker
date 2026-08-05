@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { ProfitRateModal } from "../components/ProfitRateModal";
-import { closeRegister, getRegisterState, listOrders, openRegister } from "../joker.api";
+import { closeRegister, getRegisterState, listCurrentPeriodOrders, openRegister } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerOrderRecord, JokerPaymentMethod, JokerRegisterState } from "../joker.types";
@@ -29,20 +29,6 @@ function formatDateTime(isoDate: string) {
   const dateLabel = date.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" });
   const timeLabel = date.toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
   return `${dateLabel} ${timeLabel}`;
-}
-
-// El "dia" del panel arranca a las 5am hora local (no a medianoche), para
-// que quede sincronizado con el corte que usa el backend al filtrar pedidos.
-const STORE_DAY_START_HOUR = 5;
-
-function getTodayLabel() {
-  const shifted = new Date(Date.now() - STORE_DAY_START_HOUR * 60 * 60 * 1000);
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Montevideo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).format(shifted);
 }
 
 function buildPaymentTotals(orders: JokerOrderRecord[]) {
@@ -125,6 +111,7 @@ export function PanelScreen() {
         await printCashRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking });
         const state = await closeRegister({ totalVendido, ganancia, paymentTotals, ranking });
         setRegisterState(state);
+        await loadOrders();
         toast.success("Caja cerrada.");
         setConfirmRegisterAction(null);
       } catch (closeError) {
@@ -139,6 +126,7 @@ export function PanelScreen() {
     try {
       const state = await openRegister();
       setRegisterState(state);
+      await loadOrders();
       toast.success("Caja abierta.");
       setConfirmRegisterAction(null);
     } catch (openError) {
@@ -157,7 +145,7 @@ export function PanelScreen() {
       setLoadError(null);
     }
     try {
-      const result = await listOrders(getTodayLabel());
+      const result = await listCurrentPeriodOrders();
       setOrders(result.items);
     } catch (fetchError) {
       if (!silent) {
