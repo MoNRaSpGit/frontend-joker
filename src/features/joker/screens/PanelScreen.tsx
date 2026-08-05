@@ -319,8 +319,8 @@ export function PanelScreen() {
           title={confirmRegisterAction === "close" ? "Cerrar caja" : "Abrir caja"}
           message={
             confirmRegisterAction === "close"
-              ? "Se va a imprimir el resumen y no se van a poder cargar mas pedidos hasta que la abras de nuevo. Confirmas el cierre?"
-              : "Confirmas que queres abrir la caja?"
+              ? "Seguro que queres cerrar caja? Se va a imprimir el resumen y no se van a poder cargar mas pedidos hasta que la abras de nuevo."
+              : "Seguro que queres abrir la caja?"
           }
           confirmLabel={confirmRegisterAction === "close" ? "Cerrar caja" : "Abrir caja"}
           confirmLabelBusy={confirmRegisterAction === "close" ? "Cerrando..." : "Abriendo..."}
