@@ -1,6 +1,7 @@
 import { printOrderTicketByQz, printRawLinesByQz } from "./joker.qzPrint";
 import { printOrderTicketByWebUsb, printRawLinesByWebUsb } from "./joker.webusbPrint";
-import { buildAccountStatementTicketLines } from "./joker.ticketFormat";
+import { buildAccountStatementTicketLines, buildCashRegisterCloseTicketLines } from "./joker.ticketFormat";
+import type { JokerCashRegisterSummary } from "./joker.ticketFormat";
 import type { JokerAccountEntry, JokerClient, JokerOrderItem, JokerPaymentMethod } from "../joker.types";
 
 // Orden: WebUSB primero (impresora por USB sin ningun software de por
@@ -27,6 +28,20 @@ export async function printOrderTicket(
 
 export async function printAccountStatementTicket(client: JokerClient, entries: JokerAccountEntry[]) {
   const lines = buildAccountStatementTicketLines(client, entries);
+
+  try {
+    await printRawLinesByWebUsb(lines);
+    return { method: "webusb" as const };
+  } catch (webUsbError) {
+    console.warn("[joker-print] WebUSB fallo, probando QZ.", webUsbError);
+  }
+
+  await printRawLinesByQz(lines);
+  return { method: "qz" as const };
+}
+
+export async function printCashRegisterCloseTicket(summary: JokerCashRegisterSummary) {
+  const lines = buildCashRegisterCloseTicketLines(summary);
 
   try {
     await printRawLinesByWebUsb(lines);

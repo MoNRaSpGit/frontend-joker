@@ -1,6 +1,13 @@
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerAccountEntry, JokerClient, JokerOrderItem, JokerPaymentMethod } from "../joker.types";
 
+export type JokerCashRegisterSummary = {
+  paymentTotals: Record<JokerPaymentMethod, number>;
+  totalVendido: number;
+  ganancia: number;
+  ranking: Array<{ productName: string; quantity: number }>;
+};
+
 const TICKET_WIDTH = 48;
 const STORE_NAME = "EL JOKER";
 const STORE_ADDRESS = "Elias Abdo 115";
@@ -332,6 +339,69 @@ export function buildAccountStatementTicketLines(client: JokerClient, entries: J
   lines.push(BOLD_ON);
   lines.push(`${rightAlignedLine("Total ", formatMoney(total))}\n`);
   lines.push(BOLD_OFF);
+  lines.push("\n");
+
+  lines.push(ALIGN_CENTER);
+  lines.push(BOLD_ON, TALL_SIZE_ON);
+  lines.push(`${FOOTER_MESSAGE}\n`);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+
+  lines.push("\n\n\n");
+  lines.push(ALIGN_LEFT);
+  lines.push(CUT_PAPER);
+
+  return lines;
+}
+
+// Ticket de cierre de caja: ventas por forma de pago, total vendido,
+// ganancia estimada y el top 3 de productos mas vendidos del dia.
+export function buildCashRegisterCloseTicketLines(summary: JokerCashRegisterSummary) {
+  const lines: string[] = [];
+
+  lines.push(ESC_INIT);
+  lines.push(ALIGN_CENTER);
+  lines.push(BOLD_ON, DOUBLE_SIZE_ON);
+  lines.push(`${STORE_NAME}\n`);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+  lines.push(BOLD_ON, TALL_SIZE_ON);
+  lines.push("CIERRE DE CAJA\n");
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+  lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
+  lines.push(`${INTERNAL_USE_NOTE}\n`);
+
+  lines.push(ALIGN_LEFT);
+  lines.push(`${decorativeBorder()}\n`);
+  lines.push(BOLD_ON);
+  lines.push("Ventas por forma de pago\n");
+  lines.push(BOLD_OFF);
+  lines.push(`${divider()}\n`);
+
+  (Object.keys(JOKER_PAYMENT_METHOD_LABELS) as JokerPaymentMethod[]).forEach((method) => {
+    lines.push(`${rightAlignedLine(`${JOKER_PAYMENT_METHOD_LABELS[method]} `, formatMoney(summary.paymentTotals[method] ?? 0))}\n`);
+  });
+
+  lines.push(`${decorativeBorder()}\n`);
+  lines.push(BOLD_ON);
+  lines.push(`${rightAlignedLine("Total vendido ", formatMoney(summary.totalVendido))}\n`);
+  lines.push(`${rightAlignedLine("Ganancia ", formatMoney(summary.ganancia))}\n`);
+  lines.push(BOLD_OFF);
+  lines.push("\n");
+
+  lines.push(`${decorativeBorder()}\n`);
+  lines.push(BOLD_ON);
+  lines.push("Top 3 productos\n");
+  lines.push(BOLD_OFF);
+  lines.push(`${divider()}\n`);
+
+  if (summary.ranking.length) {
+    summary.ranking.slice(0, 3).forEach((entry, index) => {
+      lines.push(`${index + 1}) ${entry.quantity}x ${entry.productName}\n`);
+    });
+  } else {
+    lines.push("Sin ventas registradas.\n");
+  }
+
+  lines.push(`${decorativeBorder()}\n`);
   lines.push("\n");
 
   lines.push(ALIGN_CENTER);

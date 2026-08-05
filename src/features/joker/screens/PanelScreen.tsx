@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { listOrders, resetOrders } from "../joker.api";
+import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerOrderRecord, JokerPaymentMethod } from "../joker.types";
 
@@ -67,10 +68,25 @@ export function PanelScreen() {
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [isResetting, setIsResetting] = useState(false);
   const [showAllMovements, setShowAllMovements] = useState(false);
+  const [isClosingRegister, setIsClosingRegister] = useState(false);
 
   useEffect(() => {
     void loadOrders();
   }, []);
+
+  // Por ahora "Cerrar caja" solo imprime el resumen (modo prueba, todavia
+  // no bloquea nada ni marca la caja como cerrada de verdad).
+  async function handleCloseRegister() {
+    setIsClosingRegister(true);
+    try {
+      await printCashRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking });
+      toast.success("Cierre de caja impreso.");
+    } catch (printError) {
+      toast.error(printError instanceof Error ? `No se pudo imprimir: ${printError.message}` : "No se pudo imprimir el cierre de caja.");
+    } finally {
+      setIsClosingRegister(false);
+    }
+  }
 
   async function handleReset() {
     if (!window.confirm("Esto borra todos los pedidos guardados (modo pruebas). Continuar?")) {
@@ -132,14 +148,24 @@ export function PanelScreen() {
             <p className="joker-eyebrow">Hoy</p>
             <h2>Resumen del dia</h2>
           </div>
-          <button
-            type="button"
-            className="joker-button joker-button--ghost joker-button--auto"
-            onClick={handleReset}
-            disabled={isResetting}
-          >
-            {isResetting ? "Reiniciando..." : "Reiniciar panel"}
-          </button>
+          <div className="joker-panel__heading-actions">
+            <button
+              type="button"
+              className="joker-button joker-button--primary joker-button--auto"
+              onClick={handleCloseRegister}
+              disabled={isClosingRegister}
+            >
+              {isClosingRegister ? "Imprimiendo..." : "Cerrar caja"}
+            </button>
+            <button
+              type="button"
+              className="joker-button joker-button--ghost joker-button--auto"
+              onClick={handleReset}
+              disabled={isResetting}
+            >
+              {isResetting ? "Reiniciando..." : "Reiniciar panel"}
+            </button>
+          </div>
         </div>
 
         <div className="joker-stat-grid">
