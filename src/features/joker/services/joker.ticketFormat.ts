@@ -33,7 +33,8 @@ const KITCHEN_NAME_ABBREVIATIONS: Array<[RegExp, string]> = [
   [/\bhamburguesas?\b/gi, "Hamb."],
   [/\bmilanesas?\b/gi, "Mila."],
   [/\bmuzzarella\b/gi, "Muzza."],
-  [/\bdoble\b/gi, "Dob."]
+  [/\bdoble\b/gi, "Dob."],
+  [/\bpara (\d+) personas?\b/gi, "Para $1"]
 ];
 
 function abbreviateForKitchen(productName: string) {
@@ -236,7 +237,7 @@ function buildCompactTicketLines(
   order.forEach((item, index) => {
     const itemNumber = index + 1;
 
-    lines.push(BOLD_ON, TALL_SIZE_ON);
+    lines.push(BOLD_ON, DOUBLE_SIZE_ON);
     lines.push(`${itemNumber}) ${item.quantity}x ${abbreviateForKitchen(item.productName)}\n`);
     lines.push(BOLD_OFF);
 
