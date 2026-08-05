@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { listOrders, resetOrders } from "../joker.api";
+import { listOrders } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerOrderRecord, JokerPaymentMethod } from "../joker.types";
@@ -66,7 +66,6 @@ export function PanelScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
-  const [isResetting, setIsResetting] = useState(false);
   const [showAllMovements, setShowAllMovements] = useState(false);
   const [isClosingRegister, setIsClosingRegister] = useState(false);
 
@@ -85,23 +84,6 @@ export function PanelScreen() {
       toast.error(printError instanceof Error ? `No se pudo imprimir: ${printError.message}` : "No se pudo imprimir el cierre de caja.");
     } finally {
       setIsClosingRegister(false);
-    }
-  }
-
-  async function handleReset() {
-    if (!window.confirm("Esto borra todos los pedidos guardados (modo pruebas). Continuar?")) {
-      return;
-    }
-
-    setIsResetting(true);
-    try {
-      await resetOrders();
-      toast.success("Panel reiniciado.");
-      await loadOrders();
-    } catch (resetError) {
-      toast.error(resetError instanceof Error ? resetError.message : "No se pudo reiniciar el panel.");
-    } finally {
-      setIsResetting(false);
     }
   }
 
@@ -156,14 +138,6 @@ export function PanelScreen() {
               disabled={isClosingRegister}
             >
               {isClosingRegister ? "Imprimiendo..." : "Cerrar caja"}
-            </button>
-            <button
-              type="button"
-              className="joker-button joker-button--ghost joker-button--auto"
-              onClick={handleReset}
-              disabled={isResetting}
-            >
-              {isResetting ? "Reiniciando..." : "Reiniciar panel"}
             </button>
           </div>
         </div>
