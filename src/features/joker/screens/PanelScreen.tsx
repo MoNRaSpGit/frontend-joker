@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { ProfitRateModal } from "../components/ProfitRateModal";
-import { listOrders } from "../joker.api";
+import { closeRegister, getRegisterState, listOrders, openRegister } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerOrderRecord, JokerPaymentMethod } from "../joker.types";
+import type { JokerOrderRecord, JokerPaymentMethod, JokerRegisterState } from "../joker.types";
 
 const PROFIT_RATE_STORAGE_KEY = "joker.profitRatePercent";
 const DEFAULT_PROFIT_RATE_PERCENT = 30;
@@ -80,6 +81,8 @@ export function PanelScreen() {
   const [isClosingRegister, setIsClosingRegister] = useState(false);
   const [profitRatePercent, setProfitRatePercent] = useState(getStoredProfitRatePercent);
   const [isEditingProfitRate, setIsEditingProfitRate] = useState(false);
+  const [registerState, setRegisterState] = useState<JokerRegisterState | null>(null);
+  const [confirmRegisterAction, setConfirmRegisterAction] = useState<"close" | "open" | null>(null);
 
   function handleSaveProfitRate(percent: number) {
     setProfitRatePercent(percent);
@@ -88,17 +91,47 @@ export function PanelScreen() {
 
   useEffect(() => {
     void loadOrders();
+    void loadRegisterState();
   }, []);
 
-  // Por ahora "Cerrar caja" solo imprime el resumen (modo prueba, todavia
-  // no bloquea nada ni marca la caja como cerrada de verdad).
-  async function handleCloseRegister() {
+  async function loadRegisterState() {
+    try {
+      const state = await getRegisterState();
+      setRegisterState(state);
+    } catch {
+      // Si falla, el boton queda con la etiqueta por defecto (Cerrar caja);
+      // el operario puede reintentar tocandolo de nuevo.
+    }
+  }
+
+  // Cerrar imprime el resumen y marca la caja como cerrada de verdad (el
+  // proximo pedido vuelve a arrancar la numeracion en 1). Abrir solo
+  // levanta el bloqueo, sin imprimir nada.
+  async function handleConfirmRegisterAction() {
+    if (confirmRegisterAction === "close") {
+      setIsClosingRegister(true);
+      try {
+        await printCashRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking });
+        const state = await closeRegister({ totalVendido, ganancia, paymentTotals, ranking });
+        setRegisterState(state);
+        toast.success("Caja cerrada.");
+        setConfirmRegisterAction(null);
+      } catch (closeError) {
+        toast.error(closeError instanceof Error ? closeError.message : "No se pudo cerrar la caja.");
+      } finally {
+        setIsClosingRegister(false);
+      }
+      return;
+    }
+
     setIsClosingRegister(true);
     try {
-      await printCashRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking });
-      toast.success("Cierre de caja impreso.");
-    } catch (printError) {
-      toast.error(printError instanceof Error ? `No se pudo imprimir: ${printError.message}` : "No se pudo imprimir el cierre de caja.");
+      const state = await openRegister();
+      setRegisterState(state);
+      toast.success("Caja abierta.");
+      setConfirmRegisterAction(null);
+    } catch (openError) {
+      toast.error(openError instanceof Error ? openError.message : "No se pudo abrir la caja.");
     } finally {
       setIsClosingRegister(false);
     }
@@ -150,11 +183,11 @@ export function PanelScreen() {
           <div className="joker-panel__heading-actions">
             <button
               type="button"
-              className="joker-button joker-button--primary joker-button--auto"
-              onClick={handleCloseRegister}
+              className={`joker-button joker-button--auto ${registerState?.isOpen === false ? "joker-button--primary" : "joker-button--ghost"}`}
+              onClick={() => setConfirmRegisterAction(registerState?.isOpen === false ? "open" : "close")}
               disabled={isClosingRegister}
             >
-              {isClosingRegister ? "Imprimiendo..." : "Cerrar caja"}
+              {registerState?.isOpen === false ? "Abrir caja" : "Cerrar caja"}
             </button>
           </div>
         </div>
@@ -218,7 +251,7 @@ export function PanelScreen() {
                   className="joker-order-item joker-order-item--flat joker-order-item--clickable"
                   onClick={() => setExpandedOrderId((current) => (current === order.id ? null : order.id))}
                 >
-                  <strong>Pedido #{order.id}</strong>
+                  <strong>Pedido #{order.displayNumber}</strong>
                   <strong className="joker-amount-plus">+{formatPrice(order.total)}</strong>
                 </button>
 
@@ -278,6 +311,23 @@ export function PanelScreen() {
           currentPercent={profitRatePercent}
           onClose={() => setIsEditingProfitRate(false)}
           onSave={handleSaveProfitRate}
+        />
+      ) : null}
+
+      {confirmRegisterAction ? (
+        <ConfirmDeleteModal
+          title={confirmRegisterAction === "close" ? "Cerrar caja" : "Abrir caja"}
+          message={
+            confirmRegisterAction === "close"
+              ? "Se va a imprimir el resumen y no se van a poder cargar mas pedidos hasta que la abras de nuevo. Confirmas el cierre?"
+              : "Confirmas que queres abrir la caja?"
+          }
+          confirmLabel={confirmRegisterAction === "close" ? "Cerrar caja" : "Abrir caja"}
+          confirmLabelBusy={confirmRegisterAction === "close" ? "Cerrando..." : "Abriendo..."}
+          variant="primary"
+          isDeleting={isClosingRegister}
+          onCancel={() => setConfirmRegisterAction(null)}
+          onConfirm={handleConfirmRegisterAction}
         />
       ) : null}
     </>

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { CustomizeProductModal } from "../components/CustomizeProductModal";
 import { OrderList } from "../components/OrderList";
 import { PaymentMethodModal } from "../components/PaymentMethodModal";
 import { ProductGrid } from "../components/ProductGrid";
 import { useJokerOrder } from "../hooks/useJokerOrder";
-import { createAccountEntry, createOrder } from "../joker.api";
+import { createAccountEntry, createOrder, getRegisterState, openRegister } from "../joker.api";
 import { printOrderTicket } from "../services/joker.print";
 import type { JokerClient, JokerOrderItem, JokerPaymentMethod, JokerProduct } from "../joker.types";
 
@@ -33,6 +34,8 @@ export function OrdersScreen({
   const [isPrinting, setIsPrinting] = useState(false);
   const [ticketCopies, setTicketCopies] = useState<1 | 3>(3);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [pendingSale, setPendingSale] = useState<{ paymentMethod: JokerPaymentMethod; clientId?: number } | null>(null);
+  const [isOpeningRegister, setIsOpeningRegister] = useState(false);
   const {
     order,
     orderAddress,
@@ -56,14 +59,57 @@ export function OrdersScreen({
     if (!order.length || isPrinting) return;
 
     setIsPrinting(true);
+    let registerState;
+    try {
+      registerState = await getRegisterState();
+    } catch (stateError) {
+      toast.error(
+        stateError instanceof Error ? `No se pudo verificar la caja: ${stateError.message}` : "No se pudo verificar la caja."
+      );
+      setIsPrinting(false);
+      return;
+    }
 
-    // El numero de pedido lo asigna el backend (id real, secuencial), asi
-    // que primero hay que guardar el pedido y recien con ese numero armar
-    // e imprimir el ticket.
-    let savedOrderId: number;
+    // Si la caja esta cerrada, se frena aca y se le pregunta al operario si
+    // quiere abrirla; el pedido se retoma solo si confirma (ver
+    // handleConfirmOpenRegisterAndSale).
+    if (!registerState.isOpen) {
+      setIsPrinting(false);
+      setPendingSale({ paymentMethod, clientId });
+      return;
+    }
+
+    await proceedWithSale(paymentMethod, clientId);
+  }
+
+  async function handleConfirmOpenRegisterAndSale() {
+    if (!pendingSale) return;
+
+    setIsOpeningRegister(true);
+    try {
+      await openRegister();
+    } catch (openError) {
+      toast.error(openError instanceof Error ? `No se pudo abrir la caja: ${openError.message}` : "No se pudo abrir la caja.");
+      setIsOpeningRegister(false);
+      return;
+    }
+    setIsOpeningRegister(false);
+
+    const sale = pendingSale;
+    setPendingSale(null);
+    await proceedWithSale(sale.paymentMethod, sale.clientId);
+  }
+
+  async function proceedWithSale(paymentMethod: JokerPaymentMethod, clientId?: number) {
+    setIsPrinting(true);
+
+    // El numero de pedido lo asigna el backend (arranca de 1 en cada
+    // cierre de caja), asi que primero hay que guardar el pedido y recien
+    // con ese numero armar e imprimir el ticket.
+    let displayNumber: number;
     try {
       const saved = await createOrder(order, orderAddress, paymentMethod);
-      savedOrderId = saved.item.id;
+      displayNumber = saved.item.displayNumber;
     } catch (saveError) {
       toast.error(saveError instanceof Error ? `No se pudo guardar el pedido: ${saveError.message}` : "No se pudo guardar el pedido.");
       setIsPrinting(false);
@@ -71,14 +117,14 @@ export function OrdersScreen({
     }
 
     try {
-      await printOrderTicket(order, orderAddress, ticketCopies, paymentMethod, orderCustomerName, orderDeliveryCost, savedOrderId);
+      await printOrderTicket(order, orderAddress, ticketCopies, paymentMethod, orderCustomerName, orderDeliveryCost, displayNumber);
       toast.success("Pedido impreso.");
       clearOrder();
     } catch (printError) {
       toast.error(
         printError instanceof Error
-          ? `El pedido #${savedOrderId} se guardo pero no se pudo imprimir: ${printError.message}`
-          : `El pedido #${savedOrderId} se guardo pero no se pudo imprimir.`
+          ? `El pedido #${displayNumber} se guardo pero no se pudo imprimir: ${printError.message}`
+          : `El pedido #${displayNumber} se guardo pero no se pudo imprimir.`
       );
       setIsPrinting(false);
       return;
@@ -141,6 +187,19 @@ export function OrdersScreen({
           isSubmitting={isPrinting}
           onClose={() => setIsPaymentModalOpen(false)}
           onConfirm={handleConfirmPayment}
+        />
+      ) : null}
+
+      {pendingSale ? (
+        <ConfirmDeleteModal
+          title="Caja cerrada"
+          message="La caja esta cerrada. Deseas abrirla y continuar con este pedido?"
+          confirmLabel="Abrir caja y continuar"
+          confirmLabelBusy="Abriendo..."
+          variant="primary"
+          isDeleting={isOpeningRegister}
+          onCancel={() => setPendingSale(null)}
+          onConfirm={handleConfirmOpenRegisterAndSale}
         />
       ) : null}
 

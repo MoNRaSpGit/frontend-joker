@@ -1,5 +1,14 @@
 import { API_BASE_URL } from "../../shared/config/api";
-import type { JokerAccountEntry, JokerClient, JokerOrderItem, JokerOrderRecord, JokerPaymentMethod, JokerProduct } from "./joker.types";
+import type {
+  JokerAccountEntry,
+  JokerClient,
+  JokerOrderItem,
+  JokerOrderRecord,
+  JokerPaymentMethod,
+  JokerProduct,
+  JokerRegisterCloseSummary,
+  JokerRegisterState
+} from "./joker.types";
 
 type ProductListResponse = {
   items: JokerProduct[];
@@ -166,4 +175,23 @@ export async function createAccountEntry(
 export async function settleAccount(clientId: number): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/joker/account-entries/client/${clientId}`, { method: "DELETE" });
   await readJson<{ ok: true }>(response);
+}
+
+export async function getRegisterState(): Promise<JokerRegisterState> {
+  const response = await fetch(`${API_BASE_URL}/joker/register/state`, { cache: "no-store" });
+  return readJson<JokerRegisterState>(response);
+}
+
+export async function openRegister(): Promise<JokerRegisterState> {
+  const response = await fetch(`${API_BASE_URL}/joker/register/open`, { method: "POST" });
+  return readJson<JokerRegisterState>(response);
+}
+
+export async function closeRegister(summary: JokerRegisterCloseSummary): Promise<JokerRegisterState> {
+  const response = await fetch(`${API_BASE_URL}/joker/register/close`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(summary)
+  });
+  return readJson<JokerRegisterState>(response);
 }

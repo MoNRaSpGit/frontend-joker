@@ -29,6 +29,7 @@ export const JOKER_PAYMENT_METHOD_LABELS: Record<JokerPaymentMethod, string> = {
 
 export type JokerOrderRecord = {
   id: number;
+  displayNumber: number;
   total: number;
   address: string;
   paymentMethod: JokerPaymentMethod;
@@ -40,6 +41,18 @@ export type JokerOrderRecord = {
     detail?: string;
   }>;
   createdAt: string;
+};
+
+export type JokerRegisterState = {
+  isOpen: boolean;
+  lastClosedAt: string | null;
+};
+
+export type JokerRegisterCloseSummary = {
+  totalVendido: number;
+  ganancia: number;
+  paymentTotals: Record<JokerPaymentMethod, number>;
+  ranking: Array<{ productName: string; quantity: number }>;
 };
 
 export type JokerClient = {
