@@ -10,7 +10,6 @@ import {
   settleAccount
 } from "./joker.api";
 import { getPreferredPrinterName } from "./services/joker.qzPrint";
-import { primeUsbPrinterConnection } from "./services/joker.webusbPrint";
 import type { JokerAccountEntry, JokerClient, JokerProduct } from "./joker.types";
 import { CuentaCorrienteScreen } from "./screens/CuentaCorrienteScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
@@ -52,12 +51,6 @@ export function JokerHomePage() {
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [clientsLoadError, setClientsLoadError] = useState<string | null>(null);
   const [accountEntries, setAccountEntries] = useState<JokerAccountEntry[]>([]);
-
-  // Reconecta en silencio la impresora USB ya autorizada en una sesion
-  // anterior (no pide permiso de nuevo, solo la vuelve a encontrar).
-  useEffect(() => {
-    void primeUsbPrinterConnection().catch(() => {});
-  }, []);
 
   useEffect(() => {
     void loadProducts();
