@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
+import { getAccountSettlements } from "../joker.api";
 import { printAccountStatementTicket } from "../services/joker.print";
-import type { JokerAccountEntry, JokerClient } from "../joker.types";
+import type { JokerAccountEntry, JokerAccountSettlement, JokerClient } from "../joker.types";
 
 type CuentaCorrienteScreenProps = {
   clients: JokerClient[];
@@ -50,6 +51,39 @@ export function CuentaCorrienteScreen({
   const [isDeletingClient, setIsDeletingClient] = useState(false);
   const [isConfirmingPago, setIsConfirmingPago] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [showSettlements, setShowSettlements] = useState(false);
+  const [settlements, setSettlements] = useState<JokerAccountSettlement[]>([]);
+  const [isLoadingSettlements, setIsLoadingSettlements] = useState(false);
+  const [settlementsError, setSettlementsError] = useState<string | null>(null);
+
+  // Al cambiar de cliente se cierra/limpia el historial de pagos anteriores
+  // (es bajo demanda, no se precarga para cada cliente de la lista).
+  useEffect(() => {
+    setShowSettlements(false);
+    setSettlements([]);
+    setSettlementsError(null);
+  }, [selectedClientId]);
+
+  async function handleToggleSettlements() {
+    if (!selectedClient) return;
+
+    if (showSettlements) {
+      setShowSettlements(false);
+      return;
+    }
+
+    setShowSettlements(true);
+    setIsLoadingSettlements(true);
+    setSettlementsError(null);
+    try {
+      const result = await getAccountSettlements(selectedClient.id);
+      setSettlements(result.items);
+    } catch (loadError) {
+      setSettlementsError(loadError instanceof Error ? loadError.message : "No se pudo cargar el historial de pagos.");
+    } finally {
+      setIsLoadingSettlements(false);
+    }
+  }
 
   function debtFor(clientId: number) {
     return accountEntries.filter((entry) => entry.clientId === clientId).reduce((sum, entry) => sum + entry.total, 0);
@@ -292,6 +326,39 @@ export function CuentaCorrienteScreen({
             ) : (
               <p className="joker-empty-state">Este cliente todavia no tiene consumos en cuenta.</p>
             )}
+
+            <div className="joker-panel__heading joker-panel__heading--row top-gap">
+              <p className="joker-eyebrow">Respaldo</p>
+              <button type="button" className="joker-mini-button" onClick={handleToggleSettlements}>
+                {showSettlements ? "Ocultar pagos anteriores" : "Ver pagos anteriores"}
+              </button>
+            </div>
+
+            {showSettlements ? (
+              isLoadingSettlements ? (
+                <p className="joker-empty-state">Cargando historial...</p>
+              ) : settlementsError ? (
+                <p className="joker-order-item__excluded">{settlementsError}</p>
+              ) : settlements.length ? (
+                <ul className="joker-cc-history">
+                  {settlements.map((settlement) => (
+                    <li key={settlement.id} className="joker-cc-history-row">
+                      <div className="joker-cc-history-row__head">
+                        <strong>{formatPrice(settlement.total)}</strong>
+                        <span className="joker-order-item__excluded">
+                          {settlement.reason === "pago" ? "Pagado" : "Cliente eliminado"} · {formatDateTime(settlement.settledAt)}
+                        </span>
+                      </div>
+                      <p className="joker-cc-history-row__items">
+                        {settlement.items.map((item) => `${item.quantity}x ${item.productName}`).join(", ")}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="joker-empty-state">Este cliente todavia no tiene pagos anteriores.</p>
+              )
+            ) : null}
           </>
         ) : (
           <p className="joker-empty-state">Selecciona un cliente para ver su saldo.</p>

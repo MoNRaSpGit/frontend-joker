@@ -75,3 +75,17 @@ export type JokerAccountEntry = {
   total: number;
   items: Array<{ productName: string; quantity: number }>;
 };
+
+// Copia permanente de un consumo ya pagado (o de un cliente eliminado con
+// consumos pendientes), para poder reclamar/verificar despues.
+export type JokerAccountSettlement = {
+  id: number;
+  clientId: number;
+  clientName: string;
+  entryId: number;
+  total: number;
+  items: Array<{ productName: string; quantity: number }>;
+  entryCreatedAt: string;
+  reason: "pago" | "cliente_eliminado";
+  settledAt: string;
+};

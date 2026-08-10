@@ -1,6 +1,7 @@
 import { API_BASE_URL } from "../../shared/config/api";
 import type {
   JokerAccountEntry,
+  JokerAccountSettlement,
   JokerClient,
   JokerOrderItem,
   JokerOrderRecord,
@@ -182,6 +183,17 @@ export async function createAccountEntry(
 export async function settleAccount(clientId: number): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/joker/account-entries/client/${clientId}`, { method: "DELETE" });
   await readJson<{ ok: true }>(response);
+}
+
+type AccountSettlementListResponse = {
+  items: JokerAccountSettlement[];
+};
+
+// Respaldo permanente de consumos ya pagados (o de clientes eliminados con
+// deuda pendiente), para reclamos ("el cliente dice que no debia eso").
+export async function getAccountSettlements(clientId: number): Promise<AccountSettlementListResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/account-settlements/client/${clientId}`, { cache: "no-store" });
+  return readJson<AccountSettlementListResponse>(response);
 }
 
 export async function getRegisterState(): Promise<JokerRegisterState> {
