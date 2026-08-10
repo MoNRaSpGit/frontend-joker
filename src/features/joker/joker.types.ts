@@ -18,6 +18,11 @@ export type JokerOrderItem = {
   quantity: number;
 };
 
+// Producto de prueba (precio $0) para probar la impresora. Se filtra del
+// panel (movimientos, ganancia, ranking, etc.) para que no ensucie los
+// resultados reales de venta.
+export const JOKER_TEST_PRODUCT_NAME = "ImprimirPrueba";
+
 export type JokerPaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "cuenta";
 
 export const JOKER_PAYMENT_METHOD_LABELS: Record<JokerPaymentMethod, string> = {
