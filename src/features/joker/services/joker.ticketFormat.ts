@@ -150,7 +150,11 @@ function pushCustomerSection(
   lines.push(DOUBLE_SIZE_OFF);
   if (paymentMethod) {
     lines.push(BOLD_ON, TALL_SIZE_ON);
-    lines.push(`Pago: ${JOKER_PAYMENT_METHOD_LABELS[paymentMethod]}\n`);
+    // El cliente pidio que en el ticket impreso diga "A cuenta" en vez de
+    // "Cuenta" para ese metodo de pago (el resto de las pantallas siguen
+    // usando JOKER_PAYMENT_METHOD_LABELS tal cual).
+    const ticketLabel = paymentMethod === "cuenta" ? "A cuenta" : JOKER_PAYMENT_METHOD_LABELS[paymentMethod];
+    lines.push(`Pago: ${ticketLabel}\n`);
     lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
   }
   lines.push(`${decorativeBorder()}\n`);
