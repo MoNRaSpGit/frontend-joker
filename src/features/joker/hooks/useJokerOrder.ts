@@ -6,6 +6,7 @@ export function useJokerOrder() {
   const [orderAddress, setOrderAddress] = useState("");
   const [orderCustomerName, setOrderCustomerName] = useState("");
   const [orderDeliveryCost, setOrderDeliveryCost] = useState("");
+  const [orderNote, setOrderNote] = useState("");
 
   function addItem(product: JokerProduct, detail: string, quantity: number) {
     const lineId = `${product.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -38,6 +39,7 @@ export function useJokerOrder() {
     setOrderAddress("");
     setOrderCustomerName("");
     setOrderDeliveryCost("");
+    setOrderNote("");
   }
 
   return {
@@ -48,6 +50,8 @@ export function useJokerOrder() {
     setOrderCustomerName,
     orderDeliveryCost,
     setOrderDeliveryCost,
+    orderNote,
+    setOrderNote,
     addItem,
     updateItem,
     removeItem,

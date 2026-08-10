@@ -8,6 +8,8 @@ type OrderListProps = {
   onCustomerNameChange: (customerName: string) => void;
   orderDeliveryCost: string;
   onDeliveryCostChange: (deliveryCost: string) => void;
+  orderNote: string;
+  onNoteChange: (note: string) => void;
   isPrinting: boolean;
   ticketCopies: 1 | 3;
   onTicketCopiesChange: (copies: 1 | 3) => void;
@@ -28,6 +30,8 @@ export function OrderList({
   onCustomerNameChange,
   orderDeliveryCost,
   onDeliveryCostChange,
+  orderNote,
+  onNoteChange,
   isPrinting,
   ticketCopies,
   onTicketCopiesChange,
@@ -72,6 +76,16 @@ export function OrderList({
           value={orderDeliveryCost}
           onChange={(event) => onDeliveryCostChange(event.target.value)}
           placeholder="Ej: 150"
+        />
+      </label>
+
+      <label className="joker-form-field">
+        <span>Nota (solo sale en el ticket de mostrador)</span>
+        <input
+          type="text"
+          value={orderNote}
+          onChange={(event) => onNoteChange(event.target.value)}
+          placeholder="Ej: Pedido para las 9:30"
         />
       </label>
 

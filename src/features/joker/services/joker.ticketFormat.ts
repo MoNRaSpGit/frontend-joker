@@ -95,11 +95,14 @@ export function buildOrderTicketLines(
   paymentMethod: JokerPaymentMethod,
   customerName: string,
   deliveryCost: string,
-  ticketNumber: number
+  ticketNumber: number,
+  note: string
 ) {
   const lines: string[] = [];
 
-  lines.push(...buildSingleTicketLines(order, orderAddress, paymentMethod, customerName, deliveryCost, ticketNumber));
+  lines.push(
+    ...buildSingleTicketLines(order, orderAddress, paymentMethod, customerName, deliveryCost, ticketNumber, note)
+  );
 
   if (copies === 1) {
     return lines;
@@ -134,13 +137,16 @@ function pushHeader(lines: string[], heading: string, includeStoreDetails: boole
 // Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
 // incluso sin nombre ni direccion (retiro en el local, sin nombre cargado).
 // El nombre y la direccion van en letra grande en los dos tipos de ticket.
-// paymentMethod es opcional: solo se pasa (y se muestra) en el ticket de
-// mostrador, no en la comanda/archivo.
+// paymentMethod y note son opcionales: solo se pasan (y se muestran) en el
+// ticket de mostrador, no en la comanda/archivo. note es distinto de
+// "Detalle" (que es por producto, ej "sin lechuga"): es una nota general del
+// pedido, ej "Pedido para las 9:30" o "Casa gris pegada al almacen".
 function pushCustomerSection(
   lines: string[],
   orderAddress: string,
   customerName: string,
-  paymentMethod?: JokerPaymentMethod
+  paymentMethod?: JokerPaymentMethod,
+  note?: string
 ) {
   lines.push(ALIGN_LEFT);
   lines.push(`${decorativeBorder()}\n`);
@@ -157,6 +163,11 @@ function pushCustomerSection(
     lines.push(`Pago: ${ticketLabel}\n`);
     lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
   }
+  if (note && note.trim()) {
+    lines.push(BOLD_ON, TALL_SIZE_ON);
+    lines.push(`Nota: ${note.trim()}\n`);
+    lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+  }
   lines.push(`${decorativeBorder()}\n`);
 }
 
@@ -166,14 +177,15 @@ function buildSingleTicketLines(
   paymentMethod: JokerPaymentMethod,
   customerName: string,
   deliveryCost: string,
-  ticketNumber: number
+  ticketNumber: number,
+  note: string
 ) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
   pushHeader(lines, STORE_NAME, true);
   lines.push(`Pedido #${ticketNumber}\n`);
-  pushCustomerSection(lines, orderAddress, customerName, paymentMethod);
+  pushCustomerSection(lines, orderAddress, customerName, paymentMethod, note);
 
   let total = 0;
   const parsedDeliveryCost = parseDeliveryCost(deliveryCost);

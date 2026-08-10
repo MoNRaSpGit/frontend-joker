@@ -10,9 +10,10 @@ export async function printOrderTicket(
   paymentMethod: JokerPaymentMethod,
   customerName: string,
   deliveryCost: string,
-  ticketNumber: number
+  ticketNumber: number,
+  note: string
 ) {
-  await printOrderTicketByQz(order, orderAddress, copies, paymentMethod, customerName, deliveryCost, ticketNumber);
+  await printOrderTicketByQz(order, orderAddress, copies, paymentMethod, customerName, deliveryCost, ticketNumber, note);
   return { method: "qz" as const };
 }
 
