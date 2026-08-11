@@ -89,3 +89,19 @@ export type JokerAccountSettlement = {
   reason: "pago" | "cliente_eliminado";
   settledAt: string;
 };
+
+export type JokerStockItem = {
+  id: number;
+  name: string;
+  unit: string;
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type JokerProductRecipeLine = {
+  stockItemId: number;
+  stockItemName: string;
+  unit: string;
+  quantityPerUnit: number;
+};

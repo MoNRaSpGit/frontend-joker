@@ -7,8 +7,10 @@ import type {
   JokerOrderRecord,
   JokerPaymentMethod,
   JokerProduct,
+  JokerProductRecipeLine,
   JokerRegisterCloseSummary,
-  JokerRegisterState
+  JokerRegisterState,
+  JokerStockItem
 } from "./joker.types";
 
 type ProductListResponse = {
@@ -194,6 +196,75 @@ type AccountSettlementListResponse = {
 export async function getAccountSettlements(clientId: number): Promise<AccountSettlementListResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/account-settlements/client/${clientId}`, { cache: "no-store" });
   return readJson<AccountSettlementListResponse>(response);
+}
+
+type StockItemListResponse = {
+  items: JokerStockItem[];
+};
+
+type StockItemResponse = {
+  item: JokerStockItem;
+};
+
+export async function listStockItems(): Promise<StockItemListResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/stock-items`, { cache: "no-store" });
+  return readJson<StockItemListResponse>(response);
+}
+
+export async function createStockItem(name: string, unit: string, quantity: number): Promise<StockItemResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/stock-items`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, unit, quantity })
+  });
+  return readJson<StockItemResponse>(response);
+}
+
+export async function restockItem(stockItemId: number, quantity: number): Promise<StockItemResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/stock-items/${stockItemId}/restock`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ quantity })
+  });
+  return readJson<StockItemResponse>(response);
+}
+
+export async function deleteStockItem(stockItemId: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/joker/stock-items/${stockItemId}`, { method: "DELETE" });
+  await readJson<{ ok: true }>(response);
+}
+
+type ProductRecipeResponse = {
+  items: JokerProductRecipeLine[];
+};
+
+export async function getProductRecipe(productId: number): Promise<ProductRecipeResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/products/${productId}/recipe`, { cache: "no-store" });
+  return readJson<ProductRecipeResponse>(response);
+}
+
+export async function setProductRecipe(
+  productId: number,
+  items: Array<{ stockItemId: number; quantityPerUnit: number }>
+): Promise<ProductRecipeResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/products/${productId}/recipe`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items })
+  });
+  return readJson<ProductRecipeResponse>(response);
+}
+
+export async function bulkApplyRecipe(
+  category: string,
+  items: Array<{ stockItemId: number; quantityPerUnit: number }>
+): Promise<{ affectedProducts: number }> {
+  const response = await fetch(`${API_BASE_URL}/joker/recipes/bulk-apply`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ category, items })
+  });
+  return readJson<{ affectedProducts: number }>(response);
 }
 
 export async function getRegisterState(): Promise<JokerRegisterState> {
