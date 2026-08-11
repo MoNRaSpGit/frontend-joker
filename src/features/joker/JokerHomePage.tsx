@@ -30,6 +30,11 @@ const TAB_TITLES: Record<JokerTab, string> = {
   stock: "Stock"
 };
 
+// El modulo de Stock todavia no esta listo para que lo toque el cliente:
+// se prueba solo en local (npm run dev), en el build de produccion
+// (github-pages, el que usa "npm run deploy") queda oculto.
+const isStockFeatureVisible = import.meta.env.MODE !== "github-pages";
+
 export function JokerHomePage() {
   const [activeTab, setActiveTab] = useState<JokerTab>("pedidos");
   const [products, setProducts] = useState<JokerProduct[]>([]);
@@ -197,13 +202,15 @@ export function JokerHomePage() {
                 >
                   Cuenta corriente
                 </button>
-                <button
-                  type="button"
-                  className={`joker-user-dropdown-item${activeTab === "stock" ? " is-active" : ""}`}
-                  onClick={() => goToTab("stock")}
-                >
-                  Stock
-                </button>
+                {isStockFeatureVisible ? (
+                  <button
+                    type="button"
+                    className={`joker-user-dropdown-item${activeTab === "stock" ? " is-active" : ""}`}
+                    onClick={() => goToTab("stock")}
+                  >
+                    Stock
+                  </button>
+                ) : null}
                 <div className="joker-user-dropdown-divider" />
                 <button type="button" className="joker-user-dropdown-item" onClick={toggleCustomizeMode}>
                   ⚙️ Modo: {customizeMode === "dev" ? "Dev" : "Cliente"}
@@ -250,9 +257,9 @@ export function JokerHomePage() {
             onDeleteClient={handleDeleteClient}
             onSettleAccount={handleSettleAccount}
           />
-        ) : (
+        ) : isStockFeatureVisible ? (
           <StockScreen products={products} />
-        )}
+        ) : null}
       </main>
 
       {isPrinterModalOpen ? (
