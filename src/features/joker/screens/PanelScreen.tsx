@@ -279,12 +279,15 @@ export function PanelScreen({ products }: PanelScreenProps) {
               <li key={order.id} className="joker-order-item joker-order-item--stacked">
                 <button
                   type="button"
-                  className="joker-order-item joker-order-item--flat joker-order-item--clickable"
+                  className={`joker-order-item joker-order-item--flat joker-order-item--clickable${!order.items.length ? " joker-order-item--cancelled" : ""}`}
                   onClick={() => setExpandedOrderId((current) => (current === order.id ? null : order.id))}
                   onDoubleClick={() => setEditingOrder(order)}
                   title="Doble click para editar el pedido"
                 >
-                  <strong>Pedido #{order.displayNumber}</strong>
+                  <strong>
+                    Pedido #{order.displayNumber}
+                    {!order.items.length ? <span className="joker-cancelled-badge">Cancelado</span> : null}
+                  </strong>
                   <strong className="joker-amount-plus">+{formatPrice(order.total)}</strong>
                 </button>
 
@@ -295,15 +298,21 @@ export function PanelScreen({ products }: PanelScreenProps) {
                         {formatDateTime(order.createdAt)} · {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}
                       </span>
                     </li>
-                    {order.items.map((item, index) => (
-                      <li key={`${order.id}-${index}`}>
-                        <span className="joker-qty-badge">{item.quantity}</span>
-                        <div>
-                          <strong>{item.productName}</strong>
-                          {item.detail ? <p className="joker-order-item__excluded">{item.detail}</p> : null}
-                        </div>
+                    {order.items.length ? (
+                      order.items.map((item, index) => (
+                        <li key={`${order.id}-${index}`}>
+                          <span className="joker-qty-badge">{item.quantity}</span>
+                          <div>
+                            <strong>{item.productName}</strong>
+                            {item.detail ? <p className="joker-order-item__excluded">{item.detail}</p> : null}
+                          </div>
+                        </li>
+                      ))
+                    ) : (
+                      <li>
+                        <p className="joker-order-item__excluded">Este pedido se cargó y después se canceló entero. No suma nada.</p>
                       </li>
-                    ))}
+                    )}
                     <li>
                       <button
                         type="button"

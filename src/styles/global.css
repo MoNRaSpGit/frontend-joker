@@ -763,6 +763,25 @@ textarea {
   margin-left: auto;
 }
 
+.joker-order-item--cancelled {
+  opacity: 0.55;
+}
+
+.joker-cancelled-badge {
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 .form-inline {
   display: flex;
   align-items: flex-end;
