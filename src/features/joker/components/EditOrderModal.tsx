@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
+import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerOrderRecord } from "../joker.types";
 
 type EditableLine = {
@@ -21,11 +22,19 @@ function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
 }
 
+function formatDateTime(isoDate: string) {
+  const date = new Date(isoDate);
+  const dateLabel = date.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" });
+  const timeLabel = date.toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
+  return `${dateLabel} ${timeLabel}`;
+}
+
 export function EditOrderModal({ order, isSaving, onClose, onSave }: EditOrderModalProps) {
   const [lines, setLines] = useState<EditableLine[]>(() => order.items.map((item) => ({ ...item })));
   const [confirmingCancelAll, setConfirmingCancelAll] = useState(false);
 
   const total = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+  const originalTotal = order.total;
 
   function adjustQuantity(productId: number, delta: number) {
     setLines((current) =>
@@ -55,25 +64,31 @@ export function EditOrderModal({ order, isSaving, onClose, onSave }: EditOrderMo
   return (
     <>
       <div className="joker-modal-overlay" role="dialog" aria-modal="true" aria-label={`Editar pedido #${order.displayNumber}`}>
-        <div className="joker-modal-card">
-          <div className="joker-modal-card__header">
-            <h2>Editar pedido #{order.displayNumber}</h2>
+        <div className="joker-modal-card joker-modal-card--wide">
+          <div className="joker-edit-order__header">
+            <div>
+              <p className="joker-eyebrow">Editar pedido</p>
+              <h2 className="joker-edit-order__title">Pedido #{order.displayNumber}</h2>
+              <p className="joker-order-item__excluded">
+                {formatDateTime(order.createdAt)} · {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}
+              </p>
+            </div>
             <button type="button" className="joker-modal-close" onClick={onClose} disabled={isSaving}>
               Cerrar
             </button>
           </div>
 
-          {lines.length ? (
-            <ul className="joker-order-list top-gap">
-              {lines.map((line) => (
-                <li key={line.productId} className="joker-order-item">
-                  <div className="joker-order-item__info">
-                    <div>
-                      <strong>{line.productName}</strong>
-                      <p className="joker-order-item__excluded">{formatPrice(line.unitPrice)} c/u · {formatPrice(line.unitPrice * line.quantity)}</p>
-                    </div>
+          <div className="joker-edit-order__lines">
+            {lines.length ? (
+              lines.map((line) => (
+                <div key={line.productId} className="joker-edit-order__row">
+                  <div className="joker-edit-order__row-info">
+                    <strong>{line.productName}</strong>
+                    <span className="joker-order-item__excluded">{formatPrice(line.unitPrice)} c/u</span>
+                    {line.detail ? <span className="joker-order-item__excluded">{line.detail}</span> : null}
                   </div>
-                  <div className="joker-product-row-actions">
+
+                  <div className="joker-edit-order__row-controls">
                     <div className="joker-quantity-stepper">
                       <button
                         type="button"
@@ -93,6 +108,9 @@ export function EditOrderModal({ order, isSaving, onClose, onSave }: EditOrderMo
                         +
                       </button>
                     </div>
+
+                    <strong className="joker-edit-order__row-total">{formatPrice(line.unitPrice * line.quantity)}</strong>
+
                     <button
                       type="button"
                       className="joker-order-item__remove"
@@ -102,24 +120,29 @@ export function EditOrderModal({ order, isSaving, onClose, onSave }: EditOrderMo
                       x
                     </button>
                   </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="joker-empty-state top-gap">Sacaste todos los productos. Si guardás así, se cancela el pedido entero.</p>
-          )}
+                </div>
+              ))
+            ) : (
+              <p className="joker-empty-state">Sacaste todos los productos. Si guardás así, se cancela el pedido entero.</p>
+            )}
+          </div>
 
-          <p className="joker-order-item__excluded joker-order-item__excluded--full top-gap">
-            <strong>Total: {formatPrice(total)}</strong>
-          </p>
+          <div className="joker-edit-order__footer">
+            <div className="joker-edit-order__totals">
+              {total !== originalTotal ? (
+                <span className="joker-order-item__excluded joker-edit-order__totals-before">Antes: {formatPrice(originalTotal)}</span>
+              ) : null}
+              <strong className="joker-edit-order__totals-now">Total: {formatPrice(total)}</strong>
+            </div>
 
-          <div className="joker-modal-card__actions">
-            <button type="button" className="joker-button joker-button--ghost" onClick={onClose} disabled={isSaving}>
-              Cancelar edición
-            </button>
-            <button type="button" className="joker-button joker-button--primary" onClick={handleSaveClick} disabled={isSaving}>
-              {isSaving ? "Guardando..." : "Guardar cambios"}
-            </button>
+            <div className="joker-modal-card__actions">
+              <button type="button" className="joker-button joker-button--ghost" onClick={onClose} disabled={isSaving}>
+                Cancelar edición
+              </button>
+              <button type="button" className="joker-button joker-button--primary" onClick={handleSaveClick} disabled={isSaving}>
+                {isSaving ? "Guardando..." : "Guardar cambios"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
