@@ -6,7 +6,7 @@ import { ProfitRateModal } from "../components/ProfitRateModal";
 import { closeRegister, getRegisterState, listCurrentPeriodOrders, openRegister, updateOrder } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerOrderRecord, JokerPaymentMethod, JokerRegisterState } from "../joker.types";
+import type { JokerOrderRecord, JokerPaymentMethod, JokerProduct, JokerRegisterState } from "../joker.types";
 
 const PROFIT_RATE_STORAGE_KEY = "joker.profitRatePercent";
 const DEFAULT_PROFIT_RATE_PERCENT = 30;
@@ -59,7 +59,11 @@ function buildRanking(orders: JokerOrderRecord[]) {
     .sort((a, b) => b.quantity - a.quantity);
 }
 
-export function PanelScreen() {
+type PanelScreenProps = {
+  products: JokerProduct[];
+};
+
+export function PanelScreen({ products }: PanelScreenProps) {
   const [orders, setOrders] = useState<JokerOrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -347,6 +351,7 @@ export function PanelScreen() {
       {editingOrder ? (
         <EditOrderModal
           order={editingOrder}
+          products={products}
           isSaving={isSavingOrder}
           onClose={() => setEditingOrder(null)}
           onSave={handleSaveOrderEdit}

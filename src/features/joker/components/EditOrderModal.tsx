@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerOrderRecord } from "../joker.types";
+import type { JokerOrderRecord, JokerProduct } from "../joker.types";
 
 type EditableLine = {
   productId: number;
@@ -13,10 +13,13 @@ type EditableLine = {
 
 type EditOrderModalProps = {
   order: JokerOrderRecord;
+  products: JokerProduct[];
   isSaving: boolean;
   onClose: () => void;
   onSave: (items: EditableLine[]) => Promise<void>;
 };
+
+const SEARCH_RESULTS_LIMIT = 8;
 
 function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
@@ -29,12 +32,21 @@ function formatDateTime(isoDate: string) {
   return `${dateLabel} ${timeLabel}`;
 }
 
-export function EditOrderModal({ order, isSaving, onClose, onSave }: EditOrderModalProps) {
+export function EditOrderModal({ order, products, isSaving, onClose, onSave }: EditOrderModalProps) {
   const [lines, setLines] = useState<EditableLine[]>(() => order.items.map((item) => ({ ...item })));
   const [confirmingCancelAll, setConfirmingCancelAll] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
 
   const total = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
   const originalTotal = order.total;
+
+  const searchResults = useMemo(() => {
+    const query = productSearch.trim().toLowerCase();
+    if (!query) return [];
+    return products
+      .filter((product) => product.name.toLowerCase().includes(query) || product.category.toLowerCase().includes(query))
+      .slice(0, SEARCH_RESULTS_LIMIT);
+  }, [productSearch, products]);
 
   function adjustQuantity(productId: number, delta: number) {
     setLines((current) =>
@@ -46,6 +58,17 @@ export function EditOrderModal({ order, isSaving, onClose, onSave }: EditOrderMo
 
   function removeLine(productId: number) {
     setLines((current) => current.filter((line) => line.productId !== productId));
+  }
+
+  function addProduct(product: JokerProduct) {
+    setLines((current) => {
+      const existing = current.find((line) => line.productId === product.id);
+      if (existing) {
+        return current.map((line) => (line.productId === product.id ? { ...line, quantity: line.quantity + 1 } : line));
+      }
+      return [...current, { productId: product.id, productName: product.name, unitPrice: product.price, quantity: 1 }];
+    });
+    setProductSearch("");
   }
 
   function handleSaveClick() {
@@ -76,6 +99,36 @@ export function EditOrderModal({ order, isSaving, onClose, onSave }: EditOrderMo
             <button type="button" className="joker-modal-close" onClick={onClose} disabled={isSaving}>
               Cerrar
             </button>
+          </div>
+
+          <div className="joker-edit-order__add">
+            <input
+              type="search"
+              className="joker-search-input"
+              placeholder="Buscar producto para agregar al pedido..."
+              value={productSearch}
+              onChange={(event) => setProductSearch(event.target.value)}
+            />
+
+            {productSearch.trim() ? (
+              searchResults.length ? (
+                <ul className="joker-edit-order__search-results">
+                  {searchResults.map((product) => (
+                    <li key={product.id}>
+                      <button type="button" className="joker-edit-order__search-result" onClick={() => addProduct(product)}>
+                        <span>
+                          <strong>{product.name}</strong>
+                          <span className="joker-order-item__excluded"> · {product.category}</span>
+                        </span>
+                        <span>{formatPrice(product.price)}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="joker-empty-state">No se encontraron productos.</p>
+              )
+            ) : null}
           </div>
 
           <div className="joker-edit-order__lines">
