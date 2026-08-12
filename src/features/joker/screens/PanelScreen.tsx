@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
+import { EditOrderModal } from "../components/EditOrderModal";
 import { ProfitRateModal } from "../components/ProfitRateModal";
-import { closeRegister, getRegisterState, listCurrentPeriodOrders, openRegister } from "../joker.api";
+import { closeRegister, getRegisterState, listCurrentPeriodOrders, openRegister, updateOrder } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS, JOKER_TEST_PRODUCT_NAME } from "../joker.types";
 import type { JokerOrderRecord, JokerPaymentMethod, JokerRegisterState } from "../joker.types";
@@ -69,6 +70,8 @@ export function PanelScreen() {
   const [isEditingProfitRate, setIsEditingProfitRate] = useState(false);
   const [registerState, setRegisterState] = useState<JokerRegisterState | null>(null);
   const [confirmRegisterAction, setConfirmRegisterAction] = useState<"close" | "open" | null>(null);
+  const [editingOrder, setEditingOrder] = useState<JokerOrderRecord | null>(null);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
 
   function handleSaveProfitRate(percent: number) {
     setProfitRatePercent(percent);
@@ -133,6 +136,22 @@ export function PanelScreen() {
       toast.error(openError instanceof Error ? openError.message : "No se pudo abrir la caja.");
     } finally {
       setIsClosingRegister(false);
+    }
+  }
+
+  async function handleSaveOrderEdit(items: JokerOrderRecord["items"]) {
+    if (!editingOrder) return;
+
+    setIsSavingOrder(true);
+    try {
+      await updateOrder(editingOrder.id, items);
+      toast.success(items.length ? "Pedido actualizado." : "Pedido cancelado.");
+      setEditingOrder(null);
+      await loadOrders();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo guardar el pedido.");
+    } finally {
+      setIsSavingOrder(false);
     }
   }
 
@@ -263,6 +282,8 @@ export function PanelScreen() {
                   type="button"
                   className="joker-order-item joker-order-item--flat joker-order-item--clickable"
                   onClick={() => setExpandedOrderId((current) => (current === order.id ? null : order.id))}
+                  onDoubleClick={() => setEditingOrder(order)}
+                  title="Doble click para editar el pedido"
                 >
                   <strong>Pedido #{order.displayNumber}</strong>
                   <strong className="joker-amount-plus">+{formatPrice(order.total)}</strong>
@@ -284,6 +305,15 @@ export function PanelScreen() {
                         </div>
                       </li>
                     ))}
+                    <li>
+                      <button
+                        type="button"
+                        className="joker-button joker-button--ghost joker-button--auto"
+                        onClick={() => setEditingOrder(order)}
+                      >
+                        Editar pedido
+                      </button>
+                    </li>
                   </ul>
                 ) : null}
               </li>
@@ -318,6 +348,15 @@ export function PanelScreen() {
           <p className="joker-empty-state">Todavia no hay pedidos impresos hoy.</p>
         )}
       </section>
+
+      {editingOrder ? (
+        <EditOrderModal
+          order={editingOrder}
+          isSaving={isSavingOrder}
+          onClose={() => setEditingOrder(null)}
+          onSave={handleSaveOrderEdit}
+        />
+      ) : null}
 
       {isEditingProfitRate ? (
         <ProfitRateModal

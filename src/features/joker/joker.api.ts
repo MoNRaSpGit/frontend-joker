@@ -102,6 +102,25 @@ export async function createOrder(
   return readJson<OrderResponse>(response);
 }
 
+export type UpdateOrderItemInput = {
+  productId: number;
+  productName: string;
+  unitPrice: number;
+  quantity: number;
+  detail?: string;
+};
+
+// Recalcula el total solo, nunca se manda a mano; el backend ajusta el
+// stock automaticamente por la diferencia entre lo viejo y lo nuevo.
+export async function updateOrder(orderId: number, items: UpdateOrderItemInput[]): Promise<OrderResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/orders/${orderId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items })
+  });
+  return readJson<OrderResponse>(response);
+}
+
 export async function listOrders(dateLabel: string): Promise<OrderListResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders?date=${encodeURIComponent(dateLabel)}`, {
     cache: "no-store"
