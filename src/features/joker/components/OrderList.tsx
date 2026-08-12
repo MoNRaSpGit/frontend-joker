@@ -149,7 +149,7 @@ export function OrderList({
           type="button"
           className={`joker-category-chip${ticketCopies === 0 ? " is-active" : ""}`}
           onClick={() => onTicketCopiesChange(0)}
-          style={{ marginLeft: 24 }}
+          style={{ marginLeft: 8 }}
           title="Registra el pedido pero no imprime nada (venta interna)"
         >
           0 tick
