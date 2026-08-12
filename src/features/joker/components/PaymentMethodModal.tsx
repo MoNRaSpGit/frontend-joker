@@ -8,15 +8,30 @@ type PaymentMethodModalProps = {
   clients: JokerClient[];
   isSubmitting: boolean;
   onClose: () => void;
-  onConfirm: (paymentMethod: JokerPaymentMethod, clientId?: number) => void;
+  onConfirm: (paymentMethod: JokerPaymentMethod, clientId?: number, customerName?: string) => void;
 };
 
 export function PaymentMethodModal({ clients, isSubmitting, onClose, onConfirm }: PaymentMethodModalProps) {
   const [selected, setSelected] = useState<JokerPaymentMethod>("efectivo");
   const [clientId, setClientId] = useState("");
+  const [transferCustomerName, setTransferCustomerName] = useState("");
 
   const needsClient = selected === "cuenta";
-  const canConfirm = !needsClient || clientId !== "";
+  const needsTransferName = selected === "transferencia";
+  const canConfirm = (!needsClient || clientId !== "") && (!needsTransferName || transferCustomerName.trim() !== "");
+
+  function handleConfirm() {
+    if (needsClient) {
+      const client = clients.find((candidate) => candidate.id === Number(clientId));
+      onConfirm(selected, Number(clientId), client?.name);
+      return;
+    }
+    if (needsTransferName) {
+      onConfirm(selected, undefined, transferCustomerName.trim());
+      return;
+    }
+    onConfirm(selected);
+  }
 
   return (
     <div className="joker-modal-overlay" role="dialog" aria-modal="true" aria-label="Metodo de pago">
@@ -57,11 +72,23 @@ export function PaymentMethodModal({ clients, isSubmitting, onClose, onConfirm }
           </label>
         ) : null}
 
+        {needsTransferName ? (
+          <label className="joker-form-field joker-modal-card__actions--top-gap">
+            <span>Nombre de quien transfiere</span>
+            <input
+              type="text"
+              value={transferCustomerName}
+              onChange={(event) => setTransferCustomerName(event.target.value)}
+              placeholder="Ej: Juan Perez"
+            />
+          </label>
+        ) : null}
+
         <div className="joker-modal-card__actions joker-modal-card__actions--top-gap">
           <button
             type="button"
             className="joker-button joker-button--primary"
-            onClick={() => onConfirm(selected, needsClient ? Number(clientId) : undefined)}
+            onClick={handleConfirm}
             disabled={isSubmitting || !canConfirm}
           >
             {isSubmitting ? "Imprimiendo..." : "Imprimir"}

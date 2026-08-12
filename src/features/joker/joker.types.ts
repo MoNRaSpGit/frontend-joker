@@ -38,6 +38,7 @@ export type JokerOrderRecord = {
   total: number;
   address: string;
   paymentMethod: JokerPaymentMethod;
+  customerName: string | null;
   items: Array<{
     productId: number;
     productName: string;

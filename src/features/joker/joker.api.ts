@@ -82,7 +82,8 @@ export async function deleteProduct(productId: number): Promise<void> {
 export async function createOrder(
   order: JokerOrderItem[],
   address: string,
-  paymentMethod: JokerPaymentMethod
+  paymentMethod: JokerPaymentMethod,
+  customerName?: string
 ): Promise<OrderResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders`, {
     method: "POST",
@@ -90,6 +91,7 @@ export async function createOrder(
     body: JSON.stringify({
       address,
       paymentMethod,
+      customerName,
       items: order.map((item) => ({
         productId: item.productId,
         productName: item.productName,

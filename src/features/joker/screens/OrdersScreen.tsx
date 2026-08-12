@@ -34,7 +34,11 @@ export function OrdersScreen({
   const [isPrinting, setIsPrinting] = useState(false);
   const [ticketCopies, setTicketCopies] = useState<0 | 1 | 3>(3);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [pendingSale, setPendingSale] = useState<{ paymentMethod: JokerPaymentMethod; clientId?: number } | null>(null);
+  const [pendingSale, setPendingSale] = useState<{
+    paymentMethod: JokerPaymentMethod;
+    clientId?: number;
+    customerName?: string;
+  } | null>(null);
   const [isOpeningRegister, setIsOpeningRegister] = useState(false);
   const {
     order,
@@ -57,7 +61,7 @@ export function OrdersScreen({
   // como resultado propio) no aparecen en el buscador de pedidos.
   const orderableProducts = products.filter((product) => product.status !== "draft" && product.productType !== "extra");
 
-  async function handleConfirmPayment(paymentMethod: JokerPaymentMethod, clientId?: number) {
+  async function handleConfirmPayment(paymentMethod: JokerPaymentMethod, clientId?: number, customerName?: string) {
     if (!order.length || isPrinting) return;
 
     setIsPrinting(true);
@@ -77,11 +81,11 @@ export function OrdersScreen({
     // handleConfirmOpenRegisterAndSale).
     if (!registerState.isOpen) {
       setIsPrinting(false);
-      setPendingSale({ paymentMethod, clientId });
+      setPendingSale({ paymentMethod, clientId, customerName });
       return;
     }
 
-    await proceedWithSale(paymentMethod, clientId);
+    await proceedWithSale(paymentMethod, clientId, customerName);
   }
 
   async function handleConfirmOpenRegisterAndSale() {
@@ -99,10 +103,10 @@ export function OrdersScreen({
 
     const sale = pendingSale;
     setPendingSale(null);
-    await proceedWithSale(sale.paymentMethod, sale.clientId);
+    await proceedWithSale(sale.paymentMethod, sale.clientId, sale.customerName);
   }
 
-  async function proceedWithSale(paymentMethod: JokerPaymentMethod, clientId?: number) {
+  async function proceedWithSale(paymentMethod: JokerPaymentMethod, clientId?: number, customerName?: string) {
     setIsPrinting(true);
 
     // El numero de pedido lo asigna el backend (arranca de 1 en cada
@@ -110,7 +114,7 @@ export function OrdersScreen({
     // con ese numero armar e imprimir el ticket.
     let displayNumber: number;
     try {
-      const saved = await createOrder(order, orderAddress, paymentMethod);
+      const saved = await createOrder(order, orderAddress, paymentMethod, customerName);
       displayNumber = saved.item.displayNumber;
     } catch (saveError) {
       toast.error(saveError instanceof Error ? `No se pudo guardar el pedido: ${saveError.message}` : "No se pudo guardar el pedido.");

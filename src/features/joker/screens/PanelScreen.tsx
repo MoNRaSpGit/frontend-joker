@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { EditOrderModal } from "../components/EditOrderModal";
+import { PaymentBreakdownModal } from "../components/PaymentBreakdownModal";
 import { ProfitRateModal } from "../components/ProfitRateModal";
 import { closeRegister, getRegisterState, listCurrentPeriodOrders, openRegister, updateOrder } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
@@ -76,6 +77,7 @@ export function PanelScreen({ products }: PanelScreenProps) {
   const [confirmRegisterAction, setConfirmRegisterAction] = useState<"close" | "open" | null>(null);
   const [editingOrder, setEditingOrder] = useState<JokerOrderRecord | null>(null);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [breakdownMethod, setBreakdownMethod] = useState<JokerPaymentMethod | null>(null);
 
   function handleSaveProfitRate(percent: number) {
     setProfitRatePercent(percent);
@@ -250,12 +252,30 @@ export function PanelScreen({ products }: PanelScreenProps) {
         </div>
 
         <div className="joker-stat-grid">
-          {PAYMENT_METHODS.map((method) => (
-            <div key={method} className={`joker-stat-tile joker-stat-tile--${method}`}>
-              <span className="joker-stat-tile__label">{JOKER_PAYMENT_METHOD_LABELS[method]}</span>
-              <strong className="joker-stat-tile__value joker-amount-plus">+{formatPrice(paymentTotals[method])}</strong>
-            </div>
-          ))}
+          {PAYMENT_METHODS.map((method) => {
+            const isTrackable = method === "cuenta" || method === "transferencia";
+            const content = (
+              <>
+                <span className="joker-stat-tile__label">{JOKER_PAYMENT_METHOD_LABELS[method]}</span>
+                <strong className="joker-stat-tile__value joker-amount-plus">+{formatPrice(paymentTotals[method])}</strong>
+              </>
+            );
+
+            return isTrackable ? (
+              <button
+                key={method}
+                type="button"
+                className={`joker-stat-tile joker-stat-tile--${method} joker-stat-tile--clickable`}
+                onClick={() => setBreakdownMethod(method)}
+              >
+                {content}
+              </button>
+            ) : (
+              <div key={method} className={`joker-stat-tile joker-stat-tile--${method}`}>
+                {content}
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -356,6 +376,10 @@ export function PanelScreen({ products }: PanelScreenProps) {
           <p className="joker-empty-state">Todavia no hay pedidos impresos hoy.</p>
         )}
       </section>
+
+      {breakdownMethod ? (
+        <PaymentBreakdownModal method={breakdownMethod} orders={orders} onClose={() => setBreakdownMethod(null)} />
+      ) : null}
 
       {editingOrder ? (
         <EditOrderModal
