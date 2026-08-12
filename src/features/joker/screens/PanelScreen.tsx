@@ -5,7 +5,7 @@ import { EditOrderModal } from "../components/EditOrderModal";
 import { ProfitRateModal } from "../components/ProfitRateModal";
 import { closeRegister, getRegisterState, listCurrentPeriodOrders, openRegister, updateOrder } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
-import { JOKER_PAYMENT_METHOD_LABELS, JOKER_TEST_PRODUCT_NAME } from "../joker.types";
+import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerOrderRecord, JokerPaymentMethod, JokerRegisterState } from "../joker.types";
 
 const PROFIT_RATE_STORAGE_KEY = "joker.profitRatePercent";
@@ -165,12 +165,7 @@ export function PanelScreen() {
     }
     try {
       const result = await listCurrentPeriodOrders();
-      // Los pedidos que solo tienen el producto de prueba de impresora no
-      // son ventas reales: no deben contar en el resumen del panel.
-      const realOrders = result.items.filter(
-        (order) => !order.items.every((item) => item.productName === JOKER_TEST_PRODUCT_NAME)
-      );
-      setOrders(realOrders);
+      setOrders(result.items);
     } catch (fetchError) {
       if (!silent) {
         setLoadError(fetchError instanceof Error ? fetchError.message : "No se pudo cargar el panel.");
