@@ -32,7 +32,7 @@ export function OrdersScreen({
   const [selectedVariants, setSelectedVariants] = useState<JokerProduct[] | null>(null);
   const [editingItem, setEditingItem] = useState<JokerOrderItem | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [ticketCopies, setTicketCopies] = useState<1 | 3>(3);
+  const [ticketCopies, setTicketCopies] = useState<0 | 1 | 3>(3);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [pendingSale, setPendingSale] = useState<{ paymentMethod: JokerPaymentMethod; clientId?: number } | null>(null);
   const [isOpeningRegister, setIsOpeningRegister] = useState(false);
@@ -118,27 +118,35 @@ export function OrdersScreen({
       return;
     }
 
-    try {
-      await printOrderTicket(
-        order,
-        orderAddress,
-        ticketCopies,
-        paymentMethod,
-        orderCustomerName,
-        orderDeliveryCost,
-        displayNumber,
-        orderNote
-      );
-      toast.success("Pedido impreso.");
+    // "0 tick": el pedido queda guardado como cualquier otro (descuenta
+    // stock, entra al panel), pero no se manda nada a la impresora. Es para
+    // ventas internas que no necesitan comprobante.
+    if (ticketCopies === 0) {
+      toast.success("Pedido guardado (sin ticket).");
       clearOrder();
-    } catch (printError) {
-      toast.error(
-        printError instanceof Error
-          ? `El pedido #${displayNumber} se guardo pero no se pudo imprimir: ${printError.message}`
-          : `El pedido #${displayNumber} se guardo pero no se pudo imprimir.`
-      );
-      setIsPrinting(false);
-      return;
+    } else {
+      try {
+        await printOrderTicket(
+          order,
+          orderAddress,
+          ticketCopies,
+          paymentMethod,
+          orderCustomerName,
+          orderDeliveryCost,
+          displayNumber,
+          orderNote
+        );
+        toast.success("Pedido impreso.");
+        clearOrder();
+      } catch (printError) {
+        toast.error(
+          printError instanceof Error
+            ? `El pedido #${displayNumber} se guardo pero no se pudo imprimir: ${printError.message}`
+            : `El pedido #${displayNumber} se guardo pero no se pudo imprimir.`
+        );
+        setIsPrinting(false);
+        return;
+      }
     }
     setIsPrinting(false);
     setIsPaymentModalOpen(false);

@@ -11,8 +11,8 @@ type OrderListProps = {
   orderNote: string;
   onNoteChange: (note: string) => void;
   isPrinting: boolean;
-  ticketCopies: 1 | 3;
-  onTicketCopiesChange: (copies: 1 | 3) => void;
+  ticketCopies: 0 | 1 | 3;
+  onTicketCopiesChange: (copies: 0 | 1 | 3) => void;
   onEditItem: (item: JokerOrderItem) => void;
   onRemoveItem: (lineId: string) => void;
   onPrint: () => void;
@@ -145,6 +145,15 @@ export function OrderList({
         >
           3 tick
         </button>
+        <button
+          type="button"
+          className={`joker-category-chip${ticketCopies === 0 ? " is-active" : ""}`}
+          onClick={() => onTicketCopiesChange(0)}
+          style={{ marginLeft: 24 }}
+          title="Registra el pedido pero no imprime nada (venta interna)"
+        >
+          0 tick
+        </button>
       </div>
 
       <button
@@ -153,7 +162,7 @@ export function OrderList({
         onClick={onPrint}
         disabled={!order.length || isPrinting}
       >
-        {isPrinting ? "Imprimiendo..." : "Imprimir pedido"}
+        {isPrinting ? "Guardando..." : ticketCopies === 0 ? "Guardar pedido (sin ticket)" : "Imprimir pedido"}
       </button>
     </section>
   );
