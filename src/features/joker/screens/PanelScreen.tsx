@@ -286,7 +286,7 @@ export function PanelScreen({ products }: PanelScreenProps) {
                 >
                   <strong>
                     Pedido #{order.displayNumber}
-                    {!order.items.length ? <span className="joker-cancelled-badge">Cancelado</span> : null}
+                    {!order.items.length ? <span className="joker-cancelled-badge">Eliminado</span> : null}
                   </strong>
                   <strong className="joker-amount-plus">+{formatPrice(order.total)}</strong>
                 </button>
@@ -310,7 +310,7 @@ export function PanelScreen({ products }: PanelScreenProps) {
                       ))
                     ) : (
                       <li>
-                        <p className="joker-order-item__excluded">Este pedido se cargó y después se canceló entero. No suma nada.</p>
+                        <p className="joker-order-item__excluded">Pedido eliminado, sin efecto. No suma nada.</p>
                       </li>
                     )}
                     <li>
