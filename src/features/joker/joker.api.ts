@@ -273,12 +273,11 @@ export async function updateStockItemQuantity(stockItemId: number, quantity: num
 }
 
 type StockItemConsumptionResponse = {
-  items: Array<{ productName: string; quantity: number }>;
+  items: Array<{ orderId: number | null; displayNumber: number | null; productName: string; quantity: number; createdAt: string }>;
 };
 
-// Desglose de que productos consumieron este insumo (ej: Churrasco de
-// hamburguesa -> Hamburguesa Clasica x1, Hamburguesa con queso x3), desde
-// el ultimo cierre de caja.
+// Historial de que pedidos consumieron este insumo (ej: Pedido #4 -> 4x
+// Pancho), desde el ultimo cierre de caja.
 export async function getStockItemConsumption(stockItemId: number): Promise<StockItemConsumptionResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/stock-items/${stockItemId}/consumption`, { cache: "no-store" });
   return readJson<StockItemConsumptionResponse>(response);
