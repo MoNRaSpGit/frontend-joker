@@ -1255,6 +1255,15 @@ textarea {
   color: #fff;
 }
 
+.joker-food-stock-group-label {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--joker-muted);
+}
+
 .joker-food-stock-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
