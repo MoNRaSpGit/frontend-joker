@@ -52,36 +52,45 @@ export function OrderList({
         <h2>Ticket a imprimir{order.length ? ` (${order.length})` : ""}</h2>
       </div>
 
-      <label className="joker-form-field">
-        <span>Nombre del cliente</span>
-        <input
-          type="text"
-          value={orderCustomerName}
-          onChange={(event) => onCustomerNameChange(event.target.value)}
-          placeholder="Ej: Juan Perez"
-        />
-      </label>
+      <div className="joker-form-row">
+        <label className="joker-form-field">
+          <span>Nombre del cliente</span>
+          <input
+            type="text"
+            value={orderCustomerName}
+            onChange={(event) => onCustomerNameChange(event.target.value)}
+            placeholder="Ej: Juan Perez"
+          />
+        </label>
 
-      <label className="joker-form-field">
-        <span>Direccion del pedido (si es delivery)</span>
-        <input
-          type="text"
-          value={orderAddress}
-          onChange={(event) => onAddressChange(event.target.value)}
-          placeholder="Ej: Av. 18 de Julio 1234"
-        />
-      </label>
+        <label className="joker-form-field">
+          <span>Direccion del pedido (si es delivery)</span>
+          <input
+            type="text"
+            value={orderAddress}
+            onChange={(event) => onAddressChange(event.target.value)}
+            placeholder="Ej: Av. 18 de Julio 1234"
+          />
+        </label>
+      </div>
 
-      <label className="joker-form-field">
-        <span>Costo de envio (si corresponde)</span>
-        <input
-          type="text"
-          inputMode="decimal"
-          value={orderDeliveryCost}
-          onChange={(event) => onDeliveryCostChange(event.target.value)}
-          placeholder="Ej: 150"
-        />
-      </label>
+      <div className="joker-form-row">
+        <label className="joker-form-field">
+          <span>Costo de envio (si corresponde)</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={orderDeliveryCost}
+            onChange={(event) => onDeliveryCostChange(event.target.value)}
+            placeholder="Ej: 150"
+          />
+        </label>
+
+        <label className="joker-form-field">
+          <span>Fecha del pedido (solo si es de otro dia)</span>
+          <input type="date" value={orderDate} onChange={(event) => onOrderDateChange(event.target.value)} />
+        </label>
+      </div>
 
       <label className="joker-form-field">
         <span>Nota (solo sale en el ticket de mostrador)</span>
@@ -91,11 +100,6 @@ export function OrderList({
           onChange={(event) => onNoteChange(event.target.value)}
           placeholder="Ej: Pedido para las 9:30"
         />
-      </label>
-
-      <label className="joker-form-field">
-        <span>Fecha del pedido (solo si es de otro dia)</span>
-        <input type="date" value={orderDate} onChange={(event) => onOrderDateChange(event.target.value)} />
       </label>
 
       {order.length ? (
