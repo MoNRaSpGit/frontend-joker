@@ -1289,3 +1289,10 @@ textarea {
   font-weight: 600;
   color: var(--joker-muted);
 }
+
+.joker-food-stock-card__edit {
+  margin-top: 4px;
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+}

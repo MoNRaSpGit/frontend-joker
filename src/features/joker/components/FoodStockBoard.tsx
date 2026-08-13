@@ -2,6 +2,7 @@ import type { JokerStockItem } from "../joker.types";
 
 type FoodStockBoardProps = {
   items: JokerStockItem[];
+  onEditItem: (item: JokerStockItem) => void;
 };
 
 // Icono por palabra clave del nombre del insumo. El orden importa: "pancho"
@@ -16,7 +17,7 @@ function resolveFoodIcon(name: string): string {
   return "📦";
 }
 
-export function FoodStockBoard({ items }: FoodStockBoardProps) {
+export function FoodStockBoard({ items, onEditItem }: FoodStockBoardProps) {
   const foodItems = items.filter((item) => item.category === "comida").sort((a, b) => a.name.localeCompare(b.name));
 
   if (!foodItems.length) {
@@ -40,6 +41,9 @@ export function FoodStockBoard({ items }: FoodStockBoardProps) {
               <span className="joker-food-stock-card__qty">
                 {item.quantity} <small>{item.unit}</small>
               </span>
+              <button type="button" className="joker-button joker-button--ghost joker-food-stock-card__edit" onClick={() => onEditItem(item)}>
+                Editar
+              </button>
             </div>
           );
         })}

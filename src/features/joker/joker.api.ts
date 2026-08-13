@@ -262,6 +262,28 @@ export async function restockItem(stockItemId: number, quantity: number): Promis
   return readJson<StockItemResponse>(response);
 }
 
+// Fija el stock a un valor exacto (a diferencia de restock, que suma/resta).
+export async function updateStockItemQuantity(stockItemId: number, quantity: number): Promise<StockItemResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/stock-items/${stockItemId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ quantity })
+  });
+  return readJson<StockItemResponse>(response);
+}
+
+type StockItemConsumptionResponse = {
+  items: Array<{ productName: string; quantity: number }>;
+};
+
+// Desglose de que productos consumieron este insumo (ej: Churrasco de
+// hamburguesa -> Hamburguesa Clasica x1, Hamburguesa con queso x3), desde
+// el ultimo cierre de caja.
+export async function getStockItemConsumption(stockItemId: number): Promise<StockItemConsumptionResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/stock-items/${stockItemId}/consumption`, { cache: "no-store" });
+  return readJson<StockItemConsumptionResponse>(response);
+}
+
 export async function deleteStockItem(stockItemId: number): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/joker/stock-items/${stockItemId}`, { method: "DELETE" });
   await readJson<{ ok: true }>(response);

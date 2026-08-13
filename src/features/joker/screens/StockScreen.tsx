@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { FoodStockBoard } from "../components/FoodStockBoard";
+import { StockItemEditModal } from "../components/StockItemEditModal";
 import {
   bulkApplyRecipe,
   createStockItem,
@@ -8,7 +9,8 @@ import {
   getProductRecipe,
   listStockItems,
   restockItem,
-  setProductRecipe
+  setProductRecipe,
+  updateStockItemQuantity
 } from "../joker.api";
 import type { JokerProduct, JokerStockItem, JokerStockItemCategory } from "../joker.types";
 
@@ -40,6 +42,9 @@ export function StockScreen({ products }: StockScreenProps) {
 
   const [restockDrafts, setRestockDrafts] = useState<Record<number, string>>({});
   const [restockingId, setRestockingId] = useState<number | null>(null);
+
+  const [editingItem, setEditingItem] = useState<JokerStockItem | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const [selectedProductId, setSelectedProductId] = useState("");
   const [recipeLines, setRecipeLines] = useState<DraftRecipeLine[]>([]);
@@ -119,6 +124,22 @@ export function StockScreen({ products }: StockScreenProps) {
       toast.error(error instanceof Error ? error.message : "No se pudo agregar el insumo.");
     } finally {
       setIsSavingItem(false);
+    }
+  }
+
+  async function handleSaveEdit(quantity: number) {
+    if (!editingItem) return;
+
+    setIsSavingEdit(true);
+    try {
+      await updateStockItemQuantity(editingItem.id, quantity);
+      toast.success("Stock actualizado.");
+      setEditingItem(null);
+      await loadStockItems();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo actualizar el stock.");
+    } finally {
+      setIsSavingEdit(false);
     }
   }
 
@@ -218,7 +239,7 @@ export function StockScreen({ products }: StockScreenProps) {
 
   return (
     <>
-      {!isLoading && !loadError ? <FoodStockBoard items={stockItems} /> : null}
+      {!isLoading && !loadError ? <FoodStockBoard items={stockItems} onEditItem={setEditingItem} /> : null}
 
       <section className="joker-panel top-gap">
         <div className="joker-panel__heading">
@@ -376,6 +397,10 @@ export function StockScreen({ products }: StockScreenProps) {
           <p className="joker-empty-state top-gap">Elegí un producto para ver o editar su receta.</p>
         )}
       </section>
+
+      {editingItem ? (
+        <StockItemEditModal item={editingItem} isSaving={isSavingEdit} onClose={() => setEditingItem(null)} onSave={handleSaveEdit} />
+      ) : null}
     </>
   );
 }
