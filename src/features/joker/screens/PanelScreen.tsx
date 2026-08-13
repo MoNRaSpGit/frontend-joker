@@ -26,9 +26,12 @@ function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
 }
 
-function formatDateTime(isoDate: string) {
+// Si el pedido tiene una fecha editada a mano (orderDate), esa es la que se
+// muestra; la hora siempre sale de created_at (no se edita).
+function formatDateTime(isoDate: string, orderDate?: string | null) {
   const date = new Date(isoDate);
-  const dateLabel = date.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" });
+  const dateSource = orderDate ? new Date(`${orderDate}T00:00:00`) : date;
+  const dateLabel = dateSource.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" });
   const timeLabel = date.toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
   return `${dateLabel} ${timeLabel}`;
 }
@@ -145,12 +148,12 @@ export function PanelScreen({ products }: PanelScreenProps) {
     }
   }
 
-  async function handleSaveOrderEdit(items: JokerOrderRecord["items"]) {
+  async function handleSaveOrderEdit(items: JokerOrderRecord["items"], orderDate: string) {
     if (!editingOrder) return;
 
     setIsSavingOrder(true);
     try {
-      await updateOrder(editingOrder.id, items);
+      await updateOrder(editingOrder.id, items, orderDate);
       toast.success(items.length ? "Pedido actualizado." : "Pedido cancelado.");
       setEditingOrder(null);
       await loadOrders();
@@ -315,7 +318,7 @@ export function PanelScreen({ products }: PanelScreenProps) {
                   <ul className="joker-order-detail-list">
                     <li className="joker-order-detail-list__meta">
                       <span className="joker-order-item__excluded">
-                        {formatDateTime(order.createdAt)} · {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}
+                        {formatDateTime(order.createdAt, order.orderDate)} · {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}
                       </span>
                     </li>
                     {order.items.length ? (

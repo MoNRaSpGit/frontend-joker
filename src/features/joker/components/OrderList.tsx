@@ -10,6 +10,8 @@ type OrderListProps = {
   onDeliveryCostChange: (deliveryCost: string) => void;
   orderNote: string;
   onNoteChange: (note: string) => void;
+  orderDate: string;
+  onOrderDateChange: (orderDate: string) => void;
   isPrinting: boolean;
   ticketCopies: 0 | 1 | 3;
   onTicketCopiesChange: (copies: 0 | 1 | 3) => void;
@@ -32,6 +34,8 @@ export function OrderList({
   onDeliveryCostChange,
   orderNote,
   onNoteChange,
+  orderDate,
+  onOrderDateChange,
   isPrinting,
   ticketCopies,
   onTicketCopiesChange,
@@ -87,6 +91,11 @@ export function OrderList({
           onChange={(event) => onNoteChange(event.target.value)}
           placeholder="Ej: Pedido para las 9:30"
         />
+      </label>
+
+      <label className="joker-form-field">
+        <span>Fecha del pedido (solo si es de otro dia)</span>
+        <input type="date" value={orderDate} onChange={(event) => onOrderDateChange(event.target.value)} />
       </label>
 
       {order.length ? (

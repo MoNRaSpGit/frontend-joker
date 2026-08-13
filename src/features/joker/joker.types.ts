@@ -47,6 +47,7 @@ export type JokerOrderRecord = {
     detail?: string;
   }>;
   createdAt: string;
+  orderDate: string | null;
 };
 
 export type JokerRegisterState = {

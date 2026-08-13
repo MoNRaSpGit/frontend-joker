@@ -16,7 +16,7 @@ type EditOrderModalProps = {
   products: JokerProduct[];
   isSaving: boolean;
   onClose: () => void;
-  onSave: (items: EditableLine[]) => Promise<void>;
+  onSave: (items: EditableLine[], orderDate: string) => Promise<void>;
 };
 
 const SEARCH_RESULTS_LIMIT = 8;
@@ -36,6 +36,7 @@ export function EditOrderModal({ order, products, isSaving, onClose, onSave }: E
   const [lines, setLines] = useState<EditableLine[]>(() => order.items.map((item) => ({ ...item })));
   const [confirmingCancelAll, setConfirmingCancelAll] = useState(false);
   const [productSearch, setProductSearch] = useState("");
+  const [orderDate, setOrderDate] = useState(() => order.orderDate ?? order.createdAt.slice(0, 10));
 
   const total = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
   const originalTotal = order.total;
@@ -76,11 +77,11 @@ export function EditOrderModal({ order, products, isSaving, onClose, onSave }: E
       setConfirmingCancelAll(true);
       return;
     }
-    void onSave(lines);
+    void onSave(lines, orderDate);
   }
 
   async function handleConfirmCancelAll() {
-    await onSave([]);
+    await onSave([], orderDate);
     setConfirmingCancelAll(false);
   }
 
@@ -100,6 +101,11 @@ export function EditOrderModal({ order, products, isSaving, onClose, onSave }: E
               Cerrar
             </button>
           </div>
+
+          <label className="joker-form-field">
+            <span>Fecha del pedido</span>
+            <input type="date" value={orderDate} onChange={(event) => setOrderDate(event.target.value)} />
+          </label>
 
           <div className="joker-edit-order__add">
             <input

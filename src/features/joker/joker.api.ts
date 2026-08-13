@@ -83,7 +83,8 @@ export async function createOrder(
   order: JokerOrderItem[],
   address: string,
   paymentMethod: JokerPaymentMethod,
-  customerName?: string
+  customerName?: string,
+  orderDate?: string
 ): Promise<OrderResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders`, {
     method: "POST",
@@ -92,6 +93,7 @@ export async function createOrder(
       address,
       paymentMethod,
       customerName,
+      orderDate: orderDate || undefined,
       items: order.map((item) => ({
         productId: item.productId,
         productName: item.productName,
@@ -114,11 +116,15 @@ export type UpdateOrderItemInput = {
 
 // Recalcula el total solo, nunca se manda a mano; el backend ajusta el
 // stock automaticamente por la diferencia entre lo viejo y lo nuevo.
-export async function updateOrder(orderId: number, items: UpdateOrderItemInput[]): Promise<OrderResponse> {
+export async function updateOrder(
+  orderId: number,
+  items: UpdateOrderItemInput[],
+  orderDate?: string
+): Promise<OrderResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders/${orderId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items })
+    body: JSON.stringify({ items, orderDate })
   });
   return readJson<OrderResponse>(response);
 }

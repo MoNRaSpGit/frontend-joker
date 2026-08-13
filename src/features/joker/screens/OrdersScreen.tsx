@@ -50,6 +50,8 @@ export function OrdersScreen({
     setOrderDeliveryCost,
     orderNote,
     setOrderNote,
+    orderDate,
+    setOrderDate,
     addItem,
     updateItem,
     removeItem,
@@ -115,7 +117,7 @@ export function OrdersScreen({
     let displayNumber: number;
     let orderId: number;
     try {
-      const saved = await createOrder(order, orderAddress, paymentMethod, customerName);
+      const saved = await createOrder(order, orderAddress, paymentMethod, customerName, orderDate);
       displayNumber = saved.item.displayNumber;
       orderId = saved.item.id;
     } catch (saveError) {
@@ -201,6 +203,8 @@ export function OrdersScreen({
         onDeliveryCostChange={setOrderDeliveryCost}
         orderNote={orderNote}
         onNoteChange={setOrderNote}
+        orderDate={orderDate}
+        onOrderDateChange={setOrderDate}
         isPrinting={isPrinting}
         ticketCopies={ticketCopies}
         onTicketCopiesChange={setTicketCopies}
