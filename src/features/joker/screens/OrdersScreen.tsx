@@ -241,8 +241,8 @@ export function OrdersScreen({
           allProducts={products}
           mode={customizeMode}
           onClose={() => setSelectedVariants(null)}
-          onConfirm={(variant, detail, quantity) => {
-            addItem(variant, detail, quantity);
+          onConfirm={(variant, detail, quantity, comboComponents) => {
+            addItem(variant, detail, quantity, comboComponents);
           }}
         />
       ) : null}

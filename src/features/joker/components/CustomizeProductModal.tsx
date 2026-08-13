@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { parseChoiceGroups, parseIngredientList, splitVariantLabel } from "../joker.variants";
-import type { JokerProduct } from "../joker.types";
+import type { ComboComponentSelection, JokerProduct } from "../joker.types";
 
 type CustomizeMode = "cliente" | "dev";
 
@@ -12,7 +12,7 @@ type CustomizeProductModalProps = {
   initialQuantity?: number;
   isEditing?: boolean;
   onClose: () => void;
-  onConfirm: (variant: JokerProduct, detail: string, quantity: number) => void;
+  onConfirm: (variant: JokerProduct, detail: string, quantity: number, comboComponents: ComboComponentSelection[]) => void;
 };
 
 function formatPrice(price: number) {
@@ -41,6 +41,7 @@ export function CustomizeProductModal({
   const [excludedIngredients, setExcludedIngredients] = useState<Set<string>>(new Set());
   const [selectedExtraIds, setSelectedExtraIds] = useState<Set<number>>(new Set());
   const [selectedChoices, setSelectedChoices] = useState<Record<string, string | null>>({});
+  const [selectedSlotProductIds, setSelectedSlotProductIds] = useState<Record<string, number>>({});
   // Solo se usa (y se muestra) al editar un item ya agregado al pedido:
   // permite corregir el precio a mano, por ejemplo si se cargo mal o si
   // se pacto un precio distinto con el cliente.
@@ -63,14 +64,24 @@ export function CustomizeProductModal({
   const selectedExtras = extrasForCategory.filter((extra) => selectedExtraIds.has(extra.id));
   const extrasTotal = selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
   const totalPrice = selectedVariant.price + extrasTotal;
+  const comboSlots = selectedVariant.comboSlots ?? [];
 
   // Al cambiar de variante (ej. tamaño de pizza) las elecciones de
   // ingredientes/extras/salsa se reinician: puede que ni siquiera
-  // apliquen a la nueva variante.
+  // apliquen a la nueva variante. Los slots de combo arrancan siempre en
+  // la primera opcion de cada uno.
   useEffect(() => {
     setExcludedIngredients(new Set());
     setSelectedExtraIds(new Set());
     setSelectedChoices({});
+    const initialSlots: Record<string, number> = {};
+    for (const slot of comboSlots) {
+      if (slot.optionProductIds[0] !== undefined) {
+        initialSlots[slot.label] = slot.optionProductIds[0];
+      }
+    }
+    setSelectedSlotProductIds(initialSlots);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIndex]);
 
   function toggleIngredient(ingredient: string) {
@@ -110,6 +121,16 @@ export function CustomizeProductModal({
       finalPrice = parsedPrice;
     }
 
+    const comboComponents: ComboComponentSelection[] = [];
+    const comboChoiceLabels: string[] = [];
+    for (const slot of comboSlots) {
+      const optionId = selectedSlotProductIds[slot.label];
+      const optionProduct = allProducts.find((product) => product.id === optionId);
+      if (!optionProduct) continue;
+      comboComponents.push({ product: optionProduct, quantity: slot.quantity });
+      comboChoiceLabels.push(`${slot.label}: ${optionProduct.name}`);
+    }
+
     if (isDev) {
       const parts: string[] = [];
       if (excludedIngredients.size) {
@@ -120,11 +141,14 @@ export function CustomizeProductModal({
         const choice = selectedChoices[group.label];
         if (choice) parts.push(`${group.label}: ${choice}`);
       }
+      parts.push(...comboChoiceLabels);
       if (detail.trim()) parts.push(detail.trim());
 
-      onConfirm({ ...selectedVariant, price: finalPrice }, parts.join(" · "), quantity);
+      onConfirm({ ...selectedVariant, price: finalPrice }, parts.join(" · "), quantity, comboComponents);
     } else {
-      onConfirm({ ...selectedVariant, price: finalPrice }, detail.trim(), quantity);
+      const parts = [...comboChoiceLabels];
+      if (detail.trim()) parts.push(detail.trim());
+      onConfirm({ ...selectedVariant, price: finalPrice }, parts.join(" · "), quantity, comboComponents);
     }
     onClose();
   }
@@ -168,6 +192,28 @@ export function CustomizeProductModal({
             <p className="joker-product-card__price">{formatPrice(selectedVariant.price)}</p>
           </>
         ) : null}
+
+        {comboSlots.map((slot) => (
+          <div key={slot.label}>
+            <p className="joker-modal-card__hint">{slot.label}</p>
+            <div className="joker-category-chips">
+              {slot.optionProductIds.map((optionId) => {
+                const optionProduct = allProducts.find((product) => product.id === optionId);
+                if (!optionProduct) return null;
+                return (
+                  <button
+                    key={optionId}
+                    type="button"
+                    className={`joker-category-chip${selectedSlotProductIds[slot.label] === optionId ? " is-active" : ""}`}
+                    onClick={() => setSelectedSlotProductIds((current) => ({ ...current, [slot.label]: optionId }))}
+                  >
+                    {optionProduct.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
 
         {isDev && ingredientList.length ? (
           <>

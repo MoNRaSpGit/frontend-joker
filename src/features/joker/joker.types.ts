@@ -1,3 +1,12 @@
+// Slot de eleccion dentro de un combo (ej: "Hamburguesa" o "Refresco"): el
+// operario elige uno de optionProductIds al cargar el combo, y ese producto
+// (con su receta propia) se descuenta del stock ademas del combo en si.
+export type JokerComboSlot = {
+  label: string;
+  quantity: number;
+  optionProductIds: number[];
+};
+
 export type JokerProduct = {
   id: number;
   name: string;
@@ -7,6 +16,14 @@ export type JokerProduct = {
   productType?: "simple" | "extra";
   ingredients?: string | null;
   observations?: string | null;
+  comboSlots?: JokerComboSlot[];
+};
+
+// Componente de combo elegido al cargar el pedido (ej: la hamburguesa y el
+// refresco que efectivamente eligio el operario dentro de un combo).
+export type ComboComponentSelection = {
+  product: JokerProduct;
+  quantity: number;
 };
 
 export type JokerOrderItem = {

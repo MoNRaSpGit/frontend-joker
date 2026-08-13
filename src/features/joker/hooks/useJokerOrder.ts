@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { JokerOrderItem, JokerProduct } from "../joker.types";
+import type { ComboComponentSelection, JokerOrderItem, JokerProduct } from "../joker.types";
 
 export function useJokerOrder() {
   const [order, setOrder] = useState<JokerOrderItem[]>([]);
@@ -9,8 +9,22 @@ export function useJokerOrder() {
   const [orderNote, setOrderNote] = useState("");
   const [orderDate, setOrderDate] = useState("");
 
-  function addItem(product: JokerProduct, detail: string, quantity: number) {
+  // Los componentes de combo (ej: la hamburguesa y el refresco elegidos
+  // dentro de un Combo Nº2) se agregan como lineas propias a $0: no suman
+  // al total (ya esta incluido en el precio del combo) pero cada una tiene
+  // su propio productId, asi el backend descuenta el stock de lo que
+  // realmente se eligio en vez de una receta fija del combo.
+  function addItem(product: JokerProduct, detail: string, quantity: number, comboComponents: ComboComponentSelection[] = []) {
     const lineId = `${product.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    const componentLines: JokerOrderItem[] = comboComponents.map((component, index) => ({
+      lineId: `${lineId}-combo-${index}`,
+      productId: component.product.id,
+      productName: component.product.name,
+      unitPrice: 0,
+      detail: `Incluido en ${product.name}`,
+      quantity: component.quantity * quantity
+    }));
 
     setOrder((current) => [
       ...current,
@@ -21,7 +35,8 @@ export function useJokerOrder() {
         unitPrice: product.price,
         detail,
         quantity
-      }
+      },
+      ...componentLines
     ]);
   }
 
