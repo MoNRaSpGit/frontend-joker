@@ -272,17 +272,6 @@ export async function updateStockItemQuantity(stockItemId: number, quantity: num
   return readJson<StockItemResponse>(response);
 }
 
-type StockItemConsumptionResponse = {
-  items: Array<{ orderId: number | null; displayNumber: number | null; productName: string; quantity: number; createdAt: string }>;
-};
-
-// Historial de que pedidos consumieron este insumo (ej: Pedido #4 -> 4x
-// Pancho), desde el ultimo cierre de caja.
-export async function getStockItemConsumption(stockItemId: number): Promise<StockItemConsumptionResponse> {
-  const response = await fetch(`${API_BASE_URL}/joker/stock-items/${stockItemId}/consumption`, { cache: "no-store" });
-  return readJson<StockItemConsumptionResponse>(response);
-}
-
 export async function deleteStockItem(stockItemId: number): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/joker/stock-items/${stockItemId}`, { method: "DELETE" });
   await readJson<{ ok: true }>(response);

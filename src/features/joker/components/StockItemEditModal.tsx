@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
-import { getStockItemConsumption } from "../joker.api";
 import type { JokerStockItem } from "../joker.types";
 
 type StockItemEditModalProps = {
@@ -10,36 +9,8 @@ type StockItemEditModalProps = {
   onSave: (quantity: number) => Promise<void>;
 };
 
-type ConsumptionLine = {
-  orderId: number | null;
-  displayNumber: number | null;
-  productName: string;
-  quantity: number;
-  createdAt: string;
-};
-
 export function StockItemEditModal({ item, isSaving, onClose, onSave }: StockItemEditModalProps) {
   const [quantityInput, setQuantityInput] = useState(String(item.quantity));
-  const [consumption, setConsumption] = useState<ConsumptionLine[] | null>(null);
-  const [isLoadingConsumption, setIsLoadingConsumption] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoadingConsumption(true);
-    getStockItemConsumption(item.id)
-      .then((result) => {
-        if (!cancelled) setConsumption(result.items);
-      })
-      .catch((error) => {
-        if (!cancelled) toast.error(error instanceof Error ? error.message : "No se pudo cargar el consumo.");
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingConsumption(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [item.id]);
 
   function handleSaveClick() {
     const parsed = Number(quantityInput);
@@ -69,23 +40,6 @@ export function StockItemEditModal({ item, isSaving, onClose, onSave }: StockIte
             placeholder={`Ej: 20 ${item.unit}`}
           />
         </label>
-
-        <p className="joker-modal-card__hint">Pedidos que consumieron este insumo desde el ultimo cierre de caja</p>
-
-        {isLoadingConsumption ? (
-          <p className="joker-empty-state">Cargando...</p>
-        ) : consumption && consumption.length ? (
-          <ul className="joker-order-list">
-            {consumption.map((line) => (
-              <li key={`${line.orderId ?? "sin-pedido"}-${line.productName}`} className="joker-order-item joker-order-item--flat">
-                <span>{line.displayNumber ? `Pedido #${line.displayNumber}` : "Sin pedido vinculado"} → {line.productName}</span>
-                <span className="joker-qty-badge">x{line.quantity}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="joker-empty-state">Todavia no se vendio nada que use este insumo en este periodo.</p>
-        )}
 
         <div className="joker-modal-card__actions">
           <button type="button" className="joker-button joker-button--ghost" onClick={onClose} disabled={isSaving}>
