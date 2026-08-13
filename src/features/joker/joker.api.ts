@@ -191,12 +191,13 @@ export async function listAccountEntries(): Promise<AccountEntryListResponse> {
 export async function createAccountEntry(
   clientId: number,
   total: number,
-  items: Array<{ productName: string; quantity: number }>
+  items: Array<{ productName: string; quantity: number }>,
+  orderId?: number
 ): Promise<AccountEntryResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/account-entries`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ clientId, total, items })
+    body: JSON.stringify({ clientId, orderId, total, items })
   });
   return readJson<AccountEntryResponse>(response);
 }

@@ -113,9 +113,11 @@ export function OrdersScreen({
     // cierre de caja), asi que primero hay que guardar el pedido y recien
     // con ese numero armar e imprimir el ticket.
     let displayNumber: number;
+    let orderId: number;
     try {
       const saved = await createOrder(order, orderAddress, paymentMethod, customerName);
       displayNumber = saved.item.displayNumber;
+      orderId = saved.item.id;
     } catch (saveError) {
       toast.error(saveError instanceof Error ? `No se pudo guardar el pedido: ${saveError.message}` : "No se pudo guardar el pedido.");
       setIsPrinting(false);
@@ -160,7 +162,8 @@ export function OrdersScreen({
         await createAccountEntry(
           clientId,
           order.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
-          order.map((item) => ({ productName: item.productName, quantity: item.quantity }))
+          order.map((item) => ({ productName: item.productName, quantity: item.quantity })),
+          orderId
         );
         onAccountEntryRegistered();
       } catch (accountError) {
