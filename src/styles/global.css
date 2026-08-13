@@ -1237,3 +1237,55 @@ textarea {
   background: var(--joker-accent);
   color: #fff;
 }
+
+.joker-food-stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.joker-food-stock-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  border: 1px solid var(--joker-border);
+  border-radius: var(--joker-radius-md);
+  background: var(--joker-surface);
+  box-shadow: var(--joker-shadow);
+  text-align: center;
+}
+
+.joker-food-stock-card--out {
+  border-color: var(--joker-danger);
+  background: #fdecec;
+}
+
+.joker-food-stock-card__icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.joker-food-stock-card__name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--joker-text);
+}
+
+.joker-food-stock-card__qty {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--joker-accent);
+}
+
+.joker-food-stock-card--out .joker-food-stock-card__qty {
+  color: var(--joker-danger);
+}
+
+.joker-food-stock-card__qty small {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--joker-muted);
+}

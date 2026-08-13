@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { FoodStockBoard } from "../components/FoodStockBoard";
 import {
   bulkApplyRecipe,
   createStockItem,
@@ -9,7 +10,9 @@ import {
   restockItem,
   setProductRecipe
 } from "../joker.api";
-import type { JokerProduct, JokerStockItem } from "../joker.types";
+import type { JokerProduct, JokerStockItem, JokerStockItemCategory } from "../joker.types";
+
+const STOCK_REFRESH_INTERVAL_MS = 15000;
 
 type StockScreenProps = {
   products: JokerProduct[];
@@ -31,6 +34,7 @@ export function StockScreen({ products }: StockScreenProps) {
 
   const [newItemName, setNewItemName] = useState("");
   const [newItemUnit, setNewItemUnit] = useState("unidad");
+  const [newItemCategory, setNewItemCategory] = useState<JokerStockItemCategory>("comida");
   const [newItemQuantity, setNewItemQuantity] = useState("0");
   const [isSavingItem, setIsSavingItem] = useState(false);
 
@@ -47,6 +51,11 @@ export function StockScreen({ products }: StockScreenProps) {
 
   useEffect(() => {
     void loadStockItems();
+
+    // Refresco silencioso: el tablero de comidas se usa para mirar en vivo
+    // como baja el stock a medida que entran pedidos desde otra pantalla.
+    const intervalId = window.setInterval(() => void loadStockItems(true), STOCK_REFRESH_INTERVAL_MS);
+    return () => window.clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
@@ -57,16 +66,22 @@ export function StockScreen({ products }: StockScreenProps) {
     void loadRecipe(Number(selectedProductId));
   }, [selectedProductId]);
 
-  async function loadStockItems() {
-    setIsLoading(true);
-    setLoadError(null);
+  async function loadStockItems(silent = false) {
+    if (!silent) {
+      setIsLoading(true);
+      setLoadError(null);
+    }
     try {
       const result = await listStockItems();
       setStockItems(result.items);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "No se pudo cargar el stock.");
+      if (!silent) {
+        setLoadError(error instanceof Error ? error.message : "No se pudo cargar el stock.");
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   }
 
@@ -95,7 +110,7 @@ export function StockScreen({ products }: StockScreenProps) {
 
     setIsSavingItem(true);
     try {
-      await createStockItem(trimmedName, newItemUnit.trim() || "unidad", Number(newItemQuantity) || 0);
+      await createStockItem(trimmedName, newItemUnit.trim() || "unidad", Number(newItemQuantity) || 0, newItemCategory);
       setNewItemName("");
       setNewItemQuantity("0");
       toast.success("Insumo agregado.");
@@ -203,13 +218,15 @@ export function StockScreen({ products }: StockScreenProps) {
 
   return (
     <>
-      <section className="joker-panel">
+      {!isLoading && !loadError ? <FoodStockBoard items={stockItems} /> : null}
+
+      <section className="joker-panel top-gap">
         <div className="joker-panel__heading">
           <p className="joker-eyebrow">Insumos</p>
           <h2>Stock</h2>
         </div>
 
-        <div className="joker-form" style={{ gridTemplateColumns: "1.4fr 1fr 1fr auto" }}>
+        <div className="joker-form" style={{ gridTemplateColumns: "1.2fr 0.8fr 0.8fr 1fr auto" }}>
           <label className="joker-form-field">
             <span>Nuevo insumo</span>
             <input type="text" value={newItemName} onChange={(event) => setNewItemName(event.target.value)} placeholder="Ej: Pan de hamburguesa" />
@@ -217,6 +234,14 @@ export function StockScreen({ products }: StockScreenProps) {
           <label className="joker-form-field">
             <span>Unidad</span>
             <input type="text" value={newItemUnit} onChange={(event) => setNewItemUnit(event.target.value)} placeholder="unidad" />
+          </label>
+          <label className="joker-form-field">
+            <span>Tipo</span>
+            <select value={newItemCategory} onChange={(event) => setNewItemCategory(event.target.value as JokerStockItemCategory)}>
+              <option value="comida">Comida</option>
+              <option value="bebida">Bebida</option>
+              <option value="otro">Otro</option>
+            </select>
           </label>
           <label className="joker-form-field">
             <span>Cantidad inicial</span>
@@ -232,7 +257,7 @@ export function StockScreen({ products }: StockScreenProps) {
         ) : loadError ? (
           <div className="top-gap">
             <p className="joker-order-item__excluded">{loadError}</p>
-            <button type="button" className="joker-button joker-button--ghost" onClick={loadStockItems}>
+            <button type="button" className="joker-button joker-button--ghost" onClick={() => loadStockItems()}>
               Reintentar
             </button>
           </div>

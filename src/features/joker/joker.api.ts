@@ -239,11 +239,16 @@ export async function listStockItems(): Promise<StockItemListResponse> {
   return readJson<StockItemListResponse>(response);
 }
 
-export async function createStockItem(name: string, unit: string, quantity: number): Promise<StockItemResponse> {
+export async function createStockItem(
+  name: string,
+  unit: string,
+  quantity: number,
+  category?: "comida" | "bebida" | "otro"
+): Promise<StockItemResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/stock-items`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, unit, quantity })
+    body: JSON.stringify({ name, unit, quantity, category })
   });
   return readJson<StockItemResponse>(response);
 }
