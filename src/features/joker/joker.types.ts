@@ -88,7 +88,7 @@ export type JokerAccountSettlement = {
   total: number;
   items: Array<{ productName: string; quantity: number }>;
   entryCreatedAt: string;
-  reason: "pago" | "cliente_eliminado";
+  reason: "pago" | "cliente_eliminado" | "correccion_manual";
   settledAt: string;
 };
 

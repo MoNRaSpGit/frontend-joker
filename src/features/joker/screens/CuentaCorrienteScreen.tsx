@@ -346,7 +346,12 @@ export function CuentaCorrienteScreen({
                       <div className="joker-cc-history-row__head">
                         <strong>{formatPrice(settlement.total)}</strong>
                         <span className="joker-order-item__excluded">
-                          {settlement.reason === "pago" ? "Pagado" : "Cliente eliminado"} · {formatDateTime(settlement.settledAt)}
+                          {settlement.reason === "pago"
+                            ? "Pagado"
+                            : settlement.reason === "correccion_manual"
+                              ? "Corregido"
+                              : "Cliente eliminado"}{" "}
+                          · {formatDateTime(settlement.settledAt)}
                         </span>
                       </div>
                       <p className="joker-cc-history-row__items">
