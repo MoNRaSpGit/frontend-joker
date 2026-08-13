@@ -330,7 +330,8 @@ export function buildAccountStatementTicketLines(client: JokerClient, entries: J
 
   if (entries.length) {
     entries.forEach((entry, index) => {
-      const dateLabel = new Date(entry.createdAt).toLocaleDateString("es-UY", {
+      const dateSource = entry.orderDate ? new Date(`${entry.orderDate}T00:00:00`) : new Date(entry.createdAt);
+      const dateLabel = dateSource.toLocaleDateString("es-UY", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric"

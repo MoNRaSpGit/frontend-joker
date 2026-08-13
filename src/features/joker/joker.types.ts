@@ -91,6 +91,7 @@ export type JokerAccountEntry = {
   id: number;
   clientId: number;
   createdAt: string;
+  orderDate: string | null;
   total: number;
   items: Array<{ productName: string; quantity: number }>;
 };

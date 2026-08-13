@@ -20,9 +20,12 @@ function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
 }
 
-function formatDateTime(isoDate: string) {
+// Si el pedido que genero este movimiento tiene una fecha editada a mano
+// (orderDate), esa es la que se muestra; la hora siempre sale de created_at.
+function formatDateTime(isoDate: string, orderDate?: string | null) {
   const date = new Date(isoDate);
-  const dateLabel = date.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" });
+  const dateSource = orderDate ? new Date(`${orderDate}T00:00:00`) : date;
+  const dateLabel = dateSource.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" });
   const timeLabel = date.toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
   return `${dateLabel} ${timeLabel}`;
 }
@@ -317,7 +320,7 @@ export function CuentaCorrienteScreen({
                   <li key={entry.id} className="joker-cc-history-row">
                     <div className="joker-cc-history-row__head">
                       <strong className="joker-amount-plus">+{formatPrice(entry.total)}</strong>
-                      <span className="joker-order-item__excluded">{formatDateTime(entry.createdAt)}</span>
+                      <span className="joker-order-item__excluded">{formatDateTime(entry.createdAt, entry.orderDate)}</span>
                     </div>
                     <p className="joker-cc-history-row__items">{formatEntryItems(entry)}</p>
                   </li>
