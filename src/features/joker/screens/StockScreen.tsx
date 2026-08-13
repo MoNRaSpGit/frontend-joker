@@ -16,6 +16,11 @@ import type { JokerProduct, JokerStockItem, JokerStockItemCategory } from "../jo
 
 const STOCK_REFRESH_INTERVAL_MS = 15000;
 
+// Por ahora solo se muestra el tablero de comidas (En vivo). El resto
+// (alta de insumos, lista completa, editor de recetas) queda armado pero
+// oculto hasta que se decida si hace falta mostrarlo.
+const SHOW_STOCK_ADMIN_TOOLS = false;
+
 type StockScreenProps = {
   products: JokerProduct[];
 };
@@ -241,6 +246,8 @@ export function StockScreen({ products }: StockScreenProps) {
     <>
       {!isLoading && !loadError ? <FoodStockBoard items={stockItems} onEditItem={setEditingItem} /> : null}
 
+      {SHOW_STOCK_ADMIN_TOOLS ? (
+        <>
       <section className="joker-panel top-gap">
         <div className="joker-panel__heading">
           <p className="joker-eyebrow">Insumos</p>
@@ -397,6 +404,8 @@ export function StockScreen({ products }: StockScreenProps) {
           <p className="joker-empty-state top-gap">Elegí un producto para ver o editar su receta.</p>
         )}
       </section>
+        </>
+      ) : null}
 
       {editingItem ? (
         <StockItemEditModal item={editingItem} isSaving={isSavingEdit} onClose={() => setEditingItem(null)} onSave={handleSaveEdit} />
