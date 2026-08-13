@@ -65,9 +65,10 @@ function buildRanking(orders: JokerOrderRecord[]) {
 
 type PanelScreenProps = {
   products: JokerProduct[];
+  onAccountEntryRegistered: () => void;
 };
 
-export function PanelScreen({ products }: PanelScreenProps) {
+export function PanelScreen({ products, onAccountEntryRegistered }: PanelScreenProps) {
   const [orders, setOrders] = useState<JokerOrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -157,6 +158,10 @@ export function PanelScreen({ products }: PanelScreenProps) {
       toast.success(items.length ? "Pedido actualizado." : "Pedido cancelado.");
       setEditingOrder(null);
       await loadOrders();
+      // Si el pedido era "a cuenta", el backend ya resincronizo el
+      // movimiento de cuenta corriente; esto solo refresca la pantalla de
+      // Cuenta corriente (que tiene su propio estado) para que se vea.
+      onAccountEntryRegistered();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo guardar el pedido.");
     } finally {

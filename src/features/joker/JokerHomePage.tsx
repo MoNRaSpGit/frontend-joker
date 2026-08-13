@@ -55,10 +55,18 @@ export function JokerHomePage() {
   const [clientsLoadError, setClientsLoadError] = useState<string | null>(null);
   const [accountEntries, setAccountEntries] = useState<JokerAccountEntry[]>([]);
 
+  // La cuenta corriente se recalcula en el backend apenas se edita un
+  // pedido (ver joker.service.ts#syncAccountEntryForOrder), pero esta
+  // pantalla la tiene en un estado propio que no se entera solo -- por eso
+  // se refresca cada 15s en silencio, ademas del refresh inmediato despues
+  // de crear/editar un pedido a cuenta (ver onAccountEntryRegistered).
   useEffect(() => {
     void loadProducts();
     void loadClients();
     void loadAccountEntries();
+
+    const intervalId = window.setInterval(() => void loadAccountEntries(), 15000);
+    return () => window.clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
@@ -239,7 +247,7 @@ export function JokerHomePage() {
         ) : activeTab === "productos" ? (
           <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
         ) : activeTab === "panel" ? (
-          <PanelScreen products={products} />
+          <PanelScreen products={products} onAccountEntryRegistered={loadAccountEntries} />
         ) : activeTab === "cuenta" ? (
           <CuentaCorrienteScreen
             clients={clients}
