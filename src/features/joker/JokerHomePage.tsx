@@ -4,11 +4,13 @@ import { PrinterSettingsModal } from "./components/PrinterSettingsModal";
 import {
   createClient,
   deleteClient,
+  enableCourier,
   listAccountEntries,
   listClients,
   listCouriers,
   listProducts,
   settleAccount,
+  settleCourier,
   updateCourier
 } from "./joker.api";
 import { getPreferredPrinterName } from "./services/joker.qzPrint";
@@ -136,6 +138,16 @@ export function JokerHomePage() {
 
   async function handleRenameCourier(courierId: number, name: string) {
     const response = await updateCourier(courierId, name);
+    setCouriers((current) => current.map((courier) => (courier.id === courierId ? response.item : courier)));
+  }
+
+  async function handleEnableCourier(courierId: number) {
+    const response = await enableCourier(courierId);
+    setCouriers((current) => current.map((courier) => (courier.id === courierId ? response.item : courier)));
+  }
+
+  async function handleSettleCourier(courierId: number) {
+    const response = await settleCourier(courierId);
     setCouriers((current) => current.map((courier) => (courier.id === courierId ? response.item : courier)));
   }
 
@@ -287,7 +299,12 @@ export function JokerHomePage() {
         ) : activeTab === "stock" ? (
           <StockScreen products={products} />
         ) : activeTab === "delivery" ? (
-          <DeliveryScreen couriers={couriers} onRenameCourier={handleRenameCourier} />
+          <DeliveryScreen
+            couriers={couriers}
+            onRenameCourier={handleRenameCourier}
+            onEnableCourier={handleEnableCourier}
+            onSettleCourier={handleSettleCourier}
+          />
         ) : null}
       </main>
 

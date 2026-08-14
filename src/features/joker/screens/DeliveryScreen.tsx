@@ -6,6 +6,8 @@ import type { JokerCourier, JokerCourierCashSummary, JokerOrderRecord } from "..
 type DeliveryScreenProps = {
   couriers: JokerCourier[];
   onRenameCourier: (courierId: number, name: string) => Promise<void>;
+  onEnableCourier: (courierId: number) => Promise<void>;
+  onSettleCourier: (courierId: number) => Promise<void>;
 };
 
 const DEFAULT_HOURLY_RATE = "120";
@@ -92,14 +94,18 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
         </p>
       </div>
 
-      <div className="joker-delivery-toggle-row">
-        <p className="joker-delivery-section-title">Carga de datos</p>
-        <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => setShowForms((current) => !current)}>
-          {showForms ? "Ocultar" : "Cargar"}
-        </button>
-      </div>
+      {courier.status !== "activo" ? (
+        <p className="joker-empty-state">Habilita al repartidor para cargar caja inicial, gastos o entregas.</p>
+      ) : (
+        <div className="joker-delivery-toggle-row">
+          <p className="joker-delivery-section-title">Carga de datos</p>
+          <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => setShowForms((current) => !current)}>
+            {showForms ? "Ocultar" : "Cargar"}
+          </button>
+        </div>
+      )}
 
-      {showForms ? (
+      {courier.status === "activo" && showForms ? (
         <div className="joker-delivery-collapsible">
           <div className="joker-delivery-cash-forms">
             <div className="joker-delivery-cash-form">
@@ -286,11 +292,30 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
   );
 }
 
-export function DeliveryScreen({ couriers, onRenameCourier }: DeliveryScreenProps) {
+export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onSettleCourier }: DeliveryScreenProps) {
   const [expandedCourierId, setExpandedCourierId] = useState<number | null>(null);
   const [editingCourierId, setEditingCourierId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
   const [isSavingName, setIsSavingName] = useState(false);
+  const [togglingCourierId, setTogglingCourierId] = useState<number | null>(null);
+
+  async function handleToggleStatus(courier: JokerCourier, event: React.MouseEvent) {
+    event.stopPropagation();
+    setTogglingCourierId(courier.id);
+    try {
+      if (courier.status === "activo") {
+        await onSettleCourier(courier.id);
+        toast.success(`${courier.name}: turno liquidado.`);
+      } else {
+        await onEnableCourier(courier.id);
+        toast.success(`${courier.name}: habilitado.`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo actualizar el estado.");
+    } finally {
+      setTogglingCourierId(null);
+    }
+  }
 
   function handleStartEdit(courier: JokerCourier, event: React.MouseEvent) {
     event.stopPropagation();
@@ -355,7 +380,12 @@ export function DeliveryScreen({ couriers, onRenameCourier }: DeliveryScreenProp
                     }}
                   />
                 ) : (
-                  <strong className="joker-delivery-card__name">{courier.name}</strong>
+                  <span className="joker-delivery-card__name-group">
+                    <strong className="joker-delivery-card__name">{courier.name}</strong>
+                    <span className={`joker-delivery-status-badge${courier.status === "activo" ? " joker-delivery-status-badge--active" : ""}`}>
+                      {courier.status === "activo" ? "Habilitado" : "Inactivo"}
+                    </span>
+                  </span>
                 )}
 
                 <span className="joker-delivery-card__actions">
@@ -385,13 +415,23 @@ export function DeliveryScreen({ couriers, onRenameCourier }: DeliveryScreenProp
                       </button>
                     </>
                   ) : (
-                    <button
-                      type="button"
-                      className="joker-button joker-button--ghost joker-button--auto"
-                      onClick={(event) => handleStartEdit(courier, event)}
-                    >
-                      Editar
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className={`joker-button joker-button--auto ${courier.status === "activo" ? "joker-button--ghost" : "joker-button--primary"}`}
+                        disabled={togglingCourierId === courier.id}
+                        onClick={(event) => void handleToggleStatus(courier, event)}
+                      >
+                        {togglingCourierId === courier.id ? "..." : courier.status === "activo" ? "Liquidar" : "Habilitar"}
+                      </button>
+                      <button
+                        type="button"
+                        className="joker-button joker-button--ghost joker-button--auto"
+                        onClick={(event) => handleStartEdit(courier, event)}
+                      >
+                        Editar
+                      </button>
+                    </>
                   )}
                   {!isEditingName ? (
                     <span className={`joker-delivery-card__chevron${expanded ? " joker-delivery-card__chevron--open" : ""}`}>›</span>

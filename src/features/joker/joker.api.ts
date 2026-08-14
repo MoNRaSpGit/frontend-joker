@@ -170,6 +170,16 @@ export async function updateCourier(courierId: number, name: string): Promise<Co
   return readJson<CourierResponse>(response);
 }
 
+export async function enableCourier(courierId: number): Promise<CourierResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/couriers/${courierId}/habilitar`, { method: "POST" });
+  return readJson<CourierResponse>(response);
+}
+
+export async function settleCourier(courierId: number): Promise<CourierResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/couriers/${courierId}/liquidar`, { method: "POST" });
+  return readJson<CourierResponse>(response);
+}
+
 export async function getCourierCashSummary(courierId: number): Promise<JokerCourierCashSummary> {
   const response = await fetch(`${API_BASE_URL}/joker/couriers/${courierId}/cash-summary`, { cache: "no-store" });
   return readJson<JokerCourierCashSummary>(response);

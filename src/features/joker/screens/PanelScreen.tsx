@@ -357,7 +357,9 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered }: Pa
                           <span className="joker-delivery-assign">
                             <select value={selectedCourierId} onChange={(event) => setSelectedCourierId(event.target.value)}>
                               <option value="">Elegir repartidor</option>
-                              {couriers.map((courier) => (
+                              {couriers
+                                .filter((courier) => courier.status === "activo")
+                                .map((courier) => (
                                 <option key={courier.id} value={courier.id}>
                                   {courier.name}
                                 </option>
