@@ -1,4 +1,5 @@
 import type { JokerStockItem } from "../joker.types";
+import { resolveFoodIcon } from "../stock.utils";
 
 type FoodStockBoardProps = {
   items: JokerStockItem[];
@@ -21,37 +22,6 @@ function resolveFoodGroup(name: string): number {
   if (lower.includes("pancho") && !lower.includes("pan de")) return GROUP_CARNES;
   if (lower.startsWith("pan")) return GROUP_PANES;
   return GROUP_OTROS;
-}
-
-// Icono especifico por tipo de corte/pan, no uno solo para todos los
-// churrascos o todos los panes: asi se distingue de un vistazo cual es cual.
-function resolveFoodIcon(name: string): string {
-  const lower = name.toLowerCase();
-
-  if (lower.includes("papas")) return "🍟";
-  if (lower.includes("pancho") && !lower.includes("pan de")) return "🌭";
-  if (lower.includes("chorizo")) return "🥓";
-  if (lower.includes("burger")) return "🍔";
-
-  if (lower.startsWith("churrasco")) {
-    if (lower.includes("milanesa")) return "🍖";
-    if (lower.includes("pollo")) return "🍗";
-    if (lower.includes("chivito")) return "🥩";
-    if (lower.includes("hamburguesa")) return "🍔";
-    return "🥩";
-  }
-
-  if (lower.startsWith("pan")) {
-    if (lower.includes("queso")) return "🧀";
-    if (lower.includes("tortuga")) return "🍞";
-    if (lower.includes("pancho")) return "🥖";
-    if (lower.includes("chivito")) return "🥙";
-    if (lower.includes("sandwich")) return "🫓";
-    if (lower.includes("jambi")) return "🥐";
-    return "🍞";
-  }
-
-  return "📦";
 }
 
 export function FoodStockBoard({ items, onEditItem }: FoodStockBoardProps) {

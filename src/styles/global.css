@@ -1284,9 +1284,19 @@ textarea {
   text-align: center;
 }
 
-.joker-food-stock-card--out {
+.joker-food-stock-card--out,
+.joker-food-stock-card--red {
   border-color: var(--joker-danger);
   background: #fdecec;
+}
+
+.joker-food-stock-card--yellow {
+  border-color: #e0a716;
+  background: #fff8e6;
+}
+
+.joker-food-stock-card--yellow .joker-food-stock-card__qty {
+  color: #a8760f;
 }
 
 .joker-food-stock-card__icon {
@@ -1306,7 +1316,8 @@ textarea {
   color: var(--joker-accent);
 }
 
-.joker-food-stock-card--out .joker-food-stock-card__qty {
+.joker-food-stock-card--out .joker-food-stock-card__qty,
+.joker-food-stock-card--red .joker-food-stock-card__qty {
   color: var(--joker-danger);
 }
 

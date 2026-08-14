@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { FoodStockBoard } from "../components/FoodStockBoard";
+import { LowStockBoard } from "../components/LowStockBoard";
 import { StockItemEditModal } from "../components/StockItemEditModal";
+import { StockSearch } from "../components/StockSearch";
 import {
   bulkApplyRecipe,
   createStockItem,
@@ -50,6 +52,8 @@ export function StockScreen({ products }: StockScreenProps) {
 
   const [editingItem, setEditingItem] = useState<JokerStockItem | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const [comidaViewMode, setComidaViewMode] = useState<"todo" | "bajo">("todo");
 
   const [selectedProductId, setSelectedProductId] = useState("");
   const [recipeLines, setRecipeLines] = useState<DraftRecipeLine[]>([]);
@@ -244,7 +248,41 @@ export function StockScreen({ products }: StockScreenProps) {
 
   return (
     <>
-      {!isLoading && !loadError ? <FoodStockBoard items={stockItems} onEditItem={setEditingItem} /> : null}
+      <StockSearch items={stockItems} onEditItem={setEditingItem} />
+
+      {!isLoading && !loadError ? (
+        <section className="joker-panel top-gap">
+          <div className="joker-panel__heading">
+            <p className="joker-eyebrow">En vivo</p>
+            <h2>Stock de comidas</h2>
+          </div>
+          <div className="joker-category-chips">
+            <button
+              type="button"
+              className={`joker-category-chip${comidaViewMode === "todo" ? " is-active" : ""}`}
+              onClick={() => setComidaViewMode("todo")}
+            >
+              Mostrar todo
+            </button>
+            <button
+              type="button"
+              className={`joker-category-chip${comidaViewMode === "bajo" ? " is-active" : ""}`}
+              onClick={() => setComidaViewMode("bajo")}
+            >
+              Solo stock bajo
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {!isLoading && !loadError && comidaViewMode === "todo" ? <FoodStockBoard items={stockItems} onEditItem={setEditingItem} /> : null}
+
+      {!isLoading && !loadError ? (
+        <LowStockBoard
+          items={comidaViewMode === "bajo" ? stockItems : stockItems.filter((item) => item.category !== "comida")}
+          onEditItem={setEditingItem}
+        />
+      ) : null}
 
       {SHOW_STOCK_ADMIN_TOOLS ? (
         <>
