@@ -365,79 +365,70 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
               >
                 <span className="joker-delivery-card__icon">🛵</span>
 
-                {isEditingName ? (
-                  <input
-                    autoFocus
-                    className="joker-delivery-card__name-input"
-                    value={editingName}
-                    onClick={(event) => event.stopPropagation()}
-                    onChange={(event) => setEditingName(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        void handleSaveName(courier.id);
-                      }
-                    }}
-                  />
-                ) : (
-                  <span className="joker-delivery-card__name-group">
-                    <strong className="joker-delivery-card__name">{courier.name}</strong>
-                    <span className={`joker-delivery-status-badge${courier.status === "activo" ? " joker-delivery-status-badge--active" : ""}`}>
-                      {courier.status === "activo" ? "Habilitado" : "Inactivo"}
-                    </span>
+                <span className="joker-delivery-card__name-group">
+                  <strong className="joker-delivery-card__name">{courier.name}</strong>
+                  <span className={`joker-delivery-status-badge${courier.status === "activo" ? " joker-delivery-status-badge--active" : ""}`}>
+                    {courier.status === "activo" ? "Habilitado" : "Inactivo"}
                   </span>
-                )}
+                </span>
 
                 <span className="joker-delivery-card__actions">
+                  <button
+                    type="button"
+                    className={`joker-button joker-button--auto ${courier.status === "activo" ? "joker-button--danger" : "joker-button--primary"}`}
+                    disabled={togglingCourierId === courier.id}
+                    onClick={(event) => void handleToggleStatus(courier, event)}
+                  >
+                    {togglingCourierId === courier.id ? "..." : courier.status === "activo" ? "Liquidar" : "Habilitar"}
+                  </button>
+                  <span className={`joker-delivery-card__chevron${expanded ? " joker-delivery-card__chevron--open" : ""}`}>›</span>
+                </span>
+              </button>
+
+              {expanded ? (
+                <div className="joker-delivery-edit-name-row">
                   {isEditingName ? (
                     <>
+                      <input
+                        autoFocus
+                        className="joker-delivery-card__name-input"
+                        value={editingName}
+                        onChange={(event) => setEditingName(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            void handleSaveName(courier.id);
+                          }
+                        }}
+                      />
                       <button
                         type="button"
-                        className="joker-button joker-button--ghost joker-button--auto"
+                        className="joker-button joker-button--ghost joker-button--auto joker-button--small"
                         disabled={isSavingName}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setEditingCourierId(null);
-                        }}
+                        onClick={() => setEditingCourierId(null)}
                       >
                         Cancelar
                       </button>
                       <button
                         type="button"
-                        className="joker-button joker-button--primary joker-button--auto"
+                        className="joker-button joker-button--primary joker-button--auto joker-button--small"
                         disabled={isSavingName}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void handleSaveName(courier.id);
-                        }}
+                        onClick={() => void handleSaveName(courier.id)}
                       >
                         {isSavingName ? "..." : "Guardar"}
                       </button>
                     </>
                   ) : (
-                    <>
-                      <button
-                        type="button"
-                        className={`joker-button joker-button--auto ${courier.status === "activo" ? "joker-button--ghost" : "joker-button--primary"}`}
-                        disabled={togglingCourierId === courier.id}
-                        onClick={(event) => void handleToggleStatus(courier, event)}
-                      >
-                        {togglingCourierId === courier.id ? "..." : courier.status === "activo" ? "Liquidar" : "Habilitar"}
-                      </button>
-                      <button
-                        type="button"
-                        className="joker-button joker-button--ghost joker-button--auto"
-                        onClick={(event) => handleStartEdit(courier, event)}
-                      >
-                        Editar
-                      </button>
-                    </>
+                    <button
+                      type="button"
+                      className="joker-delivery-edit-name-link"
+                      onClick={(event) => handleStartEdit(courier, event)}
+                    >
+                      Editar nombre
+                    </button>
                   )}
-                  {!isEditingName ? (
-                    <span className={`joker-delivery-card__chevron${expanded ? " joker-delivery-card__chevron--open" : ""}`}>›</span>
-                  ) : null}
-                </span>
-              </button>
+                </div>
+              ) : null}
 
               {expanded ? <CourierSettlement courier={courier} /> : null}
             </article>
