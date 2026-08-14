@@ -1,44 +1,5 @@
 import type { JokerStockItem } from "./joker.types";
 
-// Icono especifico por tipo de corte/pan, no uno solo para todos los
-// churrascos o todos los panes: asi se distingue de un vistazo cual es cual.
-export function resolveFoodIcon(name: string): string {
-  const lower = name.toLowerCase();
-
-  if (lower.includes("papas")) return "🍟";
-  if (lower.includes("pancho") && !lower.includes("pan de")) return "🌭";
-  if (lower.includes("chorizo")) return "🥓";
-  if (lower.includes("burger")) return "🍔";
-
-  if (lower.startsWith("churrasco")) {
-    if (lower.includes("milanesa")) return "🍖";
-    if (lower.includes("pollo")) return "🍗";
-    if (lower.includes("chivito")) return "🥩";
-    if (lower.includes("hamburguesa")) return "🍔";
-    return "🥩";
-  }
-
-  if (lower.startsWith("pan")) {
-    if (lower.includes("queso")) return "🧀";
-    if (lower.includes("tortuga")) return "🍞";
-    if (lower.includes("pancho")) return "🥖";
-    if (lower.includes("chivito")) return "🥙";
-    if (lower.includes("sandwich")) return "🫓";
-    if (lower.includes("jambi")) return "🥐";
-    return "🍞";
-  }
-
-  return "📦";
-}
-
-// Icono generico por categoria, para insumos que no son comida (bebidas,
-// otros) donde no vale la pena distinguir uno por uno.
-export function resolveCategoryIcon(category: JokerStockItem["category"]): string {
-  if (category === "bebida") return "🥤";
-  if (category === "comida") return "🍽️";
-  return "📦";
-}
-
 // Para mostrar en pantalla nunca se ve negativo (el numero real puede irse
 // a negativo si se vendio de mas sin reponer, pero mostrar "-8" confunde
 // mas de lo que ayuda): se limita a 0 como piso solo para lo que se ve, el

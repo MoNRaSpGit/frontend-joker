@@ -1,37 +1,21 @@
-import type { JokerStockItem, JokerStockItemCategory } from "../joker.types";
-import { clampDisplayQuantity, getStockSeverity, resolveCategoryIcon, resolveFoodIcon } from "../stock.utils";
+import type { JokerStockItem } from "../joker.types";
+import { clampDisplayQuantity, getStockSeverity } from "../stock.utils";
 
 type LowStockBoardProps = {
   items: JokerStockItem[];
   onEditItem: (item: JokerStockItem) => void;
-  showIcons: boolean;
+  maxItems?: number;
 };
-
-const CATEGORY_ORDER: JokerStockItemCategory[] = ["comida", "bebida", "otro"];
-
-const CATEGORY_LABELS: Record<JokerStockItemCategory, string> = {
-  comida: "Comidas",
-  bebida: "Bebidas",
-  otro: "Otros"
-};
-
-function resolveIcon(item: JokerStockItem): string {
-  return item.category === "comida" ? resolveFoodIcon(item.name) : resolveCategoryIcon(item.category);
-}
 
 // Tarjetas que solo aparecen cuando a un insumo le queda poco (amarillo) o
-// muy poco (rojo). A diferencia de FoodStockBoard, aca no se muestra nada
-// si el stock esta comodo -- es un panel de alertas, no un inventario
-// completo.
-export function LowStockBoard({ items, onEditItem, showIcons }: LowStockBoardProps) {
-  const grouped = CATEGORY_ORDER.map((category) => ({
-    category,
-    items: items
-      .filter((item) => item.category === category && getStockSeverity(item) !== null)
-      .sort((a, b) => a.name.localeCompare(b.name))
-  })).filter((group) => group.items.length);
+// muy poco (rojo) -- panel de alertas, no un inventario completo.
+export function LowStockBoard({ items, onEditItem, maxItems }: LowStockBoardProps) {
+  const lowStockItems = items
+    .filter((item) => getStockSeverity(item) !== null)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, maxItems);
 
-  if (!grouped.length) {
+  if (!lowStockItems.length) {
     return null;
   }
 
@@ -42,32 +26,22 @@ export function LowStockBoard({ items, onEditItem, showIcons }: LowStockBoardPro
         <h2>Stock bajo</h2>
       </div>
 
-      {grouped.map(({ category, items: groupItems }) => (
-        <div key={category}>
-          <p className="joker-food-stock-group-label">{CATEGORY_LABELS[category]}</p>
-          <div className="joker-food-stock-grid">
-            {groupItems.map((item) => {
-              const severity = getStockSeverity(item);
-              return (
-                <div key={item.id} className={`joker-food-stock-card joker-food-stock-card--${severity}`}>
-                  {showIcons ? <span className="joker-food-stock-card__icon">{resolveIcon(item)}</span> : null}
-                  <span className="joker-food-stock-card__name">{item.name}</span>
-                  <span className="joker-food-stock-card__qty">
-                    {clampDisplayQuantity(item.quantity)} <small>{item.unit}</small>
-                  </span>
-                  <button
-                    type="button"
-                    className="joker-button joker-button--ghost joker-food-stock-card__edit"
-                    onClick={() => onEditItem(item)}
-                  >
-                    Editar
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+      <div className="joker-food-stock-grid joker-food-stock-grid--large">
+        {lowStockItems.map((item) => {
+          const severity = getStockSeverity(item);
+          return (
+            <div key={item.id} className={`joker-food-stock-card joker-food-stock-card--large joker-food-stock-card--${severity}`}>
+              <span className="joker-food-stock-card__name">{item.name}</span>
+              <span className="joker-food-stock-card__qty">
+                {clampDisplayQuantity(item.quantity)} <small>{item.unit}</small>
+              </span>
+              <button type="button" className="joker-button joker-button--ghost joker-food-stock-card__edit" onClick={() => onEditItem(item)}>
+                Editar
+              </button>
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }

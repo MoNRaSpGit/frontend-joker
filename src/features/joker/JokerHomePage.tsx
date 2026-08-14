@@ -158,10 +158,7 @@ export function JokerHomePage() {
         <div className="joker-topbar__inner">
           <div className="joker-brand">
             <img className="joker-brand__mark" src={`${import.meta.env.BASE_URL}icons/logo-joker-mark.png`} alt="El Joker" />
-            <div>
-              <p className="joker-brand__kicker">El Joker</p>
-              <h1 className="joker-brand__title">{TAB_TITLES[activeTab]}</h1>
-            </div>
+            <h1 className="joker-brand__title">{TAB_TITLES[activeTab]}</h1>
           </div>
 
           <div className="joker-user-menu" ref={menuRef}>
