@@ -247,7 +247,7 @@ export function StockScreen({ products }: StockScreenProps) {
     <>
       <StockSearch items={stockItems} onEditItem={setEditingItem} />
 
-      {!isLoading && !loadError ? <LowStockBoard items={stockItems} onEditItem={setEditingItem} maxItems={5} /> : null}
+      {!isLoading && !loadError ? <LowStockBoard items={stockItems} onEditItem={setEditingItem} maxItems={6} /> : null}
 
       {SHOW_STOCK_ADMIN_TOOLS ? (
         <>

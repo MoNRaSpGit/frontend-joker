@@ -8,11 +8,20 @@ type LowStockBoardProps = {
 };
 
 // Tarjetas que solo aparecen cuando a un insumo le queda poco (amarillo) o
-// muy poco (rojo) -- panel de alertas, no un inventario completo.
+// muy poco (rojo) -- panel de alertas, no un inventario completo. Se
+// ordenan por severidad (rojo antes que amarillo) y dentro de cada
+// severidad por cantidad ascendente, para que lo mas critico aparezca
+// primero -- si hay mas insumos bajos que el limite (maxItems), los que se
+// cortan tienen que ser los menos urgentes, no cualquiera por orden
+// alfabetico.
 export function LowStockBoard({ items, onEditItem, maxItems }: LowStockBoardProps) {
   const lowStockItems = items
     .filter((item) => getStockSeverity(item) !== null)
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort((a, b) => {
+      const severityDiff = (getStockSeverity(a) === "red" ? 0 : 1) - (getStockSeverity(b) === "red" ? 0 : 1);
+      if (severityDiff !== 0) return severityDiff;
+      return a.quantity - b.quantity;
+    })
     .slice(0, maxItems);
 
   if (!lowStockItems.length) {
