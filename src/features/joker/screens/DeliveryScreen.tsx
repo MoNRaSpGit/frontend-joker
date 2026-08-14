@@ -23,6 +23,8 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
   const [expenseDescriptionInput, setExpenseDescriptionInput] = useState("");
   const [handoverAmountInput, setHandoverAmountInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showForms, setShowForms] = useState(false);
+  const [showMovements, setShowMovements] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,92 +79,101 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
 
   return (
     <div className="joker-delivery-cash">
-      <div className="joker-delivery-summary joker-delivery-summary--cash">
-        <div className="joker-delivery-summary__row">
-          <span>Caja inicial</span>
-          <strong>{formatPrice(summary.initialCash)}</strong>
-        </div>
-        <div className="joker-delivery-summary__row">
-          <span>Efectivo cobrado ({summary.ordersCashCount} pedidos)</span>
-          <strong>{formatPrice(summary.ordersCashTotal)}</strong>
-        </div>
-        <div className="joker-delivery-summary__row">
-          <span>Gastos</span>
-          <strong>-{formatPrice(summary.expensesTotal)}</strong>
-        </div>
-        <div className="joker-delivery-summary__row">
-          <span>Entregas al local</span>
-          <strong>-{formatPrice(summary.handoversTotal)}</strong>
-        </div>
+      <p className="joker-delivery-section-title">Caja</p>
+      <div className="joker-delivery-summary joker-delivery-summary--cash joker-delivery-summary--compact">
         <div className="joker-delivery-summary__row joker-delivery-summary__row--cash-total">
           <span>Caja actual</span>
           <strong>{formatPrice(summary.cashOnHand)}</strong>
         </div>
+        <p className="joker-delivery-summary__breakdown">
+          Inicial {formatPrice(summary.initialCash)} + Cobrado {formatPrice(summary.ordersCashTotal)} ({summary.ordersCashCount}{" "}
+          {summary.ordersCashCount === 1 ? "pedido" : "pedidos"}) − Gastos {formatPrice(summary.expensesTotal)} − Entregas{" "}
+          {formatPrice(summary.handoversTotal)}
+        </p>
       </div>
 
-      <div className="joker-delivery-cash-forms">
-        <div className="joker-delivery-cash-form">
-          <label className="joker-form-field">
-            <span>Caja inicial</span>
-            <input type="number" min="0" step="1" value={initialCashInput} onChange={(event) => setInitialCashInput(event.target.value)} placeholder="Ej: 1000" />
-          </label>
-          <button
-            type="button"
-            className="joker-button joker-button--ghost joker-button--auto"
-            disabled={isSaving}
-            onClick={() => void handleAddMovement("inicial", initialCashInput)}
-          >
-            Agregar
-          </button>
-        </div>
-
-        <div className="joker-delivery-cash-form">
-          <label className="joker-form-field">
-            <span>Gasto (compra para el local)</span>
-            <input type="number" min="0" step="1" value={expenseAmountInput} onChange={(event) => setExpenseAmountInput(event.target.value)} placeholder="Ej: 500" />
-          </label>
-          <label className="joker-form-field">
-            <span>Detalle (opcional)</span>
-            <input type="text" value={expenseDescriptionInput} onChange={(event) => setExpenseDescriptionInput(event.target.value)} placeholder="Ej: Muzzarella" />
-          </label>
-          <button
-            type="button"
-            className="joker-button joker-button--ghost joker-button--auto"
-            disabled={isSaving}
-            onClick={() => void handleAddMovement("gasto", expenseAmountInput, expenseDescriptionInput.trim() || undefined)}
-          >
-            Registrar gasto
-          </button>
-        </div>
-
-        <div className="joker-delivery-cash-form">
-          <label className="joker-form-field">
-            <span>Entrega al local</span>
-            <input type="number" min="0" step="1" value={handoverAmountInput} onChange={(event) => setHandoverAmountInput(event.target.value)} placeholder="Ej: 2000" />
-          </label>
-          <button
-            type="button"
-            className="joker-button joker-button--primary joker-button--auto"
-            disabled={isSaving}
-            onClick={() => void handleAddMovement("entrega", handoverAmountInput)}
-          >
-            Registrar entrega
-          </button>
-        </div>
+      <div className="joker-delivery-toggle-row">
+        <p className="joker-delivery-section-title">Carga de datos</p>
+        <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => setShowForms((current) => !current)}>
+          {showForms ? "Ocultar" : "Cargar"}
+        </button>
       </div>
 
-      {summary.movements.length ? (
-        <ul className="joker-order-list">
-          {summary.movements.map((movement) => (
-            <li key={movement.id} className="joker-order-item joker-order-item--flat">
-              <span>
-                {movement.type === "gasto" ? "🧾 Gasto" : "📦 Entrega"}
-                {movement.description ? ` · ${movement.description}` : ""}
-              </span>
-              <span className="joker-order-item__excluded">{formatPrice(movement.amount)}</span>
-            </li>
-          ))}
-        </ul>
+      {showForms ? (
+        <div className="joker-delivery-collapsible">
+          <div className="joker-delivery-cash-forms">
+            <div className="joker-delivery-cash-form">
+              <label className="joker-form-field">
+                <span>Caja inicial</span>
+                <input type="number" min="0" step="1" value={initialCashInput} onChange={(event) => setInitialCashInput(event.target.value)} placeholder="Ej: 1000" />
+              </label>
+              <button
+                type="button"
+                className="joker-button joker-button--ghost joker-button--auto"
+                disabled={isSaving}
+                onClick={() => void handleAddMovement("inicial", initialCashInput)}
+              >
+                Agregar
+              </button>
+            </div>
+
+            <div className="joker-delivery-cash-form">
+              <label className="joker-form-field">
+                <span>Gasto (compra para el local)</span>
+                <input type="number" min="0" step="1" value={expenseAmountInput} onChange={(event) => setExpenseAmountInput(event.target.value)} placeholder="Ej: 500" />
+              </label>
+              <label className="joker-form-field">
+                <span>Detalle (opcional)</span>
+                <input type="text" value={expenseDescriptionInput} onChange={(event) => setExpenseDescriptionInput(event.target.value)} placeholder="Ej: Muzzarella" />
+              </label>
+              <button
+                type="button"
+                className="joker-button joker-button--ghost joker-button--auto"
+                disabled={isSaving}
+                onClick={() => void handleAddMovement("gasto", expenseAmountInput, expenseDescriptionInput.trim() || undefined)}
+              >
+                Registrar gasto
+              </button>
+            </div>
+
+            <div className="joker-delivery-cash-form">
+              <label className="joker-form-field">
+                <span>Entrega al local</span>
+                <input type="number" min="0" step="1" value={handoverAmountInput} onChange={(event) => setHandoverAmountInput(event.target.value)} placeholder="Ej: 2000" />
+              </label>
+              <button
+                type="button"
+                className="joker-button joker-button--primary joker-button--auto"
+                disabled={isSaving}
+                onClick={() => void handleAddMovement("entrega", handoverAmountInput)}
+              >
+                Registrar entrega
+              </button>
+            </div>
+          </div>
+
+          {summary.movements.length ? (
+            <div className="joker-delivery-toggle-row">
+              <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => setShowMovements((current) => !current)}>
+                {showMovements ? "Ocultar movimientos" : `Ver movimientos (${summary.movements.length})`}
+              </button>
+            </div>
+          ) : null}
+
+          {showMovements && summary.movements.length ? (
+            <ul className="joker-order-list">
+              {summary.movements.map((movement) => (
+                <li key={movement.id} className="joker-order-item joker-order-item--flat">
+                  <span>
+                    {movement.type === "gasto" ? "🧾 Gasto" : "📦 Entrega"}
+                    {movement.description ? ` · ${movement.description}` : ""}
+                  </span>
+                  <span className="joker-order-item__excluded">{formatPrice(movement.amount)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
@@ -174,6 +185,7 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [hourlyRate, setHourlyRate] = useState(DEFAULT_HOURLY_RATE);
   const [hoursWorked, setHoursWorked] = useState(DEFAULT_HOURS_WORKED);
+  const [showOrders, setShowOrders] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -207,7 +219,6 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
 
   return (
     <div className="joker-delivery-settlement">
-      <p className="joker-delivery-section-title">Caja</p>
       <CourierCash courier={courier} />
 
       <p className="joker-delivery-section-title">Liquidacion</p>
@@ -218,11 +229,18 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
         <p className="joker-order-item__excluded">{loadError}</p>
       ) : (
         <>
-          <p className="joker-delivery-settlement__count">
-            {orders.length} {orders.length === 1 ? "pedido realizado" : "pedidos realizados"} desde el ultimo cierre de caja
-          </p>
+          <div className="joker-delivery-toggle-row">
+            <p className="joker-delivery-settlement__count">
+              {orders.length} {orders.length === 1 ? "pedido realizado" : "pedidos realizados"} desde el ultimo cierre
+            </p>
+            {orders.length ? (
+              <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => setShowOrders((current) => !current)}>
+                {showOrders ? "Ocultar" : "Ver pedidos"}
+              </button>
+            ) : null}
+          </div>
 
-          {orders.length ? (
+          {showOrders && orders.length ? (
             <ul className="joker-order-list">
               {orders.map((order) => (
                 <li key={order.id} className="joker-order-item joker-order-item--flat">
@@ -233,9 +251,7 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="joker-empty-state">Todavia no tiene pedidos asignados en este turno.</p>
-          )}
+          ) : null}
 
           <div className="joker-form-row">
             <label className="joker-form-field">
@@ -247,9 +263,6 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
               <input type="number" min="0" step="0.5" value={hoursWorked} onChange={(event) => setHoursWorked(event.target.value)} />
             </label>
           </div>
-          <p className="joker-order-item__excluded" style={{ marginTop: -6 }}>
-            Estandar del turno 19 a 00 hs = 5 horas.
-          </p>
 
           <div className="joker-delivery-summary">
             <div className="joker-delivery-summary__row">
@@ -259,7 +272,7 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
               <strong>{formatPrice(hoursTotal)}</strong>
             </div>
             <div className="joker-delivery-summary__row">
-              <span>Costo de envio total ({ordersWithDeliveryCost.length} pedidos)</span>
+              <span>Envio ({ordersWithDeliveryCost.length})</span>
               <strong>{formatPrice(deliveryCostTotal)}</strong>
             </div>
             <div className="joker-delivery-summary__row joker-delivery-summary__row--total">

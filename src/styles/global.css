@@ -1555,7 +1555,7 @@ textarea {
 
 .joker-delivery-cash-forms {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .joker-delivery-cash-form {
@@ -1571,9 +1571,28 @@ textarea {
   margin: 0;
 }
 
-@media (min-width: 480px) {
-  .joker-delivery-cash-forms {
-    grid-template-columns: repeat(3, 1fr);
-    align-items: start;
-  }
+.joker-delivery-summary--compact {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+}
+
+.joker-delivery-summary__breakdown {
+  margin: 0;
+  font-size: 12px;
+  color: var(--joker-muted);
+  line-height: 1.5;
+}
+
+.joker-delivery-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.joker-delivery-collapsible {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
 }
