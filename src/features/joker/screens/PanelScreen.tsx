@@ -67,9 +67,10 @@ type PanelScreenProps = {
   products: JokerProduct[];
   couriers: JokerCourier[];
   onAccountEntryRegistered: () => void;
+  onGoToDelivery: () => void;
 };
 
-export function PanelScreen({ products, couriers, onAccountEntryRegistered }: PanelScreenProps) {
+export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGoToDelivery }: PanelScreenProps) {
   const [orders, setOrders] = useState<JokerOrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -86,6 +87,7 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered }: Pa
   const [assigningCourierOrderId, setAssigningCourierOrderId] = useState<number | null>(null);
   const [selectedCourierId, setSelectedCourierId] = useState("");
   const [isSavingCourier, setIsSavingCourier] = useState(false);
+  const [blockedCloseCourierNames, setBlockedCloseCourierNames] = useState<string[] | null>(null);
 
   function handleSaveProfitRate(percent: number) {
     setProfitRatePercent(percent);
@@ -125,8 +127,7 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered }: Pa
     if (confirmRegisterAction === "close") {
       const activeCouriers = couriers.filter((courier) => courier.status === "activo");
       if (activeCouriers.length) {
-        const names = activeCouriers.map((courier) => courier.name).join(", ");
-        toast.error(`No se puede cerrar la caja: primero finaliza (liquida) a ${names}.`);
+        setBlockedCloseCourierNames(activeCouriers.map((courier) => courier.name));
         setConfirmRegisterAction(null);
         return;
       }
@@ -516,6 +517,20 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered }: Pa
           isDeleting={isClosingRegister}
           onCancel={() => setConfirmRegisterAction(null)}
           onConfirm={handleConfirmRegisterAction}
+        />
+      ) : null}
+
+      {blockedCloseCourierNames ? (
+        <ConfirmDeleteModal
+          title="No se puede cerrar la caja"
+          message={`Primero finaliza (liquida) a ${blockedCloseCourierNames.join(", ")} en Delivery.`}
+          confirmLabel="Ir a Delivery"
+          variant="primary"
+          onCancel={() => setBlockedCloseCourierNames(null)}
+          onConfirm={() => {
+            setBlockedCloseCourierNames(null);
+            onGoToDelivery();
+          }}
         />
       ) : null}
     </>
