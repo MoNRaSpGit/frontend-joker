@@ -349,67 +349,67 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered }: Pa
                 {expandedOrderId === order.id ? (
                   <ul className="joker-order-detail-list">
                     <li className="joker-order-detail-list__meta">
-                      <span className="joker-order-item__excluded">
-                        {formatDateTime(order.createdAt, order.orderDate)} · {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}
-                      </span>
-                    </li>
-                    <li className="joker-order-detail-list__meta">
-                      {assigningCourierOrderId === order.id ? (
-                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                          <select value={selectedCourierId} onChange={(event) => setSelectedCourierId(event.target.value)}>
-                            <option value="">Elegir repartidor</option>
-                            {couriers.map((courier) => (
-                              <option key={courier.id} value={courier.id}>
-                                {courier.name}
-                              </option>
-                            ))}
-                          </select>
+                      <div className="joker-order-meta-row">
+                        <span className="joker-order-meta-chip">{formatDateTime(order.createdAt, order.orderDate)}</span>
+                        <span className="joker-order-meta-chip">{JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}</span>
+
+                        {assigningCourierOrderId === order.id ? (
+                          <span className="joker-delivery-assign">
+                            <select value={selectedCourierId} onChange={(event) => setSelectedCourierId(event.target.value)}>
+                              <option value="">Elegir repartidor</option>
+                              {couriers.map((courier) => (
+                                <option key={courier.id} value={courier.id}>
+                                  {courier.name}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              className="joker-mini-button"
+                              disabled={isSavingCourier}
+                              onClick={() => {
+                                setAssigningCourierOrderId(null);
+                                setSelectedCourierId("");
+                              }}
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              className="joker-button joker-button--primary joker-button--auto"
+                              disabled={isSavingCourier}
+                              onClick={() => void handleSaveCourierAssignment(order)}
+                            >
+                              {isSavingCourier ? "Guardando..." : "Guardar"}
+                            </button>
+                          </span>
+                        ) : order.courierId ? (
+                          <span className="joker-delivery-chip joker-delivery-chip--assigned">
+                            🛵 {couriers.find((courier) => courier.id === order.courierId)?.name ?? "Repartidor"}
+                            <button
+                              type="button"
+                              className="joker-mini-button"
+                              onClick={() => {
+                                setAssigningCourierOrderId(order.id);
+                                setSelectedCourierId(String(order.courierId));
+                              }}
+                            >
+                              Cambiar
+                            </button>
+                          </span>
+                        ) : (
                           <button
                             type="button"
-                            className="joker-button joker-button--ghost joker-button--auto"
-                            disabled={isSavingCourier}
+                            className="joker-delivery-chip joker-delivery-chip--unassigned"
                             onClick={() => {
-                              setAssigningCourierOrderId(null);
+                              setAssigningCourierOrderId(order.id);
                               setSelectedCourierId("");
                             }}
                           >
-                            Cancelar
+                            🛵 Asignar delivery
                           </button>
-                          <button
-                            type="button"
-                            className="joker-button joker-button--primary joker-button--auto"
-                            disabled={isSavingCourier}
-                            onClick={() => void handleSaveCourierAssignment(order)}
-                          >
-                            {isSavingCourier ? "Guardando..." : "Guardar"}
-                          </button>
-                        </div>
-                      ) : order.courierId ? (
-                        <span className="joker-order-item__excluded">
-                          🛵 {couriers.find((courier) => courier.id === order.courierId)?.name ?? "Repartidor"}{" "}
-                          <button
-                            type="button"
-                            className="joker-mini-button"
-                            onClick={() => {
-                              setAssigningCourierOrderId(order.id);
-                              setSelectedCourierId(String(order.courierId));
-                            }}
-                          >
-                            Cambiar
-                          </button>
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          className="joker-button joker-button--ghost joker-button--auto"
-                          onClick={() => {
-                            setAssigningCourierOrderId(order.id);
-                            setSelectedCourierId("");
-                          }}
-                        >
-                          Asignar delivery
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </li>
                     {order.items.length ? (
                       order.items.map((item, index) => (

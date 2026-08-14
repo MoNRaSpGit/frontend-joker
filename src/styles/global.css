@@ -828,6 +828,58 @@ textarea {
   border-bottom: 1px dashed var(--joker-border);
 }
 
+.joker-order-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.joker-order-meta-chip {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--joker-muted);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f0f0f0;
+}
+
+.joker-delivery-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.joker-delivery-chip--unassigned {
+  appearance: none;
+  background: var(--joker-accent);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.joker-delivery-chip--unassigned:hover {
+  background: var(--joker-accent-dark);
+}
+
+.joker-delivery-chip--assigned {
+  background: #eef4ff;
+  color: #1f4e79;
+  border-color: #c7dcf5;
+}
+
+.joker-delivery-assign {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .joker-qty-badge {
   flex-shrink: 0;
   min-width: 34px;
