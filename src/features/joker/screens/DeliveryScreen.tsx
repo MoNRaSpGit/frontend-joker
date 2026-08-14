@@ -8,7 +8,13 @@ type DeliveryScreenProps = {
   couriers: JokerCourier[];
   onRenameCourier: (courierId: number, name: string) => Promise<void>;
   onEnableCourier: (courierId: number) => Promise<void>;
-  onSettleCourier: (courierId: number) => Promise<void>;
+  onSettleCourier: (courierId: number, hourlyRate?: number, hoursWorked?: number) => Promise<void>;
+};
+
+type SettlementPreview = {
+  hourlyRate: number;
+  hoursWorked: number;
+  grandTotal: number;
 };
 
 const DEFAULT_HOURLY_RATE = "120";
@@ -205,7 +211,7 @@ function CourierSettlement({
   onTotalChange
 }: {
   courier: JokerCourier;
-  onTotalChange: (courierId: number, total: number) => void;
+  onTotalChange: (courierId: number, preview: SettlementPreview) => void;
 }) {
   const [orders, setOrders] = useState<JokerOrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -213,6 +219,14 @@ function CourierSettlement({
   const [hourlyRate, setHourlyRate] = useState(DEFAULT_HOURLY_RATE);
   const [hoursWorked, setHoursWorked] = useState(DEFAULT_HOURS_WORKED);
   const [showOrders, setShowOrders] = useState(false);
+
+  // Cada turno arranca con las horas estandar de nuevo (la tarifa por hora
+  // se mantiene, ya que rara vez cambia): sin esto, si el turno anterior
+  // se edito por una hora extra, ese valor quedaba pegado en el turno
+  // siguiente sin que nadie lo notara.
+  useEffect(() => {
+    setHoursWorked(DEFAULT_HOURS_WORKED);
+  }, [courier.activeSince]);
 
   useEffect(() => {
     let cancelled = false;
@@ -245,8 +259,8 @@ function CourierSettlement({
   const grandTotal = hoursTotal + deliveryCostTotal;
 
   useEffect(() => {
-    onTotalChange(courier.id, grandTotal);
-  }, [courier.id, grandTotal, onTotalChange]);
+    onTotalChange(courier.id, { hourlyRate: parsedRate, hoursWorked: parsedHours, grandTotal });
+  }, [courier.id, parsedRate, parsedHours, grandTotal, onTotalChange]);
 
   return (
     <div className="joker-delivery-settlement">
@@ -324,26 +338,34 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
   const [isSavingName, setIsSavingName] = useState(false);
   const [togglingCourierId, setTogglingCourierId] = useState<number | null>(null);
   const [courierPendingSettlement, setCourierPendingSettlement] = useState<JokerCourier | null>(null);
-  const [courierTotals, setCourierTotals] = useState<Record<number, number>>({});
+  const [courierPreviews, setCourierPreviews] = useState<Record<number, SettlementPreview>>({});
 
   // CourierSettlement (montado solo cuando la tarjeta esta expandida) avisa
-  // aca cada vez que recalcula el total a pagar, para que el modal de
-  // liquidar lo pueda mostrar sin duplicar el fetch de pedidos.
-  const handleTotalChange = useCallback((courierId: number, total: number) => {
-    setCourierTotals((current) => (current[courierId] === total ? current : { ...current, [courierId]: total }));
+  // aca cada vez que recalcula la liquidacion, para que el modal de
+  // liquidar pueda mostrar el total a pagar y mandarlo al backend sin
+  // duplicar el fetch de pedidos.
+  const handleTotalChange = useCallback((courierId: number, preview: SettlementPreview) => {
+    setCourierPreviews((current) => {
+      const existing = current[courierId];
+      if (existing && existing.hourlyRate === preview.hourlyRate && existing.hoursWorked === preview.hoursWorked && existing.grandTotal === preview.grandTotal) {
+        return current;
+      }
+      return { ...current, [courierId]: preview };
+    });
   }, []);
 
   async function handleToggleStatus(courier: JokerCourier, event: React.MouseEvent) {
     event.stopPropagation();
 
     if (courier.status === "activo") {
-      if (courierTotals[courier.id] === undefined) {
+      if (courierPreviews[courier.id] === undefined) {
         setTogglingCourierId(courier.id);
         try {
           const result = await listCurrentPeriodOrders(courier.id);
           const deliveryCostTotal = result.items.reduce((sum, order) => sum + (order.deliveryCost || 0), 0);
-          const fallbackTotal = Number(DEFAULT_HOURLY_RATE) * Number(DEFAULT_HOURS_WORKED) + deliveryCostTotal;
-          handleTotalChange(courier.id, fallbackTotal);
+          const hourlyRate = Number(DEFAULT_HOURLY_RATE);
+          const hoursWorked = Number(DEFAULT_HOURS_WORKED);
+          handleTotalChange(courier.id, { hourlyRate, hoursWorked, grandTotal: hourlyRate * hoursWorked + deliveryCostTotal });
         } catch (error) {
           toast.error(error instanceof Error ? error.message : "No se pudo calcular la liquidacion.");
         } finally {
@@ -368,12 +390,13 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
   async function handleConfirmSettlement() {
     if (!courierPendingSettlement) return;
     const courier = courierPendingSettlement;
+    const preview = courierPreviews[courier.id];
     setTogglingCourierId(courier.id);
     try {
-      await onSettleCourier(courier.id);
+      await onSettleCourier(courier.id, preview?.hourlyRate, preview?.hoursWorked);
       toast.success(`${courier.name}: turno liquidado.`);
       setCourierPendingSettlement(null);
-      setCourierTotals((current) => {
+      setCourierPreviews((current) => {
         const next = { ...current };
         delete next[courier.id];
         return next;
@@ -508,8 +531,8 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
         <ConfirmDeleteModal
           title="Liquidar repartidor"
           message={
-            courierTotals[courierPendingSettlement.id] !== undefined
-              ? `Pagar ${formatPrice(courierTotals[courierPendingSettlement.id])} a ${courierPendingSettlement.name}. Al liquidar, su caja queda archivada y el turno arranca de nuevo en 0 la proxima vez que lo habilites. Seguro?`
+            courierPreviews[courierPendingSettlement.id] !== undefined
+              ? `Pagar ${formatPrice(courierPreviews[courierPendingSettlement.id].grandTotal)} a ${courierPendingSettlement.name}. Al liquidar, su caja y su liquidacion quedan archivadas y el turno arranca de nuevo en 0 la proxima vez que lo habilites. Seguro?`
               : `Se va a cerrar el turno de ${courierPendingSettlement.name}: su caja queda archivada y arranca de nuevo en 0 la proxima vez que lo habilites. Seguro?`
           }
           confirmLabel="Liquidar"

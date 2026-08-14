@@ -146,8 +146,8 @@ export function JokerHomePage() {
     setCouriers((current) => current.map((courier) => (courier.id === courierId ? response.item : courier)));
   }
 
-  async function handleSettleCourier(courierId: number) {
-    const response = await settleCourier(courierId);
+  async function handleSettleCourier(courierId: number, hourlyRate?: number, hoursWorked?: number) {
+    const response = await settleCourier(courierId, hourlyRate, hoursWorked);
     setCouriers((current) => current.map((courier) => (courier.id === courierId ? response.item : courier)));
   }
 

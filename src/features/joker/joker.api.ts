@@ -175,8 +175,12 @@ export async function enableCourier(courierId: number): Promise<CourierResponse>
   return readJson<CourierResponse>(response);
 }
 
-export async function settleCourier(courierId: number): Promise<CourierResponse> {
-  const response = await fetch(`${API_BASE_URL}/joker/couriers/${courierId}/liquidar`, { method: "POST" });
+export async function settleCourier(courierId: number, hourlyRate?: number, hoursWorked?: number): Promise<CourierResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/couriers/${courierId}/liquidar`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ hourlyRate, hoursWorked })
+  });
   return readJson<CourierResponse>(response);
 }
 
