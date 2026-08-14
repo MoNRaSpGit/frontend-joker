@@ -157,7 +157,7 @@ export function JokerHomePage() {
       <header className="joker-topbar">
         <div className="joker-topbar__inner">
           <div className="joker-brand">
-            <span className="joker-brand__mark">🃏</span>
+            <img className="joker-brand__mark" src={`${import.meta.env.BASE_URL}icons/logo-joker-mark.png`} alt="El Joker" />
             <div>
               <p className="joker-brand__kicker">El Joker</p>
               <h1 className="joker-brand__title">{TAB_TITLES[activeTab]}</h1>

@@ -76,14 +76,11 @@ textarea {
 }
 
 .joker-brand__mark {
-  display: grid;
-  place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 12px;
-  font-size: 22px;
-  background: var(--joker-accent);
-  box-shadow: 0 6px 18px rgba(107, 27, 35, 0.45);
+  object-fit: contain;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .joker-brand__kicker {
