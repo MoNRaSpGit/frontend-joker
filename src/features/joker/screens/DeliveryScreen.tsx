@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { addCourierCashMovement, getCourierCashSummary, listCurrentPeriodOrders } from "../joker.api";
@@ -200,7 +200,13 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
   );
 }
 
-function CourierSettlement({ courier }: { courier: JokerCourier }) {
+function CourierSettlement({
+  courier,
+  onTotalChange
+}: {
+  courier: JokerCourier;
+  onTotalChange: (courierId: number, total: number) => void;
+}) {
   const [orders, setOrders] = useState<JokerOrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -237,6 +243,10 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
   const parsedHours = Number(hoursWorked) || 0;
   const hoursTotal = parsedRate * parsedHours;
   const grandTotal = hoursTotal + deliveryCostTotal;
+
+  useEffect(() => {
+    onTotalChange(courier.id, grandTotal);
+  }, [courier.id, grandTotal, onTotalChange]);
 
   return (
     <div className="joker-delivery-settlement">
@@ -314,11 +324,32 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
   const [isSavingName, setIsSavingName] = useState(false);
   const [togglingCourierId, setTogglingCourierId] = useState<number | null>(null);
   const [courierPendingSettlement, setCourierPendingSettlement] = useState<JokerCourier | null>(null);
+  const [courierTotals, setCourierTotals] = useState<Record<number, number>>({});
+
+  // CourierSettlement (montado solo cuando la tarjeta esta expandida) avisa
+  // aca cada vez que recalcula el total a pagar, para que el modal de
+  // liquidar lo pueda mostrar sin duplicar el fetch de pedidos.
+  const handleTotalChange = useCallback((courierId: number, total: number) => {
+    setCourierTotals((current) => (current[courierId] === total ? current : { ...current, [courierId]: total }));
+  }, []);
 
   async function handleToggleStatus(courier: JokerCourier, event: React.MouseEvent) {
     event.stopPropagation();
 
     if (courier.status === "activo") {
+      if (courierTotals[courier.id] === undefined) {
+        setTogglingCourierId(courier.id);
+        try {
+          const result = await listCurrentPeriodOrders(courier.id);
+          const deliveryCostTotal = result.items.reduce((sum, order) => sum + (order.deliveryCost || 0), 0);
+          const fallbackTotal = Number(DEFAULT_HOURLY_RATE) * Number(DEFAULT_HOURS_WORKED) + deliveryCostTotal;
+          handleTotalChange(courier.id, fallbackTotal);
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "No se pudo calcular la liquidacion.");
+        } finally {
+          setTogglingCourierId(null);
+        }
+      }
       setCourierPendingSettlement(courier);
       return;
     }
@@ -342,6 +373,11 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
       await onSettleCourier(courier.id);
       toast.success(`${courier.name}: turno liquidado.`);
       setCourierPendingSettlement(null);
+      setCourierTotals((current) => {
+        const next = { ...current };
+        delete next[courier.id];
+        return next;
+      });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo liquidar.");
     } finally {
@@ -462,7 +498,7 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
                 </div>
               ) : null}
 
-              {expanded ? <CourierSettlement courier={courier} /> : null}
+              {expanded ? <CourierSettlement courier={courier} onTotalChange={handleTotalChange} /> : null}
             </article>
           );
         })}
@@ -471,7 +507,11 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
       {courierPendingSettlement ? (
         <ConfirmDeleteModal
           title="Liquidar repartidor"
-          message={`Se va a cerrar el turno de ${courierPendingSettlement.name}: su caja queda archivada y arranca de nuevo en 0 la proxima vez que lo habilites. Seguro?`}
+          message={
+            courierTotals[courierPendingSettlement.id] !== undefined
+              ? `Pagar ${formatPrice(courierTotals[courierPendingSettlement.id])} a ${courierPendingSettlement.name}. Al liquidar, su caja queda archivada y el turno arranca de nuevo en 0 la proxima vez que lo habilites. Seguro?`
+              : `Se va a cerrar el turno de ${courierPendingSettlement.name}: su caja queda archivada y arranca de nuevo en 0 la proxima vez que lo habilites. Seguro?`
+          }
           confirmLabel="Liquidar"
           confirmLabelBusy="Liquidando..."
           variant="danger"
