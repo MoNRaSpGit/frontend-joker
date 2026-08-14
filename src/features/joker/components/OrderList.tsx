@@ -1,4 +1,4 @@
-import type { JokerOrderItem } from "../joker.types";
+import type { JokerCourier, JokerOrderItem } from "../joker.types";
 
 type OrderListProps = {
   order: JokerOrderItem[];
@@ -12,6 +12,9 @@ type OrderListProps = {
   onNoteChange: (note: string) => void;
   orderDate: string;
   onOrderDateChange: (orderDate: string) => void;
+  couriers: JokerCourier[];
+  orderCourierId: string;
+  onCourierChange: (courierId: string) => void;
   isPrinting: boolean;
   ticketCopies: 0 | 1 | 3;
   onTicketCopiesChange: (copies: 0 | 1 | 3) => void;
@@ -36,6 +39,9 @@ export function OrderList({
   onNoteChange,
   orderDate,
   onOrderDateChange,
+  couriers,
+  orderCourierId,
+  onCourierChange,
   isPrinting,
   ticketCopies,
   onTicketCopiesChange,
@@ -91,6 +97,18 @@ export function OrderList({
           <input type="date" value={orderDate} onChange={(event) => onOrderDateChange(event.target.value)} />
         </label>
       </div>
+
+      <label className="joker-form-field">
+        <span>Repartidor (si es delivery)</span>
+        <select value={orderCourierId} onChange={(event) => onCourierChange(event.target.value)}>
+          <option value="">Sin asignar</option>
+          {couriers.map((courier) => (
+            <option key={courier.id} value={courier.id}>
+              {courier.name}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <label className="joker-form-field">
         <span>Nota (solo sale en el ticket de mostrador)</span>

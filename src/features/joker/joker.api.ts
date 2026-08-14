@@ -3,6 +3,7 @@ import type {
   JokerAccountEntry,
   JokerAccountSettlement,
   JokerClient,
+  JokerCourier,
   JokerOrderItem,
   JokerOrderRecord,
   JokerPaymentMethod,
@@ -84,7 +85,9 @@ export async function createOrder(
   address: string,
   paymentMethod: JokerPaymentMethod,
   customerName?: string,
-  orderDate?: string
+  orderDate?: string,
+  courierId?: number,
+  deliveryCost?: number
 ): Promise<OrderResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders`, {
     method: "POST",
@@ -94,6 +97,8 @@ export async function createOrder(
       paymentMethod,
       customerName,
       orderDate: orderDate || undefined,
+      courierId,
+      deliveryCost,
       items: order.map((item) => ({
         productId: item.productId,
         productName: item.productName,
@@ -119,18 +124,22 @@ export type UpdateOrderItemInput = {
 export async function updateOrder(
   orderId: number,
   items: UpdateOrderItemInput[],
-  orderDate?: string
+  orderDate?: string,
+  courierId?: number,
+  deliveryCost?: number
 ): Promise<OrderResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders/${orderId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items, orderDate })
+    body: JSON.stringify({ items, orderDate, courierId, deliveryCost })
   });
   return readJson<OrderResponse>(response);
 }
 
-export async function listOrders(dateLabel: string): Promise<OrderListResponse> {
-  const response = await fetch(`${API_BASE_URL}/joker/orders?date=${encodeURIComponent(dateLabel)}`, {
+export async function listOrders(dateLabel: string, courierId?: number): Promise<OrderListResponse> {
+  const params = new URLSearchParams({ date: dateLabel });
+  if (courierId) params.set("courierId", String(courierId));
+  const response = await fetch(`${API_BASE_URL}/joker/orders?${params.toString()}`, {
     cache: "no-store"
   });
   return readJson<OrderListResponse>(response);
@@ -141,6 +150,15 @@ export async function listOrders(dateLabel: string): Promise<OrderListResponse> 
 export async function listCurrentPeriodOrders(): Promise<OrderListResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders/current-period`, { cache: "no-store" });
   return readJson<OrderListResponse>(response);
+}
+
+type CourierListResponse = {
+  items: JokerCourier[];
+};
+
+export async function listCouriers(): Promise<CourierListResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/couriers`, { cache: "no-store" });
+  return readJson<CourierListResponse>(response);
 }
 
 export async function resetOrders(): Promise<void> {

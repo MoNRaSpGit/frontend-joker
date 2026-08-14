@@ -6,18 +6,20 @@ import {
   deleteClient,
   listAccountEntries,
   listClients,
+  listCouriers,
   listProducts,
   settleAccount
 } from "./joker.api";
 import { getPreferredPrinterName } from "./services/joker.qzPrint";
-import type { JokerAccountEntry, JokerClient, JokerProduct } from "./joker.types";
+import type { JokerAccountEntry, JokerClient, JokerCourier, JokerProduct } from "./joker.types";
 import { CuentaCorrienteScreen } from "./screens/CuentaCorrienteScreen";
+import { DeliveryScreen } from "./screens/DeliveryScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { PanelScreen } from "./screens/PanelScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
 import { StockScreen } from "./screens/StockScreen";
 
-type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock";
+type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock" | "delivery";
 type CustomizeMode = "cliente" | "dev";
 
 const CUSTOMIZE_MODE_STORAGE_KEY = "joker.customizeMode";
@@ -27,7 +29,8 @@ const TAB_TITLES: Record<JokerTab, string> = {
   productos: "Productos",
   panel: "Panel",
   cuenta: "Cuenta corriente",
-  stock: "Stock"
+  stock: "Stock",
+  delivery: "Delivery"
 };
 
 
@@ -54,6 +57,7 @@ export function JokerHomePage() {
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [clientsLoadError, setClientsLoadError] = useState<string | null>(null);
   const [accountEntries, setAccountEntries] = useState<JokerAccountEntry[]>([]);
+  const [couriers, setCouriers] = useState<JokerCourier[]>([]);
 
   // La cuenta corriente se recalcula en el backend apenas se edita un
   // pedido (ver joker.service.ts#syncAccountEntryForOrder), pero esta
@@ -64,6 +68,7 @@ export function JokerHomePage() {
     void loadProducts();
     void loadClients();
     void loadAccountEntries();
+    void loadCouriers();
 
     const intervalId = window.setInterval(() => void loadAccountEntries(), 15000);
     return () => window.clearInterval(intervalId);
@@ -115,6 +120,16 @@ export function JokerHomePage() {
     } catch {
       // El desglose de "Debe" se recalcula solo la proxima vez que ande
       // bien la conexion; no hace falta un estado de error propio aca.
+    }
+  }
+
+  async function loadCouriers() {
+    try {
+      const result = await listCouriers();
+      setCouriers(result.items);
+    } catch {
+      // Si falla, el select de repartidor en el pedido queda vacio; se
+      // reintenta solo la proxima vez que cargue bien.
     }
   }
 
@@ -210,6 +225,13 @@ export function JokerHomePage() {
                 >
                   Stock
                 </button>
+                <button
+                  type="button"
+                  className={`joker-user-dropdown-item${activeTab === "delivery" ? " is-active" : ""}`}
+                  onClick={() => goToTab("delivery")}
+                >
+                  Delivery
+                </button>
                 <div className="joker-user-dropdown-divider" />
                 <button type="button" className="joker-user-dropdown-item" onClick={toggleCustomizeMode}>
                   ⚙️ Modo: {customizeMode === "dev" ? "Dev" : "Cliente"}
@@ -238,6 +260,7 @@ export function JokerHomePage() {
             loadError={loadError}
             onReload={loadProducts}
             clients={clients}
+            couriers={couriers}
             onAccountEntryRegistered={loadAccountEntries}
             customizeMode={customizeMode}
           />
@@ -258,6 +281,8 @@ export function JokerHomePage() {
           />
         ) : activeTab === "stock" ? (
           <StockScreen products={products} />
+        ) : activeTab === "delivery" ? (
+          <DeliveryScreen couriers={couriers} />
         ) : null}
       </main>
 
