@@ -123,6 +123,14 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered }: Pa
   // levanta el bloqueo, sin imprimir nada.
   async function handleConfirmRegisterAction() {
     if (confirmRegisterAction === "close") {
+      const activeCouriers = couriers.filter((courier) => courier.status === "activo");
+      if (activeCouriers.length) {
+        const names = activeCouriers.map((courier) => courier.name).join(", ");
+        toast.error(`No se puede cerrar la caja: primero finaliza (liquida) a ${names}.`);
+        setConfirmRegisterAction(null);
+        return;
+      }
+
       setIsClosingRegister(true);
       try {
         await printCashRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking });
