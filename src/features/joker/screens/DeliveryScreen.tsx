@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { addCourierCashMovement, getCourierCashSummary, listCurrentPeriodOrders } from "../joker.api";
 import type { JokerCourier, JokerCourierCashSummary, JokerOrderRecord } from "../joker.types";
 
@@ -44,7 +45,7 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
     return () => {
       cancelled = true;
     };
-  }, [courier.id]);
+  }, [courier.id, courier.status]);
 
   async function handleAddMovement(type: "inicial" | "gasto" | "entrega", amountInput: string, description?: string) {
     const parsedAmount = Number(amountInput);
@@ -87,11 +88,25 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
           <span>Caja actual</span>
           <strong>{formatPrice(summary.cashOnHand)}</strong>
         </div>
-        <p className="joker-delivery-summary__breakdown">
-          Inicial {formatPrice(summary.initialCash)} + Cobrado {formatPrice(summary.ordersCashTotal)} ({summary.ordersCashCount}{" "}
-          {summary.ordersCashCount === 1 ? "pedido" : "pedidos"}) − Gastos {formatPrice(summary.expensesTotal)} − Entregas{" "}
-          {formatPrice(summary.handoversTotal)}
-        </p>
+      </div>
+
+      <div className="joker-delivery-stat-grid">
+        <div className="joker-delivery-stat-card">
+          <span className="joker-delivery-stat-card__label">Inicial</span>
+          <strong className="joker-delivery-stat-card__value">{formatPrice(summary.initialCash)}</strong>
+        </div>
+        <div className="joker-delivery-stat-card">
+          <span className="joker-delivery-stat-card__label">Cobrado ({summary.ordersCashCount})</span>
+          <strong className="joker-delivery-stat-card__value">{formatPrice(summary.ordersCashTotal)}</strong>
+        </div>
+        <div className="joker-delivery-stat-card">
+          <span className="joker-delivery-stat-card__label">Gastos</span>
+          <strong className="joker-delivery-stat-card__value">{formatPrice(summary.expensesTotal)}</strong>
+        </div>
+        <div className="joker-delivery-stat-card">
+          <span className="joker-delivery-stat-card__label">Entregas</span>
+          <strong className="joker-delivery-stat-card__value">{formatPrice(summary.handoversTotal)}</strong>
+        </div>
       </div>
 
       {courier.status !== "activo" ? (
@@ -214,7 +229,7 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
     return () => {
       cancelled = true;
     };
-  }, [courier.id]);
+  }, [courier.id, courier.status]);
 
   const deliveryCostTotal = orders.reduce((sum, order) => sum + (order.deliveryCost || 0), 0);
   const ordersWithDeliveryCost = orders.filter((order) => order.deliveryCost);
@@ -298,20 +313,37 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
   const [editingName, setEditingName] = useState("");
   const [isSavingName, setIsSavingName] = useState(false);
   const [togglingCourierId, setTogglingCourierId] = useState<number | null>(null);
+  const [courierPendingSettlement, setCourierPendingSettlement] = useState<JokerCourier | null>(null);
 
   async function handleToggleStatus(courier: JokerCourier, event: React.MouseEvent) {
     event.stopPropagation();
+
+    if (courier.status === "activo") {
+      setCourierPendingSettlement(courier);
+      return;
+    }
+
     setTogglingCourierId(courier.id);
     try {
-      if (courier.status === "activo") {
-        await onSettleCourier(courier.id);
-        toast.success(`${courier.name}: turno liquidado.`);
-      } else {
-        await onEnableCourier(courier.id);
-        toast.success(`${courier.name}: habilitado.`);
-      }
+      await onEnableCourier(courier.id);
+      toast.success(`${courier.name}: habilitado.`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo actualizar el estado.");
+      toast.error(error instanceof Error ? error.message : "No se pudo habilitar.");
+    } finally {
+      setTogglingCourierId(null);
+    }
+  }
+
+  async function handleConfirmSettlement() {
+    if (!courierPendingSettlement) return;
+    const courier = courierPendingSettlement;
+    setTogglingCourierId(courier.id);
+    try {
+      await onSettleCourier(courier.id);
+      toast.success(`${courier.name}: turno liquidado.`);
+      setCourierPendingSettlement(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo liquidar.");
     } finally {
       setTogglingCourierId(null);
     }
@@ -435,6 +467,19 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
           );
         })}
       </div>
+
+      {courierPendingSettlement ? (
+        <ConfirmDeleteModal
+          title="Liquidar repartidor"
+          message={`Se va a cerrar el turno de ${courierPendingSettlement.name}: su caja queda archivada y arranca de nuevo en 0 la proxima vez que lo habilites. Seguro?`}
+          confirmLabel="Liquidar"
+          confirmLabelBusy="Liquidando..."
+          variant="danger"
+          isDeleting={togglingCourierId === courierPendingSettlement.id}
+          onCancel={() => setCourierPendingSettlement(null)}
+          onConfirm={() => void handleConfirmSettlement()}
+        />
+      ) : null}
     </section>
   );
 }

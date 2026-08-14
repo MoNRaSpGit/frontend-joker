@@ -1425,6 +1425,7 @@ textarea {
 }
 
 .joker-delivery-card--expanded {
+  grid-column: 1 / -1;
   border-color: var(--joker-accent);
   box-shadow: 0 12px 30px rgba(107, 27, 35, 0.12);
 }
@@ -1625,11 +1626,37 @@ textarea {
   padding: 12px 14px;
 }
 
-.joker-delivery-summary__breakdown {
-  margin: 0;
-  font-size: 12px;
+.joker-delivery-summary--compact .joker-delivery-summary__row--cash-total {
+  padding-top: 0;
+  border-top: none;
+}
+
+.joker-delivery-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.joker-delivery-stat-card {
+  display: grid;
+  gap: 4px;
+  padding: 8px 6px;
+  border: 1px solid var(--joker-border);
+  border-radius: var(--joker-radius-sm);
+  background: #fff;
+  text-align: center;
+}
+
+.joker-delivery-stat-card__label {
+  font-size: 10px;
+  font-weight: 700;
   color: var(--joker-muted);
-  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.joker-delivery-stat-card__value {
+  font-size: 13px;
 }
 
 .joker-delivery-toggle-row {
