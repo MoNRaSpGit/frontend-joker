@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { listOrders } from "../joker.api";
+import { listCurrentPeriodOrders } from "../joker.api";
 import type { JokerCourier, JokerOrderRecord } from "../joker.types";
 
 type DeliveryScreenProps = {
   couriers: JokerCourier[];
+  onRenameCourier: (courierId: number, name: string) => Promise<void>;
 };
 
 const DEFAULT_HOURLY_RATE = "120";
@@ -14,12 +15,7 @@ function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
 }
 
-function getTodayLabel() {
-  return new Date().toLocaleDateString("en-CA");
-}
-
 function CourierSettlement({ courier }: { courier: JokerCourier }) {
-  const [dateLabel, setDateLabel] = useState(getTodayLabel);
   const [orders, setOrders] = useState<JokerOrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -30,7 +26,7 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
     let cancelled = false;
     setIsLoading(true);
     setLoadError(null);
-    listOrders(dateLabel, courier.id)
+    listCurrentPeriodOrders(courier.id)
       .then((result) => {
         if (!cancelled) setOrders(result.items);
       })
@@ -47,9 +43,10 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
     return () => {
       cancelled = true;
     };
-  }, [courier.id, dateLabel]);
+  }, [courier.id]);
 
   const deliveryCostTotal = orders.reduce((sum, order) => sum + (order.deliveryCost || 0), 0);
+  const ordersWithDeliveryCost = orders.filter((order) => order.deliveryCost);
   const parsedRate = Number(hourlyRate) || 0;
   const parsedHours = Number(hoursWorked) || 0;
   const hoursTotal = parsedRate * parsedHours;
@@ -57,30 +54,14 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
 
   return (
     <div className="joker-delivery-settlement">
-      <div className="joker-form-row">
-        <label className="joker-form-field">
-          <span>Fecha</span>
-          <input type="date" value={dateLabel} onChange={(event) => setDateLabel(event.target.value)} />
-        </label>
-        <label className="joker-form-field">
-          <span>Tarifa por hora</span>
-          <input type="number" min="0" step="1" value={hourlyRate} onChange={(event) => setHourlyRate(event.target.value)} />
-        </label>
-      </div>
-
-      <label className="joker-form-field">
-        <span>Horas trabajadas (estandar 19 a 00 hs = 5 hs)</span>
-        <input type="number" min="0" step="0.5" value={hoursWorked} onChange={(event) => setHoursWorked(event.target.value)} />
-      </label>
-
       {isLoading ? (
-        <p className="joker-empty-state top-gap">Cargando pedidos...</p>
+        <p className="joker-empty-state">Cargando pedidos...</p>
       ) : loadError ? (
-        <p className="joker-order-item__excluded top-gap">{loadError}</p>
+        <p className="joker-order-item__excluded">{loadError}</p>
       ) : (
         <>
-          <p className="joker-order-item__excluded top-gap">
-            {courier.name} · {orders.length} {orders.length === 1 ? "pedido realizado" : "pedidos realizados"}
+          <p className="joker-delivery-settlement__count">
+            {orders.length} {orders.length === 1 ? "pedido realizado" : "pedidos realizados"} desde el ultimo cierre de caja
           </p>
 
           {orders.length ? (
@@ -88,21 +69,39 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
               {orders.map((order) => (
                 <li key={order.id} className="joker-order-item joker-order-item--flat">
                   <span>Pedido #{order.displayNumber}</span>
-                  <span>{order.deliveryCost ? `Envio: ${formatPrice(order.deliveryCost)}` : "Sin costo de envio"}</span>
+                  <span className={order.deliveryCost ? "joker-delivery-cost-tag" : "joker-order-item__excluded"}>
+                    {order.deliveryCost ? `Envio ${formatPrice(order.deliveryCost)}` : "Sin costo de envio"}
+                  </span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="joker-empty-state">No tiene pedidos asignados este dia.</p>
+            <p className="joker-empty-state">Todavia no tiene pedidos asignados en este turno.</p>
           )}
 
-          <div className="joker-delivery-summary top-gap">
+          <div className="joker-form-row">
+            <label className="joker-form-field">
+              <span>Tarifa por hora</span>
+              <input type="number" min="0" step="1" value={hourlyRate} onChange={(event) => setHourlyRate(event.target.value)} />
+            </label>
+            <label className="joker-form-field">
+              <span>Horas trabajadas</span>
+              <input type="number" min="0" step="0.5" value={hoursWorked} onChange={(event) => setHoursWorked(event.target.value)} />
+            </label>
+          </div>
+          <p className="joker-order-item__excluded" style={{ marginTop: -6 }}>
+            Estandar del turno 19 a 00 hs = 5 horas.
+          </p>
+
+          <div className="joker-delivery-summary">
             <div className="joker-delivery-summary__row">
-              <span>Horas ({parsedHours} hs x {formatPrice(parsedRate)})</span>
+              <span>
+                Horas ({parsedHours} hs x {formatPrice(parsedRate)})
+              </span>
               <strong>{formatPrice(hoursTotal)}</strong>
             </div>
             <div className="joker-delivery-summary__row">
-              <span>Costo de envio total ({orders.filter((order) => order.deliveryCost).length} pedidos)</span>
+              <span>Costo de envio total ({ordersWithDeliveryCost.length} pedidos)</span>
               <strong>{formatPrice(deliveryCostTotal)}</strong>
             </div>
             <div className="joker-delivery-summary__row joker-delivery-summary__row--total">
@@ -116,8 +115,36 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
   );
 }
 
-export function DeliveryScreen({ couriers }: DeliveryScreenProps) {
+export function DeliveryScreen({ couriers, onRenameCourier }: DeliveryScreenProps) {
   const [expandedCourierId, setExpandedCourierId] = useState<number | null>(null);
+  const [editingCourierId, setEditingCourierId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [isSavingName, setIsSavingName] = useState(false);
+
+  function handleStartEdit(courier: JokerCourier, event: React.MouseEvent) {
+    event.stopPropagation();
+    setEditingCourierId(courier.id);
+    setEditingName(courier.name);
+  }
+
+  async function handleSaveName(courierId: number) {
+    const trimmed = editingName.trim();
+    if (!trimmed) {
+      toast.error("Ponele un nombre al repartidor.");
+      return;
+    }
+
+    setIsSavingName(true);
+    try {
+      await onRenameCourier(courierId, trimmed);
+      setEditingCourierId(null);
+      toast.success("Nombre actualizado.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo actualizar el nombre.");
+    } finally {
+      setIsSavingName(false);
+    }
+  }
 
   return (
     <section className="joker-panel">
@@ -131,14 +158,60 @@ export function DeliveryScreen({ couriers }: DeliveryScreenProps) {
       <div className="joker-delivery-grid">
         {couriers.map((courier) => {
           const expanded = expandedCourierId === courier.id;
+          const isEditingName = editingCourierId === courier.id;
+
           return (
-            <article key={courier.id} className="joker-delivery-card">
+            <article key={courier.id} className={`joker-delivery-card${expanded ? " joker-delivery-card--expanded" : ""}`}>
               <button
                 type="button"
                 className="joker-delivery-card__header"
                 onClick={() => setExpandedCourierId(expanded ? null : courier.id)}
               >
-                <strong>{courier.name}</strong>
+                <span className="joker-delivery-card__icon">🛵</span>
+
+                {isEditingName ? (
+                  <input
+                    autoFocus
+                    className="joker-delivery-card__name-input"
+                    value={editingName}
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={(event) => setEditingName(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void handleSaveName(courier.id);
+                      }
+                    }}
+                  />
+                ) : (
+                  <strong className="joker-delivery-card__name">{courier.name}</strong>
+                )}
+
+                <span className="joker-delivery-card__actions">
+                  {isEditingName ? (
+                    <button
+                      type="button"
+                      className="joker-button joker-button--ghost joker-button--auto"
+                      disabled={isSavingName}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleSaveName(courier.id);
+                      }}
+                    >
+                      {isSavingName ? "..." : "Guardar"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="joker-delivery-card__edit"
+                      onClick={(event) => handleStartEdit(courier, event)}
+                      aria-label={`Editar nombre de ${courier.name}`}
+                    >
+                      ✎
+                    </button>
+                  )}
+                  <span className={`joker-delivery-card__chevron${expanded ? " joker-delivery-card__chevron--open" : ""}`}>›</span>
+                </span>
               </button>
 
               {expanded ? <CourierSettlement courier={courier} /> : null}

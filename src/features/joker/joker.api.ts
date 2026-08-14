@@ -136,19 +136,13 @@ export async function updateOrder(
   return readJson<OrderResponse>(response);
 }
 
-export async function listOrders(dateLabel: string, courierId?: number): Promise<OrderListResponse> {
-  const params = new URLSearchParams({ date: dateLabel });
-  if (courierId) params.set("courierId", String(courierId));
-  const response = await fetch(`${API_BASE_URL}/joker/orders?${params.toString()}`, {
-    cache: "no-store"
-  });
-  return readJson<OrderListResponse>(response);
-}
-
 // Pedidos del periodo de caja actual (desde el ultimo cierre): lo usa el
-// Panel para que el resumen arranque de nuevo despues de cada cierre.
-export async function listCurrentPeriodOrders(): Promise<OrderListResponse> {
-  const response = await fetch(`${API_BASE_URL}/joker/orders/current-period`, { cache: "no-store" });
+// Panel para que el resumen arranque de nuevo despues de cada cierre, y
+// Delivery (con courierId) para que la asignacion de pedidos por
+// repartidor tambien arranque de nuevo con cada cierre.
+export async function listCurrentPeriodOrders(courierId?: number): Promise<OrderListResponse> {
+  const params = courierId ? `?courierId=${courierId}` : "";
+  const response = await fetch(`${API_BASE_URL}/joker/orders/current-period${params}`, { cache: "no-store" });
   return readJson<OrderListResponse>(response);
 }
 
@@ -156,9 +150,22 @@ type CourierListResponse = {
   items: JokerCourier[];
 };
 
+type CourierResponse = {
+  item: JokerCourier;
+};
+
 export async function listCouriers(): Promise<CourierListResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/couriers`, { cache: "no-store" });
   return readJson<CourierListResponse>(response);
+}
+
+export async function updateCourier(courierId: number, name: string): Promise<CourierResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/couriers/${courierId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name })
+  });
+  return readJson<CourierResponse>(response);
 }
 
 export async function resetOrders(): Promise<void> {

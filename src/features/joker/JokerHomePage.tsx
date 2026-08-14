@@ -8,7 +8,8 @@ import {
   listClients,
   listCouriers,
   listProducts,
-  settleAccount
+  settleAccount,
+  updateCourier
 } from "./joker.api";
 import { getPreferredPrinterName } from "./services/joker.qzPrint";
 import type { JokerAccountEntry, JokerClient, JokerCourier, JokerProduct } from "./joker.types";
@@ -131,6 +132,11 @@ export function JokerHomePage() {
       // Si falla, el select de repartidor en el pedido queda vacio; se
       // reintenta solo la proxima vez que cargue bien.
     }
+  }
+
+  async function handleRenameCourier(courierId: number, name: string) {
+    const response = await updateCourier(courierId, name);
+    setCouriers((current) => current.map((courier) => (courier.id === courierId ? response.item : courier)));
   }
 
   function goToTab(tab: JokerTab) {
@@ -282,7 +288,7 @@ export function JokerHomePage() {
         ) : activeTab === "stock" ? (
           <StockScreen products={products} />
         ) : activeTab === "delivery" ? (
-          <DeliveryScreen couriers={couriers} />
+          <DeliveryScreen couriers={couriers} onRenameCourier={handleRenameCourier} />
         ) : null}
       </main>
 
