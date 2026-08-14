@@ -7,7 +7,7 @@ import { ProfitRateModal } from "../components/ProfitRateModal";
 import { closeRegister, getRegisterState, listCurrentPeriodOrders, openRegister, updateOrder } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerOrderRecord, JokerPaymentMethod, JokerProduct, JokerRegisterState } from "../joker.types";
+import type { JokerCourier, JokerOrderRecord, JokerPaymentMethod, JokerProduct, JokerRegisterState } from "../joker.types";
 
 const PROFIT_RATE_STORAGE_KEY = "joker.profitRatePercent";
 const DEFAULT_PROFIT_RATE_PERCENT = 30;
@@ -65,10 +65,11 @@ function buildRanking(orders: JokerOrderRecord[]) {
 
 type PanelScreenProps = {
   products: JokerProduct[];
+  couriers: JokerCourier[];
   onAccountEntryRegistered: () => void;
 };
 
-export function PanelScreen({ products, onAccountEntryRegistered }: PanelScreenProps) {
+export function PanelScreen({ products, couriers, onAccountEntryRegistered }: PanelScreenProps) {
   const [orders, setOrders] = useState<JokerOrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -324,6 +325,7 @@ export function PanelScreen({ products, onAccountEntryRegistered }: PanelScreenP
                     <li className="joker-order-detail-list__meta">
                       <span className="joker-order-item__excluded">
                         {formatDateTime(order.createdAt, order.orderDate)} · {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}
+                        {order.courierId ? ` · 🛵 ${couriers.find((courier) => courier.id === order.courierId)?.name ?? "Repartidor"}` : ""}
                       </span>
                     </li>
                     {order.items.length ? (

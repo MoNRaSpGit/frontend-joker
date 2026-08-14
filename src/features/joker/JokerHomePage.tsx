@@ -273,7 +273,7 @@ export function JokerHomePage() {
         ) : activeTab === "productos" ? (
           <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
         ) : activeTab === "panel" ? (
-          <PanelScreen products={products} onAccountEntryRegistered={loadAccountEntries} />
+          <PanelScreen products={products} couriers={couriers} onAccountEntryRegistered={loadAccountEntries} />
         ) : activeTab === "cuenta" ? (
           <CuentaCorrienteScreen
             clients={clients}
