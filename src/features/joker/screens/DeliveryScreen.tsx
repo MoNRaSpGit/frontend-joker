@@ -189,28 +189,42 @@ export function DeliveryScreen({ couriers, onRenameCourier }: DeliveryScreenProp
 
                 <span className="joker-delivery-card__actions">
                   {isEditingName ? (
-                    <button
-                      type="button"
-                      className="joker-button joker-button--ghost joker-button--auto"
-                      disabled={isSavingName}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void handleSaveName(courier.id);
-                      }}
-                    >
-                      {isSavingName ? "..." : "Guardar"}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className="joker-button joker-button--ghost joker-button--auto"
+                        disabled={isSavingName}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setEditingCourierId(null);
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        className="joker-button joker-button--primary joker-button--auto"
+                        disabled={isSavingName}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleSaveName(courier.id);
+                        }}
+                      >
+                        {isSavingName ? "..." : "Guardar"}
+                      </button>
+                    </>
                   ) : (
                     <button
                       type="button"
-                      className="joker-delivery-card__edit"
+                      className="joker-button joker-button--ghost joker-button--auto"
                       onClick={(event) => handleStartEdit(courier, event)}
-                      aria-label={`Editar nombre de ${courier.name}`}
                     >
-                      ✎
+                      Editar
                     </button>
                   )}
-                  <span className={`joker-delivery-card__chevron${expanded ? " joker-delivery-card__chevron--open" : ""}`}>›</span>
+                  {!isEditingName ? (
+                    <span className={`joker-delivery-card__chevron${expanded ? " joker-delivery-card__chevron--open" : ""}`}>›</span>
+                  ) : null}
                 </span>
               </button>
 

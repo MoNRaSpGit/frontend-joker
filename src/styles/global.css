@@ -471,6 +471,7 @@ textarea {
   display: grid;
   gap: 6px;
   margin: 0 0 1rem;
+  min-width: 0;
   font-size: 13px;
   font-weight: 700;
   color: var(--joker-muted);
@@ -478,6 +479,7 @@ textarea {
 
 .joker-form-field input,
 .joker-form-field select {
+  width: 100%;
   min-height: 46px;
   padding: 0 14px;
   border: 1px solid var(--joker-border);
@@ -1416,24 +1418,6 @@ textarea {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-}
-
-.joker-delivery-card__edit {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--joker-border);
-  border-radius: 50%;
-  background: #fff;
-  color: var(--joker-muted);
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.joker-delivery-card__edit:hover {
-  color: var(--joker-accent);
-  border-color: var(--joker-accent);
 }
 
 .joker-delivery-card__chevron {
