@@ -1,9 +1,10 @@
 import type { JokerStockItem } from "../joker.types";
-import { resolveFoodIcon } from "../stock.utils";
+import { clampDisplayQuantity, resolveFoodIcon } from "../stock.utils";
 
 type FoodStockBoardProps = {
   items: JokerStockItem[];
   onEditItem: (item: JokerStockItem) => void;
+  showIcons: boolean;
 };
 
 const GROUP_CARNES = 0;
@@ -24,7 +25,7 @@ function resolveFoodGroup(name: string): number {
   return GROUP_OTROS;
 }
 
-export function FoodStockBoard({ items, onEditItem }: FoodStockBoardProps) {
+export function FoodStockBoard({ items, onEditItem, showIcons }: FoodStockBoardProps) {
   const foodItems = items
     .filter((item) => item.category === "comida")
     .sort((a, b) => resolveFoodGroup(a.name) - resolveFoodGroup(b.name) || a.name.localeCompare(b.name));
@@ -52,10 +53,10 @@ export function FoodStockBoard({ items, onEditItem }: FoodStockBoardProps) {
                 const isOut = item.quantity <= 0;
                 return (
                   <div key={item.id} className={`joker-food-stock-card${isOut ? " joker-food-stock-card--out" : ""}`}>
-                    <span className="joker-food-stock-card__icon">{resolveFoodIcon(item.name)}</span>
+                    {showIcons ? <span className="joker-food-stock-card__icon">{resolveFoodIcon(item.name)}</span> : null}
                     <span className="joker-food-stock-card__name">{item.name}</span>
                     <span className="joker-food-stock-card__qty">
-                      {item.quantity} <small>{item.unit}</small>
+                      {clampDisplayQuantity(item.quantity)} <small>{item.unit}</small>
                     </span>
                     <button
                       type="button"

@@ -54,6 +54,7 @@ export function StockScreen({ products }: StockScreenProps) {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const [comidaViewMode, setComidaViewMode] = useState<"todo" | "bajo">("todo");
+  const [showIcons, setShowIcons] = useState(true);
 
   const [selectedProductId, setSelectedProductId] = useState("");
   const [recipeLines, setRecipeLines] = useState<DraftRecipeLine[]>([]);
@@ -248,13 +249,13 @@ export function StockScreen({ products }: StockScreenProps) {
 
   return (
     <>
-      <StockSearch items={stockItems} onEditItem={setEditingItem} />
+      <StockSearch items={stockItems} onEditItem={setEditingItem} showIcons={showIcons} />
 
       {!isLoading && !loadError ? (
         <section className="joker-panel top-gap">
           <div className="joker-panel__heading">
             <p className="joker-eyebrow">En vivo</p>
-            <h2>Stock de comidas</h2>
+            <h2>Stock</h2>
           </div>
           <div className="joker-category-chips">
             <button
@@ -262,25 +263,44 @@ export function StockScreen({ products }: StockScreenProps) {
               className={`joker-category-chip${comidaViewMode === "todo" ? " is-active" : ""}`}
               onClick={() => setComidaViewMode("todo")}
             >
-              Mostrar todo
+              Comidas: mostrar todo
             </button>
             <button
               type="button"
               className={`joker-category-chip${comidaViewMode === "bajo" ? " is-active" : ""}`}
               onClick={() => setComidaViewMode("bajo")}
             >
-              Solo stock bajo
+              Comidas: solo stock bajo
+            </button>
+          </div>
+          <div className="joker-category-chips">
+            <button
+              type="button"
+              className={`joker-category-chip${showIcons ? " is-active" : ""}`}
+              onClick={() => setShowIcons(true)}
+            >
+              Con sticker
+            </button>
+            <button
+              type="button"
+              className={`joker-category-chip${!showIcons ? " is-active" : ""}`}
+              onClick={() => setShowIcons(false)}
+            >
+              Sin sticker
             </button>
           </div>
         </section>
       ) : null}
 
-      {!isLoading && !loadError && comidaViewMode === "todo" ? <FoodStockBoard items={stockItems} onEditItem={setEditingItem} /> : null}
+      {!isLoading && !loadError && comidaViewMode === "todo" ? (
+        <FoodStockBoard items={stockItems} onEditItem={setEditingItem} showIcons={showIcons} />
+      ) : null}
 
       {!isLoading && !loadError ? (
         <LowStockBoard
           items={comidaViewMode === "bajo" ? stockItems : stockItems.filter((item) => item.category !== "comida")}
           onEditItem={setEditingItem}
+          showIcons={showIcons}
         />
       ) : null}
 

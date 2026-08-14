@@ -39,6 +39,14 @@ export function resolveCategoryIcon(category: JokerStockItem["category"]): strin
   return "📦";
 }
 
+// Para mostrar en pantalla nunca se ve negativo (el numero real puede irse
+// a negativo si se vendio de mas sin reponer, pero mostrar "-8" confunde
+// mas de lo que ayuda): se limita a 0 como piso solo para lo que se ve, el
+// valor real en la base no cambia.
+export function clampDisplayQuantity(quantity: number): number {
+  return Math.max(0, quantity);
+}
+
 export type StockSeverity = "red" | "yellow" | null;
 
 // Umbrales de "queda poco": distintos segun la unidad, porque no es lo

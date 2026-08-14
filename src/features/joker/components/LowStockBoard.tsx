@@ -1,9 +1,10 @@
 import type { JokerStockItem, JokerStockItemCategory } from "../joker.types";
-import { getStockSeverity, resolveCategoryIcon, resolveFoodIcon } from "../stock.utils";
+import { clampDisplayQuantity, getStockSeverity, resolveCategoryIcon, resolveFoodIcon } from "../stock.utils";
 
 type LowStockBoardProps = {
   items: JokerStockItem[];
   onEditItem: (item: JokerStockItem) => void;
+  showIcons: boolean;
 };
 
 const CATEGORY_ORDER: JokerStockItemCategory[] = ["comida", "bebida", "otro"];
@@ -22,7 +23,7 @@ function resolveIcon(item: JokerStockItem): string {
 // muy poco (rojo). A diferencia de FoodStockBoard, aca no se muestra nada
 // si el stock esta comodo -- es un panel de alertas, no un inventario
 // completo.
-export function LowStockBoard({ items, onEditItem }: LowStockBoardProps) {
+export function LowStockBoard({ items, onEditItem, showIcons }: LowStockBoardProps) {
   const grouped = CATEGORY_ORDER.map((category) => ({
     category,
     items: items
@@ -49,10 +50,10 @@ export function LowStockBoard({ items, onEditItem }: LowStockBoardProps) {
               const severity = getStockSeverity(item);
               return (
                 <div key={item.id} className={`joker-food-stock-card joker-food-stock-card--${severity}`}>
-                  <span className="joker-food-stock-card__icon">{resolveIcon(item)}</span>
+                  {showIcons ? <span className="joker-food-stock-card__icon">{resolveIcon(item)}</span> : null}
                   <span className="joker-food-stock-card__name">{item.name}</span>
                   <span className="joker-food-stock-card__qty">
-                    {item.quantity} <small>{item.unit}</small>
+                    {clampDisplayQuantity(item.quantity)} <small>{item.unit}</small>
                   </span>
                   <button
                     type="button"
