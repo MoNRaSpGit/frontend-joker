@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { listCurrentPeriodOrders } from "../joker.api";
-import type { JokerCourier, JokerOrderRecord } from "../joker.types";
+import { addCourierCashMovement, getCourierCashSummary, listCurrentPeriodOrders } from "../joker.api";
+import type { JokerCourier, JokerCourierCashSummary, JokerOrderRecord } from "../joker.types";
 
 type DeliveryScreenProps = {
   couriers: JokerCourier[];
@@ -13,6 +13,159 @@ const DEFAULT_HOURS_WORKED = "5";
 
 function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
+}
+
+function CourierCash({ courier }: { courier: JokerCourier }) {
+  const [summary, setSummary] = useState<JokerCourierCashSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [initialCashInput, setInitialCashInput] = useState("");
+  const [expenseAmountInput, setExpenseAmountInput] = useState("");
+  const [expenseDescriptionInput, setExpenseDescriptionInput] = useState("");
+  const [handoverAmountInput, setHandoverAmountInput] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    getCourierCashSummary(courier.id)
+      .then((result) => {
+        if (!cancelled) setSummary(result);
+      })
+      .catch((error) => {
+        if (!cancelled) toast.error(error instanceof Error ? error.message : "No se pudo cargar la caja.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [courier.id]);
+
+  async function handleAddMovement(type: "inicial" | "gasto" | "entrega", amountInput: string, description?: string) {
+    const parsedAmount = Number(amountInput);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      toast.error("Ingresa un monto valido mayor a 0.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const result = await addCourierCashMovement(courier.id, type, parsedAmount, description);
+      setSummary(result);
+      if (type === "inicial") setInitialCashInput("");
+      if (type === "gasto") {
+        setExpenseAmountInput("");
+        setExpenseDescriptionInput("");
+      }
+      if (type === "entrega") setHandoverAmountInput("");
+      toast.success(type === "inicial" ? "Caja inicial cargada." : type === "gasto" ? "Gasto registrado." : "Entrega registrada.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo guardar el movimiento.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  if (isLoading) {
+    return <p className="joker-empty-state">Cargando caja...</p>;
+  }
+
+  if (!summary) {
+    return null;
+  }
+
+  return (
+    <div className="joker-delivery-cash">
+      <div className="joker-delivery-summary joker-delivery-summary--cash">
+        <div className="joker-delivery-summary__row">
+          <span>Caja inicial</span>
+          <strong>{formatPrice(summary.initialCash)}</strong>
+        </div>
+        <div className="joker-delivery-summary__row">
+          <span>Efectivo cobrado ({summary.ordersCashCount} pedidos)</span>
+          <strong>{formatPrice(summary.ordersCashTotal)}</strong>
+        </div>
+        <div className="joker-delivery-summary__row">
+          <span>Gastos</span>
+          <strong>-{formatPrice(summary.expensesTotal)}</strong>
+        </div>
+        <div className="joker-delivery-summary__row">
+          <span>Entregas al local</span>
+          <strong>-{formatPrice(summary.handoversTotal)}</strong>
+        </div>
+        <div className="joker-delivery-summary__row joker-delivery-summary__row--cash-total">
+          <span>Caja actual</span>
+          <strong>{formatPrice(summary.cashOnHand)}</strong>
+        </div>
+      </div>
+
+      <div className="joker-delivery-cash-forms">
+        <div className="joker-delivery-cash-form">
+          <label className="joker-form-field">
+            <span>Caja inicial</span>
+            <input type="number" min="0" step="1" value={initialCashInput} onChange={(event) => setInitialCashInput(event.target.value)} placeholder="Ej: 1000" />
+          </label>
+          <button
+            type="button"
+            className="joker-button joker-button--ghost joker-button--auto"
+            disabled={isSaving}
+            onClick={() => void handleAddMovement("inicial", initialCashInput)}
+          >
+            Agregar
+          </button>
+        </div>
+
+        <div className="joker-delivery-cash-form">
+          <label className="joker-form-field">
+            <span>Gasto (compra para el local)</span>
+            <input type="number" min="0" step="1" value={expenseAmountInput} onChange={(event) => setExpenseAmountInput(event.target.value)} placeholder="Ej: 500" />
+          </label>
+          <label className="joker-form-field">
+            <span>Detalle (opcional)</span>
+            <input type="text" value={expenseDescriptionInput} onChange={(event) => setExpenseDescriptionInput(event.target.value)} placeholder="Ej: Muzzarella" />
+          </label>
+          <button
+            type="button"
+            className="joker-button joker-button--ghost joker-button--auto"
+            disabled={isSaving}
+            onClick={() => void handleAddMovement("gasto", expenseAmountInput, expenseDescriptionInput.trim() || undefined)}
+          >
+            Registrar gasto
+          </button>
+        </div>
+
+        <div className="joker-delivery-cash-form">
+          <label className="joker-form-field">
+            <span>Entrega al local</span>
+            <input type="number" min="0" step="1" value={handoverAmountInput} onChange={(event) => setHandoverAmountInput(event.target.value)} placeholder="Ej: 2000" />
+          </label>
+          <button
+            type="button"
+            className="joker-button joker-button--primary joker-button--auto"
+            disabled={isSaving}
+            onClick={() => void handleAddMovement("entrega", handoverAmountInput)}
+          >
+            Registrar entrega
+          </button>
+        </div>
+      </div>
+
+      {summary.movements.length ? (
+        <ul className="joker-order-list">
+          {summary.movements.map((movement) => (
+            <li key={movement.id} className="joker-order-item joker-order-item--flat">
+              <span>
+                {movement.type === "gasto" ? "🧾 Gasto" : "📦 Entrega"}
+                {movement.description ? ` · ${movement.description}` : ""}
+              </span>
+              <span className="joker-order-item__excluded">{formatPrice(movement.amount)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
 }
 
 function CourierSettlement({ courier }: { courier: JokerCourier }) {
@@ -54,6 +207,11 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
 
   return (
     <div className="joker-delivery-settlement">
+      <p className="joker-delivery-section-title">Caja</p>
+      <CourierCash courier={courier} />
+
+      <p className="joker-delivery-section-title">Liquidacion</p>
+
       {isLoading ? (
         <p className="joker-empty-state">Cargando pedidos...</p>
       ) : loadError ? (

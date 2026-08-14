@@ -74,6 +74,26 @@ export type JokerCourier = {
   name: string;
 };
 
+export type JokerCourierCashMovementType = "inicial" | "gasto" | "entrega";
+
+export type JokerCourierCashMovement = {
+  id: number;
+  type: JokerCourierCashMovementType;
+  amount: number;
+  description: string | null;
+  createdAt: string;
+};
+
+export type JokerCourierCashSummary = {
+  initialCash: number;
+  ordersCashTotal: number;
+  ordersCashCount: number;
+  expensesTotal: number;
+  handoversTotal: number;
+  cashOnHand: number;
+  movements: JokerCourierCashMovement[];
+};
+
 export type JokerRegisterState = {
   isOpen: boolean;
   lastClosedAt: string | null;

@@ -1527,3 +1527,53 @@ textarea {
   font-size: 18px;
   color: var(--joker-accent);
 }
+
+.joker-delivery-section-title {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--joker-muted);
+}
+
+.joker-delivery-cash {
+  display: grid;
+  gap: 14px;
+}
+
+.joker-delivery-summary--cash {
+  background: #f2f7ff;
+}
+
+.joker-delivery-summary__row--cash-total {
+  padding-top: 8px;
+  border-top: 1px solid #c7dcf5;
+  font-size: 18px;
+  color: #1f4e79;
+}
+
+.joker-delivery-cash-forms {
+  display: grid;
+  gap: 12px;
+}
+
+.joker-delivery-cash-form {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--joker-border);
+  border-radius: var(--joker-radius-sm);
+  background: #fff;
+}
+
+.joker-delivery-cash-form .joker-form-field {
+  margin: 0;
+}
+
+@media (min-width: 480px) {
+  .joker-delivery-cash-forms {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: start;
+  }
+}

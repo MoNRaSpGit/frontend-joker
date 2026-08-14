@@ -4,6 +4,8 @@ import type {
   JokerAccountSettlement,
   JokerClient,
   JokerCourier,
+  JokerCourierCashMovementType,
+  JokerCourierCashSummary,
   JokerOrderItem,
   JokerOrderRecord,
   JokerPaymentMethod,
@@ -166,6 +168,26 @@ export async function updateCourier(courierId: number, name: string): Promise<Co
     body: JSON.stringify({ name })
   });
   return readJson<CourierResponse>(response);
+}
+
+export async function getCourierCashSummary(courierId: number): Promise<JokerCourierCashSummary> {
+  const response = await fetch(`${API_BASE_URL}/joker/couriers/${courierId}/cash-summary`, { cache: "no-store" });
+  return readJson<JokerCourierCashSummary>(response);
+}
+
+export async function addCourierCashMovement(
+  courierId: number,
+  type: JokerCourierCashMovementType,
+  amount: number,
+  description?: string
+): Promise<JokerCourierCashSummary> {
+  const response = await fetch(`${API_BASE_URL}/joker/couriers/${courierId}/cash-movements`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type, amount, description })
+  });
+  const result = await readJson<{ item: JokerCourierCashSummary }>(response);
+  return result.item;
 }
 
 export async function resetOrders(): Promise<void> {
