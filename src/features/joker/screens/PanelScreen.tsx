@@ -83,6 +83,9 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered }: Pa
   const [editingOrder, setEditingOrder] = useState<JokerOrderRecord | null>(null);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [breakdownMethod, setBreakdownMethod] = useState<JokerPaymentMethod | null>(null);
+  const [assigningCourierOrderId, setAssigningCourierOrderId] = useState<number | null>(null);
+  const [selectedCourierId, setSelectedCourierId] = useState("");
+  const [isSavingCourier, setIsSavingCourier] = useState(false);
 
   function handleSaveProfitRate(percent: number) {
     setProfitRatePercent(percent);
@@ -167,6 +170,29 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered }: Pa
       toast.error(error instanceof Error ? error.message : "No se pudo guardar el pedido.");
     } finally {
       setIsSavingOrder(false);
+    }
+  }
+
+  // Asigna (o cambia) el repartidor de un pedido ya cargado. Se manda el
+  // mismo array de items sin tocar, el backend solo recalcula el total con
+  // lo que ya tenia (no cambia nada del pedido salvo el repartidor).
+  async function handleSaveCourierAssignment(order: JokerOrderRecord) {
+    if (!selectedCourierId) {
+      toast.error("Elegi un repartidor.");
+      return;
+    }
+
+    setIsSavingCourier(true);
+    try {
+      const response = await updateOrder(order.id, order.items, order.orderDate ?? undefined, Number(selectedCourierId));
+      setOrders((current) => current.map((item) => (item.id === order.id ? response.item : item)));
+      setAssigningCourierOrderId(null);
+      setSelectedCourierId("");
+      toast.success("Delivery asignado.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo asignar el delivery.");
+    } finally {
+      setIsSavingCourier(false);
     }
   }
 
@@ -325,8 +351,65 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered }: Pa
                     <li className="joker-order-detail-list__meta">
                       <span className="joker-order-item__excluded">
                         {formatDateTime(order.createdAt, order.orderDate)} · {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}
-                        {order.courierId ? ` · 🛵 ${couriers.find((courier) => courier.id === order.courierId)?.name ?? "Repartidor"}` : ""}
                       </span>
+                    </li>
+                    <li className="joker-order-detail-list__meta">
+                      {assigningCourierOrderId === order.id ? (
+                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                          <select value={selectedCourierId} onChange={(event) => setSelectedCourierId(event.target.value)}>
+                            <option value="">Elegir repartidor</option>
+                            {couriers.map((courier) => (
+                              <option key={courier.id} value={courier.id}>
+                                {courier.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            className="joker-button joker-button--ghost joker-button--auto"
+                            disabled={isSavingCourier}
+                            onClick={() => {
+                              setAssigningCourierOrderId(null);
+                              setSelectedCourierId("");
+                            }}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            className="joker-button joker-button--primary joker-button--auto"
+                            disabled={isSavingCourier}
+                            onClick={() => void handleSaveCourierAssignment(order)}
+                          >
+                            {isSavingCourier ? "Guardando..." : "Guardar"}
+                          </button>
+                        </div>
+                      ) : order.courierId ? (
+                        <span className="joker-order-item__excluded">
+                          🛵 {couriers.find((courier) => courier.id === order.courierId)?.name ?? "Repartidor"}{" "}
+                          <button
+                            type="button"
+                            className="joker-mini-button"
+                            onClick={() => {
+                              setAssigningCourierOrderId(order.id);
+                              setSelectedCourierId(String(order.courierId));
+                            }}
+                          >
+                            Cambiar
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="joker-button joker-button--ghost joker-button--auto"
+                          onClick={() => {
+                            setAssigningCourierOrderId(order.id);
+                            setSelectedCourierId("");
+                          }}
+                        >
+                          Asignar delivery
+                        </button>
+                      )}
                     </li>
                     {order.items.length ? (
                       order.items.map((item, index) => (

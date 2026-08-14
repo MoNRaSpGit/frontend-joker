@@ -8,7 +8,6 @@ export function useJokerOrder() {
   const [orderDeliveryCost, setOrderDeliveryCost] = useState("");
   const [orderNote, setOrderNote] = useState("");
   const [orderDate, setOrderDate] = useState("");
-  const [orderCourierId, setOrderCourierId] = useState("");
 
   // Los componentes de combo (ej: la hamburguesa y el refresco elegidos
   // dentro de un Combo Nº2) se agregan como lineas propias a $0: no suman
@@ -58,7 +57,6 @@ export function useJokerOrder() {
     setOrderDeliveryCost("");
     setOrderNote("");
     setOrderDate("");
-    setOrderCourierId("");
   }
 
   return {
@@ -73,8 +71,6 @@ export function useJokerOrder() {
     setOrderNote,
     orderDate,
     setOrderDate,
-    orderCourierId,
-    setOrderCourierId,
     addItem,
     updateItem,
     removeItem,

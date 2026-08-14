@@ -8,7 +8,7 @@ import { ProductGrid } from "../components/ProductGrid";
 import { useJokerOrder } from "../hooks/useJokerOrder";
 import { createAccountEntry, createOrder, getRegisterState, openRegister } from "../joker.api";
 import { printOrderTicket } from "../services/joker.print";
-import type { JokerClient, JokerCourier, JokerOrderItem, JokerPaymentMethod, JokerProduct } from "../joker.types";
+import type { JokerClient, JokerOrderItem, JokerPaymentMethod, JokerProduct } from "../joker.types";
 
 type OrdersScreenProps = {
   products: JokerProduct[];
@@ -16,7 +16,6 @@ type OrdersScreenProps = {
   loadError: string | null;
   onReload: () => void;
   clients: JokerClient[];
-  couriers: JokerCourier[];
   onAccountEntryRegistered: () => void;
   customizeMode: "cliente" | "dev";
 };
@@ -27,7 +26,6 @@ export function OrdersScreen({
   loadError,
   onReload,
   clients,
-  couriers,
   onAccountEntryRegistered,
   customizeMode
 }: OrdersScreenProps) {
@@ -54,8 +52,6 @@ export function OrdersScreen({
     setOrderNote,
     orderDate,
     setOrderDate,
-    orderCourierId,
-    setOrderCourierId,
     addItem,
     updateItem,
     removeItem,
@@ -121,7 +117,6 @@ export function OrdersScreen({
     let displayNumber: number;
     let orderId: number;
     try {
-      const parsedCourierId = orderCourierId ? Number(orderCourierId) : undefined;
       const parsedDeliveryCost = orderDeliveryCost.trim() ? Number(orderDeliveryCost) : undefined;
       const saved = await createOrder(
         order,
@@ -129,7 +124,7 @@ export function OrdersScreen({
         paymentMethod,
         customerName,
         orderDate,
-        parsedCourierId,
+        undefined,
         Number.isFinite(parsedDeliveryCost) ? parsedDeliveryCost : undefined
       );
       displayNumber = saved.item.displayNumber;
@@ -219,9 +214,6 @@ export function OrdersScreen({
         onNoteChange={setOrderNote}
         orderDate={orderDate}
         onOrderDateChange={setOrderDate}
-        couriers={couriers}
-        orderCourierId={orderCourierId}
-        onCourierChange={setOrderCourierId}
         isPrinting={isPrinting}
         ticketCopies={ticketCopies}
         onTicketCopiesChange={setTicketCopies}

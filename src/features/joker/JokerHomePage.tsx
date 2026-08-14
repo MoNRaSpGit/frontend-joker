@@ -266,7 +266,6 @@ export function JokerHomePage() {
             loadError={loadError}
             onReload={loadProducts}
             clients={clients}
-            couriers={couriers}
             onAccountEntryRegistered={loadAccountEntries}
             customizeMode={customizeMode}
           />
