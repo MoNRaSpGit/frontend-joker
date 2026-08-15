@@ -336,10 +336,13 @@ export function buildAccountStatementTicketLines(client: JokerClient, entries: J
         month: "2-digit",
         year: "numeric"
       });
-      const itemsSummary = entry.items.map((item) => `${item.quantity}x ${item.productName}`).join(", ");
 
+      lines.push(BOLD_ON);
       lines.push(`${dateLabel}\n`);
-      lines.push(`${itemsSummary}\n`);
+      lines.push(BOLD_OFF);
+      entry.items.forEach((item) => {
+        lines.push(`  ${item.quantity}x ${item.productName}\n`);
+      });
       lines.push(BOLD_ON);
       lines.push(`${rightAlignedLine("", formatMoney(entry.total))}\n`);
       lines.push(BOLD_OFF);
