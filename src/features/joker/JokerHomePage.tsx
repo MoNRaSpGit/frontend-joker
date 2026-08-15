@@ -270,7 +270,7 @@ export function JokerHomePage() {
         </div>
       </header>
 
-      <main className="joker-shell">
+      <main className={`joker-shell${activeTab === "cuenta" ? " joker-shell--wide" : ""}`}>
         {activeTab === "pedidos" ? (
           <OrdersScreen
             products={products}

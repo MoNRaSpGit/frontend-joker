@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { AddClientModal } from "../components/AddClientModal";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { getAccountSettlements } from "../joker.api";
 import { printAccountStatementTicket } from "../services/joker.print";
@@ -31,7 +32,7 @@ function formatDateTime(isoDate: string, orderDate?: string | null) {
 }
 
 function formatEntryItems(entry: JokerAccountEntry) {
-  return entry.items.map((item) => `${item.quantity}x ${item.productName}`).join(", ");
+  return entry.items.map((item) => `${item.quantity}x ${item.productName}`);
 }
 
 export function CuentaCorrienteScreen({
@@ -44,10 +45,7 @@ export function CuentaCorrienteScreen({
   onDeleteClient,
   onSettleAccount
 }: CuentaCorrienteScreenProps) {
-  const [newClientName, setNewClientName] = useState("");
-  const [newClientPhone, setNewClientPhone] = useState("");
-  const [newClientAddress, setNewClientAddress] = useState("");
-  const [isSavingClient, setIsSavingClient] = useState(false);
+  const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [pendingDeleteClient, setPendingDeleteClient] = useState<JokerClient | null>(null);
@@ -99,22 +97,9 @@ export function CuentaCorrienteScreen({
     : [];
   const selectedClientDebt = selectedClient ? debtFor(selectedClient.id) : 0;
 
-  async function handleAddClient() {
-    const trimmed = newClientName.trim();
-    if (!trimmed || isSavingClient) return;
-
-    setIsSavingClient(true);
-    try {
-      await onAddClient(trimmed, newClientPhone, newClientAddress);
-      setNewClientName("");
-      setNewClientPhone("");
-      setNewClientAddress("");
-      toast.success("Cliente agregado.");
-    } catch (saveError) {
-      toast.error(saveError instanceof Error ? saveError.message : "No se pudo agregar el cliente.");
-    } finally {
-      setIsSavingClient(false);
-    }
+  async function handleAddClient(name: string, phone?: string, address?: string) {
+    await onAddClient(name, phone, address);
+    toast.success("Cliente agregado.");
   }
 
   async function handleConfirmDeleteClient() {
@@ -169,53 +154,7 @@ export function CuentaCorrienteScreen({
   }
 
   return (
-    <div className="joker-columns-3">
-      <section className="joker-panel joker-cc-card">
-        <div className="joker-panel__heading">
-          <p className="joker-eyebrow">Cuenta corriente</p>
-          <h2>Alta rapida</h2>
-        </div>
-
-        <label className="joker-form-field">
-          <span>Nombre</span>
-          <input
-            type="text"
-            value={newClientName}
-            onChange={(event) => setNewClientName(event.target.value)}
-            placeholder="Ej: Juan Perez"
-            disabled={isSavingClient}
-          />
-        </label>
-        <label className="joker-form-field">
-          <span>Telefono</span>
-          <input
-            type="tel"
-            value={newClientPhone}
-            onChange={(event) => setNewClientPhone(event.target.value)}
-            placeholder="099 000 000"
-            disabled={isSavingClient}
-          />
-        </label>
-        <label className="joker-form-field">
-          <span>Direccion</span>
-          <input
-            type="text"
-            value={newClientAddress}
-            onChange={(event) => setNewClientAddress(event.target.value)}
-            placeholder="Ej: Av. 18 de Julio 1234"
-            disabled={isSavingClient}
-          />
-        </label>
-        <button
-          type="button"
-          className="joker-button joker-button--primary joker-button--auto"
-          onClick={handleAddClient}
-          disabled={isSavingClient}
-        >
-          {isSavingClient ? "Agregando..." : "Agregar cliente"}
-        </button>
-      </section>
-
+    <div className="joker-cc-layout">
       <section className="joker-panel joker-cc-card">
         <div className="joker-panel__heading joker-panel__heading--row">
           <div>
@@ -224,6 +163,14 @@ export function CuentaCorrienteScreen({
           </div>
           <span className="joker-cc-badge">{clients.length}</span>
         </div>
+
+        <button
+          type="button"
+          className="joker-button joker-button--primary joker-button--auto"
+          onClick={() => setIsAddClientModalOpen(true)}
+        >
+          + Agregar cliente
+        </button>
 
         <input
           type="search"
@@ -322,7 +269,11 @@ export function CuentaCorrienteScreen({
                       <strong className="joker-amount-plus">+{formatPrice(entry.total)}</strong>
                       <span className="joker-order-item__excluded">{formatDateTime(entry.createdAt, entry.orderDate)}</span>
                     </div>
-                    <p className="joker-cc-history-row__items">{formatEntryItems(entry)}</p>
+                    <ul className="joker-cc-history-row__items">
+                      {formatEntryItems(entry).map((line, index) => (
+                        <li key={index}>{line}</li>
+                      ))}
+                    </ul>
                   </li>
                 ))}
               </ul>
@@ -357,9 +308,11 @@ export function CuentaCorrienteScreen({
                           · {formatDateTime(settlement.settledAt)}
                         </span>
                       </div>
-                      <p className="joker-cc-history-row__items">
-                        {settlement.items.map((item) => `${item.quantity}x ${item.productName}`).join(", ")}
-                      </p>
+                      <ul className="joker-cc-history-row__items">
+                        {settlement.items.map((item, index) => (
+                          <li key={index}>{`${item.quantity}x ${item.productName}`}</li>
+                        ))}
+                      </ul>
                     </li>
                   ))}
                 </ul>
@@ -372,6 +325,10 @@ export function CuentaCorrienteScreen({
           <p className="joker-empty-state">Selecciona un cliente para ver su saldo.</p>
         )}
       </section>
+
+      {isAddClientModalOpen ? (
+        <AddClientModal onClose={() => setIsAddClientModalOpen(false)} onSave={handleAddClient} />
+      ) : null}
 
       {pendingDeleteClient ? (
         <ConfirmDeleteModal
