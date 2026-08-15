@@ -179,3 +179,37 @@ export type JokerProductRecipeLine = {
   unit: string;
   quantityPerUnit: number;
 };
+
+// ---------- Mes (dia comercial: 5am a 5am) ----------
+
+export type JokerCierreDia = {
+  fecha: string;
+  total: number;
+  editadoManualmente: boolean;
+};
+
+export type JokerMonthDay = {
+  fecha: string;
+  diaSemana: string;
+  total: number;
+  cerrado: boolean;
+};
+
+export type JokerMonthWeek = {
+  numero: number;
+  dias: JokerMonthDay[];
+  total: number;
+};
+
+export type JokerMonthSummary = {
+  anio: number;
+  mes: number;
+  total: number;
+  semanas: JokerMonthWeek[];
+};
+
+export type JokerMonthHistoryItem = {
+  anio: number;
+  mes: number;
+  total: number;
+};

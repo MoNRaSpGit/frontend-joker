@@ -1708,3 +1708,203 @@ textarea {
   gap: 10px;
   margin-top: 10px;
 }
+
+/* ---------- Mes ---------- */
+
+.joker-mes-container {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+.joker-mes-cabecera {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  text-align: center;
+}
+
+.joker-mes-selector {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.joker-mes-btn-nav {
+  appearance: none;
+  border: 1px solid var(--joker-border);
+  background: var(--joker-surface);
+  color: var(--joker-text);
+  font-size: 1.3rem;
+  line-height: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--joker-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.joker-mes-btn-nav:hover {
+  background: rgba(107, 27, 35, 0.08);
+  border-color: var(--joker-accent);
+}
+
+.joker-mes-titulo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  min-width: 220px;
+  text-align: center;
+  margin: 0;
+}
+
+.joker-mes-total-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px;
+  border-radius: var(--joker-radius-md);
+  background: linear-gradient(135deg, #1a1a1a 0%, #3a0d10 100%);
+  color: #fff;
+}
+
+.joker-mes-total-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.joker-mes-total-valor {
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.joker-mes-semana {
+  padding: 18px 20px;
+  border: 1px solid var(--joker-border);
+  border-radius: var(--joker-radius-lg);
+  background: var(--joker-surface);
+  box-shadow: var(--joker-shadow);
+}
+
+.joker-mes-semana-cabecera {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--joker-border);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.joker-mes-semana-cabecera h6 {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.joker-mes-semana-cabecera:hover {
+  opacity: 0.85;
+}
+
+.joker-mes-semana-flecha {
+  color: var(--joker-muted);
+  font-size: 0.85rem;
+  width: 14px;
+}
+
+.joker-mes-semana-total {
+  font-weight: 800;
+  color: var(--joker-text);
+}
+
+.joker-mes-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  margin-top: 12px;
+}
+
+.joker-mes-tabla th {
+  text-align: left;
+  font-weight: 700;
+  color: var(--joker-muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--joker-border);
+}
+
+.joker-mes-tabla td {
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--joker-border);
+}
+
+.joker-mes-tabla tr:last-child td {
+  border-bottom: none;
+}
+
+.joker-mes-tabla__num {
+  text-align: right;
+}
+
+.joker-mes-fila-sin-ventas {
+  color: var(--joker-muted);
+}
+
+.joker-mes-fila-editar {
+  text-align: right;
+  width: 1%;
+  white-space: nowrap;
+}
+
+.joker-mes-grafico {
+  background: var(--joker-surface);
+}
+
+.joker-mes-grafico-card {
+  border-radius: var(--joker-radius-md);
+  background: linear-gradient(180deg, #fbfbfb, #ffffff);
+  padding: 8px;
+}
+
+.joker-mes-grafico-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.joker-mes-grafico-grilla {
+  stroke: var(--joker-border);
+  stroke-width: 1;
+}
+
+.joker-mes-grafico-etiqueta {
+  font-size: 12px;
+  fill: var(--joker-muted);
+}
+
+.joker-mes-grafico-valor {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--joker-text);
+}
+
+@media (min-width: 720px) {
+  .joker-mes-container {
+    grid-template-columns: minmax(0, 640px);
+  }
+}

@@ -17,12 +17,13 @@ import { getPreferredPrinterName } from "./services/joker.qzPrint";
 import type { JokerAccountEntry, JokerClient, JokerCourier, JokerProduct } from "./joker.types";
 import { CuentaCorrienteScreen } from "./screens/CuentaCorrienteScreen";
 import { DeliveryScreen } from "./screens/DeliveryScreen";
+import { MesScreen } from "./screens/MesScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { PanelScreen } from "./screens/PanelScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
 import { StockScreen } from "./screens/StockScreen";
 
-type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock" | "delivery";
+type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock" | "delivery" | "mes";
 type CustomizeMode = "cliente" | "dev";
 
 const CUSTOMIZE_MODE_STORAGE_KEY = "joker.customizeMode";
@@ -33,7 +34,8 @@ const TAB_TITLES: Record<JokerTab, string> = {
   panel: "Panel",
   cuenta: "Cuenta corriente",
   stock: "Stock",
-  delivery: "Delivery"
+  delivery: "Delivery",
+  mes: "Mes"
 };
 
 
@@ -250,6 +252,13 @@ export function JokerHomePage() {
                 >
                   Delivery
                 </button>
+                <button
+                  type="button"
+                  className={`joker-user-dropdown-item${activeTab === "mes" ? " is-active" : ""}`}
+                  onClick={() => goToTab("mes")}
+                >
+                  Mes
+                </button>
                 <div className="joker-user-dropdown-divider" />
                 <button type="button" className="joker-user-dropdown-item" onClick={toggleCustomizeMode}>
                   ⚙️ Modo: {customizeMode === "dev" ? "Dev" : "Cliente"}
@@ -270,7 +279,7 @@ export function JokerHomePage() {
         </div>
       </header>
 
-      <main className={`joker-shell${activeTab === "cuenta" ? " joker-shell--wide" : ""}`}>
+      <main className={`joker-shell${activeTab === "cuenta" || activeTab === "mes" ? " joker-shell--wide" : ""}`}>
         {activeTab === "pedidos" ? (
           <OrdersScreen
             products={products}
@@ -310,6 +319,8 @@ export function JokerHomePage() {
             onEnableCourier={handleEnableCourier}
             onSettleCourier={handleSettleCourier}
           />
+        ) : activeTab === "mes" ? (
+          <MesScreen />
         ) : null}
       </main>
 
