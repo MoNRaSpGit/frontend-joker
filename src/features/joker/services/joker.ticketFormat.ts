@@ -340,14 +340,22 @@ export function buildAccountStatementTicketLines(client: JokerClient, entries: J
       lines.push(BOLD_ON);
       lines.push(`${dateLabel}\n`);
       lines.push(BOLD_OFF);
+
+      // unitPrice puede faltar en consumos viejos, guardados antes de que el
+      // ticket empezara a mostrar precio por producto: en ese caso se listan
+      // los productos sin precio (como antes) y se muestra solo el total del
+      // consumo, en vez de inventar un precio en $0 por linea.
+      const hasPrices = entry.items.every((item) => item.unitPrice != null);
       entry.items.forEach((item) => {
-        lines.push(
-          `${rightAlignedLine(`  ${item.quantity}x ${item.productName} `, formatMoney((item.unitPrice ?? 0) * item.quantity))}\n`
-        );
+        if (hasPrices) {
+          lines.push(`${rightAlignedLine(`  ${item.quantity}x ${item.productName} `, formatMoney(item.unitPrice * item.quantity))}\n`);
+        } else {
+          lines.push(`  ${item.quantity}x ${item.productName}\n`);
+        }
       });
-      if (entry.items.length > 1) {
+      if (!hasPrices || entry.items.length > 1) {
         lines.push(BOLD_ON);
-        lines.push(`${rightAlignedLine("Subtotal ", formatMoney(entry.total))}\n`);
+        lines.push(`${rightAlignedLine(hasPrices ? "Subtotal " : "", formatMoney(entry.total))}\n`);
         lines.push(BOLD_OFF);
       }
 

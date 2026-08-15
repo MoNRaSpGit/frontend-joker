@@ -32,9 +32,14 @@ function formatDateTime(isoDate: string, orderDate?: string | null) {
 }
 
 // unitPrice puede faltar en consumos viejos, guardados antes de que el
-// ticket empezara a mostrar precio por producto.
+// ticket empezara a mostrar precio por producto: en esos casos se omite el
+// precio en vez de mostrar $0 (los consumos nuevos si lo traen).
 function formatEntryItems(entry: JokerAccountEntry) {
-  return entry.items.map((item) => `${item.quantity}x ${item.productName} — ${formatPrice((item.unitPrice ?? 0) * item.quantity)}`);
+  return entry.items.map((item) =>
+    item.unitPrice != null
+      ? `${item.quantity}x ${item.productName} — ${formatPrice(item.unitPrice * item.quantity)}`
+      : `${item.quantity}x ${item.productName}`
+  );
 }
 
 export function CuentaCorrienteScreen({
@@ -312,7 +317,11 @@ export function CuentaCorrienteScreen({
                       </div>
                       <ul className="joker-cc-history-row__items">
                         {settlement.items.map((item, index) => (
-                          <li key={index}>{`${item.quantity}x ${item.productName} — ${formatPrice((item.unitPrice ?? 0) * item.quantity)}`}</li>
+                          <li key={index}>
+                            {item.unitPrice != null
+                              ? `${item.quantity}x ${item.productName} — ${formatPrice(item.unitPrice * item.quantity)}`
+                              : `${item.quantity}x ${item.productName}`}
+                          </li>
                         ))}
                       </ul>
                     </li>
