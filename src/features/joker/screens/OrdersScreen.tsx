@@ -173,7 +173,7 @@ export function OrdersScreen({
         await createAccountEntry(
           clientId,
           order.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
-          order.map((item) => ({ productName: item.productName, quantity: item.quantity })),
+          order.map((item) => ({ productName: item.productName, quantity: item.quantity, unitPrice: item.unitPrice })),
           orderId
         );
         onAccountEntryRegistered();

@@ -144,7 +144,7 @@ export type JokerAccountEntry = {
   createdAt: string;
   orderDate: string | null;
   total: number;
-  items: Array<{ productName: string; quantity: number }>;
+  items: Array<{ productName: string; quantity: number; unitPrice: number }>;
 };
 
 // Copia permanente de un consumo ya pagado (o de un cliente eliminado con
@@ -155,7 +155,7 @@ export type JokerAccountSettlement = {
   clientName: string;
   entryId: number;
   total: number;
-  items: Array<{ productName: string; quantity: number }>;
+  items: Array<{ productName: string; quantity: number; unitPrice: number }>;
   entryCreatedAt: string;
   reason: "pago" | "cliente_eliminado" | "correccion_manual";
   settledAt: string;

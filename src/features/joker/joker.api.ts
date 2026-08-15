@@ -258,7 +258,7 @@ export async function listAccountEntries(): Promise<AccountEntryListResponse> {
 export async function createAccountEntry(
   clientId: number,
   total: number,
-  items: Array<{ productName: string; quantity: number }>,
+  items: Array<{ productName: string; quantity: number; unitPrice: number }>,
   orderId?: number
 ): Promise<AccountEntryResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/account-entries`, {

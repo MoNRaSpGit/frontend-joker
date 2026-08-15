@@ -341,11 +341,15 @@ export function buildAccountStatementTicketLines(client: JokerClient, entries: J
       lines.push(`${dateLabel}\n`);
       lines.push(BOLD_OFF);
       entry.items.forEach((item) => {
-        lines.push(`  ${item.quantity}x ${item.productName}\n`);
+        lines.push(
+          `${rightAlignedLine(`  ${item.quantity}x ${item.productName} `, formatMoney((item.unitPrice ?? 0) * item.quantity))}\n`
+        );
       });
-      lines.push(BOLD_ON);
-      lines.push(`${rightAlignedLine("", formatMoney(entry.total))}\n`);
-      lines.push(BOLD_OFF);
+      if (entry.items.length > 1) {
+        lines.push(BOLD_ON);
+        lines.push(`${rightAlignedLine("Subtotal ", formatMoney(entry.total))}\n`);
+        lines.push(BOLD_OFF);
+      }
 
       if (index < entries.length - 1) {
         lines.push(`${divider()}\n`);
