@@ -43,13 +43,20 @@ export function OrderList({
   onRemoveItem,
   onPrint
 }: OrderListProps) {
+  // Las lineas hijas de un combo ("-combo-N", a $0) son para que el
+  // backend descuente el stock de lo que realmente se eligio -- no van
+  // en esta lista porque la linea del combo ya trae el detalle completo
+  // ("Hamburguesa: 4Q · Bebida: Coca-Cola"). Sin este filtro salian
+  // duplicadas: una vez en el detalle del combo, y otra vez como
+  // renglon propio a $0.
+  const visibleOrder = order.filter((item) => !item.lineId.includes("-combo-"));
   const total = order.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
   return (
     <section className="joker-panel">
       <div className="joker-panel__heading">
         <p className="joker-eyebrow">Pedido</p>
-        <h2>Ticket a imprimir{order.length ? ` (${order.length})` : ""}</h2>
+        <h2>Ticket a imprimir{visibleOrder.length ? ` (${visibleOrder.length})` : ""}</h2>
       </div>
 
       <div className="joker-form-row">
@@ -102,9 +109,9 @@ export function OrderList({
         />
       </label>
 
-      {order.length ? (
+      {visibleOrder.length ? (
         <ul className="joker-order-list">
-          {order.map((item) => (
+          {visibleOrder.map((item) => (
             <li key={item.lineId} className="joker-order-item">
               <div className="joker-order-item__info">
                 <span className="joker-qty-badge">{item.quantity}x</span>

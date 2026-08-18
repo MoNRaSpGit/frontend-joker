@@ -82,8 +82,11 @@ export function useJokerOrder() {
     });
   }
 
+  // Al borrar la linea de un combo, sus hijas ("-combo-N") tienen que
+  // borrarse con ella -- si no, quedan huerfanas en el pedido (a $0, sin
+  // el combo que las trajo).
   function removeItem(lineId: string) {
-    setOrder((current) => current.filter((item) => item.lineId !== lineId));
+    setOrder((current) => current.filter((item) => item.lineId !== lineId && !item.lineId.startsWith(`${lineId}-combo-`)));
   }
 
   function clearOrder() {
