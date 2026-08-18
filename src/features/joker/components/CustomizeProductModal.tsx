@@ -42,6 +42,12 @@ export function CustomizeProductModal({
   const [selectedExtraIds, setSelectedExtraIds] = useState<Set<number>>(new Set());
   const [selectedChoices, setSelectedChoices] = useState<Record<string, string | null>>({});
   const [selectedSlotProductIds, setSelectedSlotProductIds] = useState<Record<string, number>>({});
+  // Ingredientes destildados por slot de combo (ej: "sin lechuga" en la
+  // hamburguesa elegida dentro de "Combo 4"). Van aparte de
+  // excludedIngredients (que es para un producto suelto, sin combo) porque
+  // cada slot tiene su propia hamburguesa con sus propios ingredientes --
+  // no tiene sentido un solo set compartido.
+  const [excludedIngredientsBySlot, setExcludedIngredientsBySlot] = useState<Record<string, Set<string>>>({});
   // Solo se usa (y se muestra) al editar un item ya agregado al pedido:
   // permite corregir el precio a mano, por ejemplo si se cargo mal o si
   // se pacto un precio distinto con el cliente.
@@ -65,6 +71,11 @@ export function CustomizeProductModal({
   const extrasTotal = selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
   const totalPrice = selectedVariant.price + extrasTotal;
   const comboSlots = selectedVariant.comboSlots ?? [];
+  // Si el producto es un combo, sus propios ingredientes/extras/opciones
+  // (los de "selectedVariant", ej. "Combo 4") no dicen nada util -- lo que
+  // hay que mostrar es lo de la hamburguesa/bebida realmente elegidas en
+  // cada slot (ver mas abajo, dentro del map de comboSlots).
+  const isCombo = comboSlots.length > 0;
 
   // Al cambiar de variante (ej. tamaño de pizza) las elecciones de
   // ingredientes/extras/salsa se reinician: puede que ni siquiera
@@ -74,6 +85,7 @@ export function CustomizeProductModal({
     setExcludedIngredients(new Set());
     setSelectedExtraIds(new Set());
     setSelectedChoices({});
+    setExcludedIngredientsBySlot({});
     const initialSlots: Record<string, number> = {};
     for (const slot of comboSlots) {
       if (slot.optionProductIds[0] !== undefined) {
@@ -83,6 +95,32 @@ export function CustomizeProductModal({
     setSelectedSlotProductIds(initialSlots);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIndex]);
+
+  // Cambiar de opcion dentro de un slot (ej: pasar de la hamburguesa por
+  // defecto a "4 quesos") tiene que limpiar los ingredientes destildados
+  // de ESE slot -- son de la hamburguesa anterior, no tienen sentido para
+  // la nueva.
+  function selectSlotOption(slotLabel: string, optionId: number) {
+    setSelectedSlotProductIds((current) => ({ ...current, [slotLabel]: optionId }));
+    setExcludedIngredientsBySlot((current) => {
+      if (!current[slotLabel]?.size) return current;
+      const next = { ...current };
+      delete next[slotLabel];
+      return next;
+    });
+  }
+
+  function toggleSlotIngredient(slotLabel: string, ingredient: string) {
+    setExcludedIngredientsBySlot((current) => {
+      const next = new Set(current[slotLabel] ?? []);
+      if (next.has(ingredient)) {
+        next.delete(ingredient);
+      } else {
+        next.add(ingredient);
+      }
+      return { ...current, [slotLabel]: next };
+    });
+  }
 
   function toggleIngredient(ingredient: string) {
     setExcludedIngredients((current) => {
@@ -128,7 +166,12 @@ export function CustomizeProductModal({
       const optionProduct = allProducts.find((product) => product.id === optionId);
       if (!optionProduct) continue;
       comboComponents.push({ product: optionProduct, quantity: slot.quantity });
-      comboChoiceLabels.push(`${slot.label}: ${optionProduct.name}`);
+
+      const excludedForSlot = excludedIngredientsBySlot[slot.label];
+      const excludedText = excludedForSlot?.size
+        ? ` (${Array.from(excludedForSlot).map((ingredient) => `Sin ${ingredient}`).join(", ")})`
+        : "";
+      comboChoiceLabels.push(`${slot.label}: ${optionProduct.name}${excludedText}`);
     }
 
     if (isDev) {
@@ -193,29 +236,56 @@ export function CustomizeProductModal({
           </>
         ) : null}
 
-        {comboSlots.map((slot) => (
-          <label key={slot.label} className="joker-form-field">
-            <span>{slot.label}</span>
-            <select
-              value={selectedSlotProductIds[slot.label] ?? ""}
-              onChange={(event) =>
-                setSelectedSlotProductIds((current) => ({ ...current, [slot.label]: Number(event.target.value) }))
-              }
-            >
-              {slot.optionProductIds.map((optionId) => {
-                const optionProduct = allProducts.find((product) => product.id === optionId);
-                if (!optionProduct) return null;
-                return (
-                  <option key={optionId} value={optionId}>
-                    {optionProduct.name}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
-        ))}
+        {comboSlots.map((slot) => {
+          const selectedOptionProduct = allProducts.find((product) => product.id === selectedSlotProductIds[slot.label]);
+          // Los ingredientes de ESTA opcion (ej: los de "4 quesos", no los
+          // de la hamburguesa por defecto que traia el combo antes de
+          // elegir nada) -- ver el comentario de isCombo mas arriba.
+          const slotIngredientList = isDev && selectedOptionProduct ? parseIngredientList(selectedOptionProduct.ingredients) : [];
+          const excludedForSlot = excludedIngredientsBySlot[slot.label] ?? new Set<string>();
 
-        {isDev && ingredientList.length ? (
+          return (
+            <div key={slot.label}>
+              <label className="joker-form-field">
+                <span>{slot.label}</span>
+                <select
+                  value={selectedSlotProductIds[slot.label] ?? ""}
+                  onChange={(event) => selectSlotOption(slot.label, Number(event.target.value))}
+                >
+                  {slot.optionProductIds.map((optionId) => {
+                    const optionProduct = allProducts.find((product) => product.id === optionId);
+                    if (!optionProduct) return null;
+                    return (
+                      <option key={optionId} value={optionId}>
+                        {optionProduct.name}
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
+
+              {slotIngredientList.length ? (
+                <>
+                  <p className="joker-modal-card__hint">Ingredientes de {selectedOptionProduct?.name} (destildá lo que no va)</p>
+                  <div className="joker-checklist">
+                    {slotIngredientList.map((ingredient) => (
+                      <label key={ingredient} className="joker-checklist-item">
+                        <input
+                          type="checkbox"
+                          checked={!excludedForSlot.has(ingredient)}
+                          onChange={() => toggleSlotIngredient(slot.label, ingredient)}
+                        />
+                        <span>{ingredient}</span>
+                      </label>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+            </div>
+          );
+        })}
+
+        {!isCombo && isDev && ingredientList.length ? (
           <>
             <p className="joker-modal-card__hint">Ingredientes (destildá lo que no va)</p>
             <div className="joker-checklist">
@@ -233,7 +303,7 @@ export function CustomizeProductModal({
           </>
         ) : null}
 
-        {isDev && extrasForCategory.length ? (
+        {!isCombo && isDev && extrasForCategory.length ? (
           <>
             <p className="joker-modal-card__hint">Extras</p>
             <div className="joker-checklist">
@@ -248,7 +318,7 @@ export function CustomizeProductModal({
           </>
         ) : null}
 
-        {isDev
+        {!isCombo && isDev
           ? choiceGroups.map((group) => (
               <div key={group.label}>
                 <p className="joker-modal-card__hint">{group.label}</p>
