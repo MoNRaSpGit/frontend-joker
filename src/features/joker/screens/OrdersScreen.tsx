@@ -187,6 +187,16 @@ export function OrdersScreen({
     }
   }
 
+  // Producto real del catalogo para el item en edicion (si todavia existe):
+  // se necesita para traer sus comboSlots, que el objeto minimo armado a
+  // mano (solo con lo guardado en la linea del pedido) nunca tenia. Sin
+  // esto, editar un combo ya agregado no mostraba los selects para
+  // recambiar hamburguesa/bebida, y la unica forma de corregir una eleccion
+  // mal hecha era borrar la linea entera y volver a agregarla -- lo que
+  // dejaba la eleccion vieja (a $0, "Incluido en...") pegada en el pedido
+  // si alguien se olvidaba de borrarla primero.
+  const editingProduct = editingItem ? products.find((product) => product.id === editingItem.productId) : undefined;
+
   return (
     <>
       {isLoading ? (
@@ -259,14 +269,21 @@ export function OrdersScreen({
       {editingItem ? (
         <CustomizeProductModal
           variants={[
-            { id: editingItem.productId, name: editingItem.productName, category: "", price: editingItem.unitPrice }
+            {
+              ...editingProduct,
+              id: editingItem.productId,
+              name: editingItem.productName,
+              category: editingProduct?.category ?? "",
+              price: editingItem.unitPrice
+            } as JokerProduct
           ]}
+          allProducts={products}
           initialDetail={editingItem.detail}
           initialQuantity={editingItem.quantity}
           isEditing
           onClose={() => setEditingItem(null)}
-          onConfirm={(variant, detail, quantity) => {
-            updateItem(editingItem.lineId, detail, quantity, variant.price);
+          onConfirm={(variant, detail, quantity, comboComponents) => {
+            updateItem(editingItem.lineId, detail, quantity, variant.price, comboComponents);
           }}
         />
       ) : null}

@@ -40,10 +40,46 @@ export function useJokerOrder() {
     ]);
   }
 
-  function updateItem(lineId: string, detail: string, quantity: number, unitPrice: number) {
-    setOrder((current) =>
-      current.map((item) => (item.lineId === lineId ? { ...item, detail, quantity, unitPrice } : item))
-    );
+  // comboComponents (si se pasa) reemplaza del todo las lineas hijas
+  // "-combo-N" de este item -- antes, editar un combo ya agregado no tenia
+  // forma de recambiar una eleccion (ej: pasar de la hamburguesa por
+  // defecto a "4 quesos"), asi que quedaba la eleccion vieja pegada a $0
+  // en el pedido junto a la nueva. Si no se pasa comboComponents (item sin
+  // combo), no se tocan las demas lineas.
+  function updateItem(
+    lineId: string,
+    detail: string,
+    quantity: number,
+    unitPrice: number,
+    comboComponents?: ComboComponentSelection[]
+  ) {
+    setOrder((current) => {
+      const withoutOldComboChildren = comboComponents
+        ? current.filter((item) => !item.lineId.startsWith(`${lineId}-combo-`))
+        : current;
+
+      const updated = withoutOldComboChildren.map((item) =>
+        item.lineId === lineId ? { ...item, detail, quantity, unitPrice } : item
+      );
+
+      if (!comboComponents || !comboComponents.length) {
+        return updated;
+      }
+
+      const mainIndex = updated.findIndex((item) => item.lineId === lineId);
+      const mainItem = updated[mainIndex];
+
+      const newComponentLines: JokerOrderItem[] = comboComponents.map((component, index) => ({
+        lineId: `${lineId}-combo-${index}`,
+        productId: component.product.id,
+        productName: component.product.name,
+        unitPrice: 0,
+        detail: `Incluido en ${mainItem?.productName ?? ""}`,
+        quantity: component.quantity * quantity
+      }));
+
+      return [...updated.slice(0, mainIndex + 1), ...newComponentLines, ...updated.slice(mainIndex + 1)];
+    });
   }
 
   function removeItem(lineId: string) {

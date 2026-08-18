@@ -194,25 +194,25 @@ export function CustomizeProductModal({
         ) : null}
 
         {comboSlots.map((slot) => (
-          <div key={slot.label}>
-            <p className="joker-modal-card__hint">{slot.label}</p>
-            <div className="joker-category-chips">
+          <label key={slot.label} className="joker-form-field">
+            <span>{slot.label}</span>
+            <select
+              value={selectedSlotProductIds[slot.label] ?? ""}
+              onChange={(event) =>
+                setSelectedSlotProductIds((current) => ({ ...current, [slot.label]: Number(event.target.value) }))
+              }
+            >
               {slot.optionProductIds.map((optionId) => {
                 const optionProduct = allProducts.find((product) => product.id === optionId);
                 if (!optionProduct) return null;
                 return (
-                  <button
-                    key={optionId}
-                    type="button"
-                    className={`joker-category-chip${selectedSlotProductIds[slot.label] === optionId ? " is-active" : ""}`}
-                    onClick={() => setSelectedSlotProductIds((current) => ({ ...current, [slot.label]: optionId }))}
-                  >
+                  <option key={optionId} value={optionId}>
                     {optionProduct.name}
-                  </button>
+                  </option>
                 );
               })}
-            </div>
-          </div>
+            </select>
+          </label>
         ))}
 
         {isDev && ingredientList.length ? (
