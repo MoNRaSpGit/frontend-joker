@@ -1,3 +1,4 @@
+import { isComboComponentLine } from "../joker.types";
 import type { JokerOrderItem } from "../joker.types";
 
 type OrderListProps = {
@@ -43,13 +44,12 @@ export function OrderList({
   onRemoveItem,
   onPrint
 }: OrderListProps) {
-  // Las lineas hijas de un combo ("-combo-N", a $0) son para que el
-  // backend descuente el stock de lo que realmente se eligio -- no van
-  // en esta lista porque la linea del combo ya trae el detalle completo
-  // ("Hamburguesa: 4Q · Bebida: Coca-Cola"). Sin este filtro salian
-  // duplicadas: una vez en el detalle del combo, y otra vez como
-  // renglon propio a $0.
-  const visibleOrder = order.filter((item) => !item.lineId.includes("-combo-"));
+  // Las lineas hijas de un combo (a $0) son para que el backend descuente
+  // el stock de lo que realmente se eligio -- no van en esta lista porque
+  // la linea del combo ya trae el detalle completo ("Hamburguesa: 4Q ·
+  // Bebida: Coca-Cola"). Sin este filtro salian duplicadas: una vez en el
+  // detalle del combo, y otra vez como renglon propio a $0.
+  const visibleOrder = order.filter((item) => !isComboComponentLine(item));
   const total = order.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
   return (

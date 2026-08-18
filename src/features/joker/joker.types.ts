@@ -33,7 +33,26 @@ export type JokerOrderItem = {
   unitPrice: number;
   detail: string;
   quantity: number;
+  // Si esta linea es un componente de combo (ej: la hamburguesa o la bebida
+  // elegidas dentro de "Combo 4", agregadas a $0 solo para que el backend
+  // descuente el stock correcto), esto apunta al lineId de la linea
+  // principal del combo. Sin esto habia que adivinar la relacion parseando
+  // el propio lineId (".includes('-combo-')" en unos lugares,
+  // ".startsWith(...)" en otros) -- fragil y quedo desincronizado mas de
+  // una vez.
+  parentLineId?: string;
 };
+
+// Helpers unicos para leer la relacion combo/componente -- se usan en vez
+// de comparar item.parentLineId a mano en cada lugar, para que un dia de
+// manana (ej: combos anidados) solo haga falta cambiar esto una vez.
+export function isComboComponentLine(item: JokerOrderItem): boolean {
+  return Boolean(item.parentLineId);
+}
+
+export function isComboComponentOf(item: JokerOrderItem, parentLineId: string): boolean {
+  return item.parentLineId === parentLineId;
+}
 
 // Producto de prueba (precio $0) para probar la impresora. Se filtra del
 // panel (movimientos, ganancia, ranking, etc.) para que no ensucie los

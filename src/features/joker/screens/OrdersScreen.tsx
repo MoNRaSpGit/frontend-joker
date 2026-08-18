@@ -8,6 +8,7 @@ import { ProductGrid } from "../components/ProductGrid";
 import { useJokerOrder } from "../hooks/useJokerOrder";
 import { createAccountEntry, createOrder, getRegisterState, openRegister } from "../joker.api";
 import { printOrderTicket } from "../services/joker.print";
+import { isComboComponentLine } from "../joker.types";
 import type { JokerClient, JokerOrderItem, JokerPaymentMethod, JokerProduct } from "../joker.types";
 
 type OrdersScreenProps = {
@@ -142,13 +143,13 @@ export function OrdersScreen({
       toast.success("Pedido guardado (sin ticket).");
       clearOrder();
     } else {
-      // Las lineas hijas de un combo ("-combo-N", a $0) son para que el
-      // backend descuente el stock de lo que realmente se eligio -- no
-      // aportan nada al ticket impreso, porque la linea del combo ya
-      // muestra el detalle completo ("Hamburguesa: 4Q · Bebida: Coca-Cola").
-      // Sin este filtro salian duplicadas: una vez como parte del detalle
-      // del combo, y otra vez como renglon propio a $0.
-      const printableOrder = order.filter((item) => !item.lineId.includes("-combo-"));
+      // Las lineas hijas de un combo (a $0) son para que el backend
+      // descuente el stock de lo que realmente se eligio -- no aportan
+      // nada al ticket impreso, porque la linea del combo ya muestra el
+      // detalle completo ("Hamburguesa: 4Q · Bebida: Coca-Cola"). Sin este
+      // filtro salian duplicadas: una vez como parte del detalle del
+      // combo, y otra vez como renglon propio a $0.
+      const printableOrder = order.filter((item) => !isComboComponentLine(item));
       try {
         await printOrderTicket(
           printableOrder,

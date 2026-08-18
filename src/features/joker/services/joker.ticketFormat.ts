@@ -1,3 +1,21 @@
+import {
+  ALIGN_CENTER,
+  ALIGN_LEFT,
+  BOLD_OFF,
+  BOLD_ON,
+  CUT_PAPER,
+  DOUBLE_SIZE_OFF,
+  DOUBLE_SIZE_ON,
+  ESC_INIT,
+  TALL_SIZE_ON,
+  TRIPLE_SIZE_ON,
+  decorativeBorder,
+  divider,
+  formatMoney,
+  parseDeliveryCost,
+  rightAlignedLine
+} from "./joker.escpos";
+import { abbreviateForKitchen, wrapForKitchenPrinting } from "./joker.kitchenAbbreviations";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerAccountEntry, JokerClient, JokerOrderItem, JokerPaymentMethod } from "../joker.types";
 
@@ -8,125 +26,11 @@ export type JokerCashRegisterSummary = {
   ranking: Array<{ productName: string; quantity: number }>;
 };
 
-const TICKET_WIDTH = 48;
 const STORE_NAME = "EL JOKER";
 const STORE_ADDRESS = "Elias Abdo 115";
 const STORE_PHONE = "Tel: 099 238 454";
 const INTERNAL_USE_NOTE = "Uso interno";
 const FOOTER_MESSAGE = "Muito obrigado!!";
-const DECORATIVE_CHAR = "=";
-const DIVIDER_CHAR = "-";
-
-function decorativeBorder() {
-  return DECORATIVE_CHAR.repeat(TICKET_WIDTH);
-}
-
-function divider() {
-  return DIVIDER_CHAR.repeat(TICKET_WIDTH);
-}
-
-// Redondea a centesimos y solo muestra decimales cuando realmente los hay
-// (un precio editado a mano puede quedar fraccionado, ej. 58,35).
-function formatMoney(amount: number) {
-  const rounded = Math.round(amount * 100) / 100;
-  const value = Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(2).replace(".", ",");
-  return `$ ${value}`;
-}
-
-// Nombres puntuales que se abrevian completos, no palabra por palabra --
-// van antes que KITCHEN_NAME_ABBREVIATIONS y la reemplazan del todo (nunca
-// pasan por las reglas genericas de abajo). Hace falta esto en vez de
-// agregar mas reglas genericas porque, por ejemplo, "doble" ya se abrevia
-// a "Dob." en general, y estos nombres puntuales lo quieren tal cual
-// ("doble"), asi que si pasaran por la reduce generica se pisarian.
-// Coincide con el nombre completo del producto (^...$), asi que solo
-// aplica a esos productos exactos, no a substrings de otros nombres.
-const KITCHEN_FULL_NAME_OVERRIDES: Array<[RegExp, string]> = [
-  [/^hamburguesa especial doble carne$/i, "Esp. doble"],
-  [/^hamburguesa americana bbq 2\.0$/i, "BBQ 2.0"],
-  [/^hamburguesa americana bbq$/i, "BBQ"]
-];
-
-// Abreviaciones de nombres de producto, solo para la comanda de cocina (en
-// letra grande ocupan mas lugar, asi entran mas comodas). Agregar aca
-// cuando haga falta otra.
-const KITCHEN_NAME_ABBREVIATIONS: Array<[RegExp, string]> = [
-  [/\bhamburguesas?\b/gi, "Hamb."],
-  [/\bmilanesas?\b/gi, "Mila."],
-  [/\bmuzzarella\b/gi, "Muzza."],
-  [/\bdoble\b/gi, "Dob."],
-  [/\bpara (\d+) personas?\b/gi, "Para $1"]
-];
-
-function abbreviateForKitchen(productName: string) {
-  const trimmed = productName.trim();
-  const override = KITCHEN_FULL_NAME_OVERRIDES.find(([pattern]) => pattern.test(trimmed));
-  if (override) {
-    return override[1];
-  }
-
-  return KITCHEN_NAME_ABBREVIATIONS.reduce(
-    (name, [pattern, replacement]) => name.replace(pattern, replacement),
-    productName
-  );
-}
-
-// A TRIPLE_SIZE_ON (ancho x3) la impresora entra solo TICKET_WIDTH / 3
-// caracteres por linea fisica -- si el texto se manda tal cual, la
-// impresora lo corta sola donde le toca, a veces a mitad de palabra (ej.
-// "Hamburguesa" partido en "Hambur" + "guesa"). Esta funcion arma las
-// lineas de antemano, cortando solo entre palabras, para que cada producto
-// se lea entero de un vistazo aunque ocupe mas de un renglon impreso.
-const KITCHEN_LINE_WIDTH = Math.floor(TICKET_WIDTH / 3);
-
-function wrapForKitchenPrinting(text: string) {
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let current = "";
-
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length > KITCHEN_LINE_WIDTH && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = candidate;
-    }
-  }
-  if (current) lines.push(current);
-
-  return lines.length ? lines : [text];
-}
-
-// El costo de envio es opcional (no todos los pedidos son delivery): si
-// esta vacio o no es un numero valido, no se muestra en el ticket.
-function parseDeliveryCost(value: string) {
-  const parsed = Number(value.trim().replace(",", "."));
-  return value.trim() && Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
-// Arma una linea con el label a la izquierda y el valor pegado a la derecha,
-// rellenando el medio con espacios.
-function rightAlignedLine(label: string, value: string) {
-  const gap = Math.max(1, TICKET_WIDTH - label.length - value.length);
-  return `${label}${" ".repeat(gap)}${value}`;
-}
-
-const ESC_INIT = "\x1B\x40";
-const ALIGN_CENTER = "\x1B\x61\x01";
-const ALIGN_LEFT = "\x1B\x61\x00";
-const BOLD_ON = "\x1B\x45\x01";
-const BOLD_OFF = "\x1B\x45\x00";
-const DOUBLE_SIZE_ON = "\x1D\x21\x11";
-const DOUBLE_SIZE_OFF = "\x1D\x21\x00";
-// Triple tamano (ancho x3, alto x3): para el nombre/detalle de producto en
-// la comanda, un escalon mas grande que DOUBLE_SIZE_ON.
-const TRIPLE_SIZE_ON = "\x1D\x21\x22";
-// Tamaño intermedio (solo mas alto, ancho normal): la impresora solo soporta
-// tamaños fijos por multiplos, no puntos intermedios, asi que este es el
-// unico paso entre el tamaño normal y el doble (DOUBLE_SIZE_ON).
-const TALL_SIZE_ON = "\x1D\x21\x01";
-const CUT_PAPER = "\x1D\x56\x41\x00";
 
 // copies: cuantas veces se repite el ticket completo en el mismo trabajo
 // (cada copia ya trae su propio corte de papel al final). Con 3 copias
