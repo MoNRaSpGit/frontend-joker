@@ -236,6 +236,26 @@ export function CustomizeProductModal({
           </>
         ) : null}
 
+        {comboSlots.map((slot) => (
+          <label key={slot.label} className="joker-form-field">
+            <span>{slot.label}</span>
+            <select
+              value={selectedSlotProductIds[slot.label] ?? ""}
+              onChange={(event) => selectSlotOption(slot.label, Number(event.target.value))}
+            >
+              {slot.optionProductIds.map((optionId) => {
+                const optionProduct = allProducts.find((product) => product.id === optionId);
+                if (!optionProduct) return null;
+                return (
+                  <option key={optionId} value={optionId}>
+                    {optionProduct.name}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+        ))}
+
         {comboSlots.map((slot) => {
           const selectedOptionProduct = allProducts.find((product) => product.id === selectedSlotProductIds[slot.label]);
           // Los ingredientes de ESTA opcion (ej: los de "4 quesos", no los
@@ -244,43 +264,23 @@ export function CustomizeProductModal({
           const slotIngredientList = isDev && selectedOptionProduct ? parseIngredientList(selectedOptionProduct.ingredients) : [];
           const excludedForSlot = excludedIngredientsBySlot[slot.label] ?? new Set<string>();
 
+          if (!slotIngredientList.length) return null;
+
           return (
             <div key={slot.label}>
-              <label className="joker-form-field">
-                <span>{slot.label}</span>
-                <select
-                  value={selectedSlotProductIds[slot.label] ?? ""}
-                  onChange={(event) => selectSlotOption(slot.label, Number(event.target.value))}
-                >
-                  {slot.optionProductIds.map((optionId) => {
-                    const optionProduct = allProducts.find((product) => product.id === optionId);
-                    if (!optionProduct) return null;
-                    return (
-                      <option key={optionId} value={optionId}>
-                        {optionProduct.name}
-                      </option>
-                    );
-                  })}
-                </select>
-              </label>
-
-              {slotIngredientList.length ? (
-                <>
-                  <p className="joker-modal-card__hint">Ingredientes de {selectedOptionProduct?.name} (destildá lo que no va)</p>
-                  <div className="joker-checklist">
-                    {slotIngredientList.map((ingredient) => (
-                      <label key={ingredient} className="joker-checklist-item">
-                        <input
-                          type="checkbox"
-                          checked={!excludedForSlot.has(ingredient)}
-                          onChange={() => toggleSlotIngredient(slot.label, ingredient)}
-                        />
-                        <span>{ingredient}</span>
-                      </label>
-                    ))}
-                  </div>
-                </>
-              ) : null}
+              <p className="joker-modal-card__hint">Ingredientes de {selectedOptionProduct?.name} (destildá lo que no va)</p>
+              <div className="joker-checklist">
+                {slotIngredientList.map((ingredient) => (
+                  <label key={ingredient} className="joker-checklist-item">
+                    <input
+                      type="checkbox"
+                      checked={!excludedForSlot.has(ingredient)}
+                      onChange={() => toggleSlotIngredient(slot.label, ingredient)}
+                    />
+                    <span>{ingredient}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           );
         })}
