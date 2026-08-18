@@ -109,8 +109,8 @@ export function buildOrderTicketLines(
   }
 
   if (copies === 3) {
-    lines.push(...buildCompactTicketLines(order, orderAddress, customerName, "COMANDA", ticketNumber));
-    lines.push(...buildCompactTicketLines(order, orderAddress, customerName, "ARCHIVO", ticketNumber));
+    lines.push(...buildCompactTicketLines(order, orderAddress, customerName, "COMANDA", ticketNumber, note));
+    lines.push(...buildCompactTicketLines(order, orderAddress, customerName, "ARCHIVO", ticketNumber, note));
   }
 
   return lines;
@@ -134,19 +134,23 @@ function pushHeader(lines: string[], heading: string, includeStoreDetails: boole
   lines.push(`${INTERNAL_USE_NOTE}\n`);
 }
 
-// Seccion "Cliente" comun a los dos tipos de ticket: siempre se muestra,
+// Seccion "Cliente" comun a los tres tipos de ticket: siempre se muestra,
 // incluso sin nombre ni direccion (retiro en el local, sin nombre cargado).
-// El nombre y la direccion van en letra grande en los dos tipos de ticket.
-// paymentMethod y note son opcionales: solo se pasan (y se muestran) en el
-// ticket de mostrador, no en la comanda/archivo. note es distinto de
-// "Detalle" (que es por producto, ej "sin lechuga"): es una nota general del
-// pedido, ej "Pedido para las 9:30" o "Casa gris pegada al almacen".
+// El nombre y la direccion van en letra grande en los tres tipos de ticket.
+// paymentMethod solo se pasa (y se muestra) en el ticket de mostrador, no
+// en la comanda/archivo (no le sirve a cocina ni al archivo). note, en
+// cambio, se muestra en los tres -- el cliente pidio verla siempre, mas
+// grande en la comanda (noteSize) para que no se pierda entre el resto del
+// texto. note es distinto de "Detalle" (que es por producto, ej "sin
+// lechuga"): es una nota general del pedido, ej "Pedido para las 9:30" o
+// "Casa gris pegada al almacen".
 function pushCustomerSection(
   lines: string[],
   orderAddress: string,
   customerName: string,
   paymentMethod?: JokerPaymentMethod,
-  note?: string
+  note?: string,
+  noteSize: string = TALL_SIZE_ON
 ) {
   lines.push(ALIGN_LEFT);
   lines.push(`${decorativeBorder()}\n`);
@@ -164,7 +168,7 @@ function pushCustomerSection(
     lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
   }
   if (note && note.trim()) {
-    lines.push(BOLD_ON, TALL_SIZE_ON);
+    lines.push(BOLD_ON, noteSize);
     lines.push(`Nota: ${note.trim()}\n`);
     lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
   }
@@ -196,7 +200,7 @@ function buildSingleTicketLines(
     total += lineTotal;
 
     lines.push(BOLD_ON);
-    lines.push(`${rightAlignedLine(`${itemNumber}) ${item.quantity}x ${item.productName} `, formatMoney(lineTotal))}\n`);
+    lines.push(`${rightAlignedLine(`${itemNumber}) * ${item.quantity}x ${item.productName} `, formatMoney(lineTotal))}\n`);
     lines.push(BOLD_OFF);
 
     const detailLines = item.detail ? item.detail.split("\n").filter((line) => line.trim().length > 0) : [];
@@ -245,26 +249,42 @@ function buildSingleTicketLines(
 // precios (no le sirven ni a cocina ni al archivo). El nombre del producto
 // y el detalle van en letra grande (doble ancho y alto: aca no comparte
 // linea con ningun precio, asi que no hay riesgo de que quede apretado
-// como pasaba en el ticket normal).
+// como pasaba en el ticket normal). La nota sale mas grande en la comanda
+// (TRIPLE_SIZE_ON, igual que el nombre del producto) que en el archivo
+// (TALL_SIZE_ON, igual que el mostrador) porque el cocinero la necesita
+// mas legible de un vistazo.
 function buildCompactTicketLines(
   order: JokerOrderItem[],
   orderAddress: string,
   customerName: string,
   heading: string,
-  ticketNumber: number
+  ticketNumber: number,
+  note: string
 ) {
   const lines: string[] = [];
+  // La comanda (no el archivo) va sin numero de linea -- el cocinero solo
+  // necesita el "*" y la cantidad, el numero de posicion en la lista es lo
+  // que lo confundia con la cantidad. Tambien separa cada producto con una
+  // raya doble (decorativeBorder, "="), mas marcada que el guion simple que
+  // usan el resto de los tickets, para que no se le pase de un producto a
+  // otro de un vistazo.
+  const isKitchenCopy = heading === "COMANDA";
+  const noteSize = isKitchenCopy ? TRIPLE_SIZE_ON : TALL_SIZE_ON;
 
   lines.push(ESC_INIT);
   pushHeader(lines, heading, false);
   lines.push(`Pedido #${ticketNumber}\n`);
-  pushCustomerSection(lines, orderAddress, customerName);
+  pushCustomerSection(lines, orderAddress, customerName, undefined, note, noteSize);
 
   order.forEach((item, index) => {
     const itemNumber = index + 1;
 
     lines.push(BOLD_ON, TRIPLE_SIZE_ON);
-    lines.push(`${itemNumber}) ${item.quantity}x ${abbreviateForKitchen(item.productName)}\n`);
+    lines.push(
+      isKitchenCopy
+        ? `* ${item.quantity}x ${abbreviateForKitchen(item.productName)}\n`
+        : `${itemNumber}) * ${item.quantity}x ${abbreviateForKitchen(item.productName)}\n`
+    );
     lines.push(BOLD_OFF);
 
     const detailLines = item.detail ? item.detail.split("\n").filter((line) => line.trim().length > 0) : [];
@@ -278,7 +298,7 @@ function buildCompactTicketLines(
     lines.push(DOUBLE_SIZE_OFF);
 
     if (index < order.length - 1) {
-      lines.push(`${divider()}\n`);
+      lines.push(`${isKitchenCopy ? decorativeBorder() : divider()}\n`);
     }
   });
 
