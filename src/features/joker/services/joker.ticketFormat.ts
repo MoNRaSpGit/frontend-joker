@@ -213,12 +213,13 @@ function buildCompactTicketLines(
   note: string
 ) {
   const lines: string[] = [];
-  // La comanda (no el archivo) va sin numero de linea -- el cocinero solo
-  // necesita el "*" y la cantidad, el numero de posicion en la lista es lo
-  // que lo confundia con la cantidad. Tambien separa cada producto con una
-  // raya doble (decorativeBorder, "="), mas marcada que el guion simple que
-  // usan el resto de los tickets, para que no se le pase de un producto a
-  // otro de un vistazo.
+  // Ni comanda ni archivo van con numero de linea -- solo el "*" y la
+  // cantidad, para que las dos copias salgan identicas en el listado de
+  // items (el numero de posicion en la lista es lo que confundia al
+  // cocinero con la cantidad). Tambien separan cada producto con una raya
+  // doble (decorativeBorder, "="), mas marcada que el guion simple que usan
+  // el resto de los tickets, para que no se le pase de un producto a otro
+  // de un vistazo.
   const isKitchenCopy = heading === "COMANDA";
   const noteSize = isKitchenCopy ? TRIPLE_SIZE_ON : TALL_SIZE_ON;
 
@@ -228,11 +229,7 @@ function buildCompactTicketLines(
   pushCustomerSection(lines, orderAddress, customerName, undefined, note, noteSize);
 
   order.forEach((item, index) => {
-    const itemNumber = index + 1;
-
-    const itemText = isKitchenCopy
-      ? `* ${item.quantity}x ${abbreviateForKitchen(item.productName)}`
-      : `${itemNumber}) ${item.quantity}x ${abbreviateForKitchen(item.productName)}`;
+    const itemText = `* ${item.quantity}x ${abbreviateForKitchen(item.productName)}`;
 
     lines.push(BOLD_ON, TRIPLE_SIZE_ON);
     // Se corta a mano (por palabra) en vez de dejar que la impresora corte

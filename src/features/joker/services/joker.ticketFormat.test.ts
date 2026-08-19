@@ -30,7 +30,7 @@ describe("buildOrderTicketLines", () => {
     expect(archivoIndex).toBeGreaterThan(comandaIndex);
   });
 
-  it("el asterisco de separacion solo sale en la comanda, no en mostrador ni archivo", () => {
+  it("el asterisco de cantidad sale en comanda y archivo (identicas), no en mostrador", () => {
     const lines = buildOrderTicketLines(order, "", 3, "efectivo", "Fede", "", 482, "");
     const text = fullText(lines);
     const comandaStart = text.indexOf("COMANDA");
@@ -41,7 +41,7 @@ describe("buildOrderTicketLines", () => {
     const mostradorSection = text.slice(0, comandaStart);
 
     expect(comandaSection).toContain("* 2x");
-    expect(archivoSection).not.toContain("* 2x");
+    expect(archivoSection).toContain("* 2x");
     expect(mostradorSection).not.toContain("* 2x");
   });
 
