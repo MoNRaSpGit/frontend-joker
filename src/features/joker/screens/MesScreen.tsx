@@ -164,9 +164,11 @@ export function MesScreen() {
                           <td>{dia.fecha.split("-").reverse().join("/")}</td>
                           <td className="joker-mes-tabla__num">{formatPrice(dia.total)}</td>
                           <td className="joker-mes-fila-editar">
-                            <button type="button" className="joker-mini-button" onClick={() => setDiaEditando(dia)}>
-                              Editar
-                            </button>
+                            {dia.cerrado ? (
+                              <button type="button" className="joker-mini-button" onClick={() => setDiaEditando(dia)}>
+                                Editar
+                              </button>
+                            ) : null}
                           </td>
                         </tr>
                       ))}
