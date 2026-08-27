@@ -2,6 +2,7 @@ import { Menu, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { JokerRoleLoginScreen } from "./components/JokerRoleLoginScreen";
+import { PendingOrderBadge } from "./components/PendingOrderBadge";
 import { PendingOrderModal } from "./components/PendingOrderModal";
 import { PrinterSettingsModal } from "./components/PrinterSettingsModal";
 import {
@@ -83,6 +84,10 @@ export function JokerHomePage() {
   const [accountEntries, setAccountEntries] = useState<JokerAccountEntry[]>([]);
   const [couriers, setCouriers] = useState<JokerCourier[]>([]);
   const [pendingOrders, setPendingOrders] = useState<JokerOrderRecord[]>([]);
+  // El pop-up de pedidos pendientes no se abre solo -- el cartelito fijo
+  // (PendingOrderBadge) avisa sin tapar la pantalla, y esto se pone en
+  // true recien cuando el admin le hace click.
+  const [isPendingOrderModalOpen, setIsPendingOrderModalOpen] = useState(false);
 
   // Solo el Administrador ve el pop-up de pedidos pendientes de mostrador
   // (el rol Usuario es quien los manda, no tendria sentido que se
@@ -109,6 +114,15 @@ export function JokerHomePage() {
       window.clearInterval(intervalId);
     };
   }, [role]);
+
+  // Si ya no queda ningun pendiente (se aceptaron/rechazaron todos), el
+  // modal se cierra solo. La proxima vez que llegue uno nuevo arranca de
+  // nuevo como cartelito, no se abre solo tapando la pantalla.
+  useEffect(() => {
+    if (!pendingOrders.length) {
+      setIsPendingOrderModalOpen(false);
+    }
+  }, [pendingOrders.length]);
 
   // La cuenta corriente se recalcula en el backend apenas se edita un
   // pedido (ver joker.service.ts#syncAccountEntryForOrder), pero esta
@@ -496,11 +510,16 @@ export function JokerHomePage() {
       ) : null}
 
       {role === "administrador" && pendingOrders.length ? (
+        <PendingOrderBadge count={pendingOrders.length} onClick={() => setIsPendingOrderModalOpen(true)} />
+      ) : null}
+
+      {role === "administrador" && pendingOrders.length && isPendingOrderModalOpen ? (
         <PendingOrderModal
           order={pendingOrders[0]}
           queueCount={pendingOrders.length}
           onAccept={handleAcceptPendingOrder}
           onReject={handleRejectPendingOrder}
+          onDismiss={() => setIsPendingOrderModalOpen(false)}
         />
       ) : null}
     </div>

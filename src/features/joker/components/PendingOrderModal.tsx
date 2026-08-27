@@ -11,12 +11,15 @@ type PendingOrderModalProps = {
   queueCount: number;
   onAccept: (order: JokerOrderRecord) => Promise<void>;
   onReject: (order: JokerOrderRecord) => Promise<void>;
+  onDismiss: () => void;
 };
 
 // Pop-up que ve el Administrador cuando el Usuario (mostrador) manda un
 // pedido: queda "pendiente" hasta que aca se lo acepta (recien ahi entra a
-// cocina con numero real) o se lo rechaza.
-export function PendingOrderModal({ order, queueCount, onAccept, onReject }: PendingOrderModalProps) {
+// cocina con numero real) o se lo rechaza. Se abre solo al hacer click en
+// el cartelito (PendingOrderBadge) -- no aparece solo tapando la pantalla,
+// para no interrumpir lo que este haciendo el admin.
+export function PendingOrderModal({ order, queueCount, onAccept, onReject, onDismiss }: PendingOrderModalProps) {
   const [isBusy, setIsBusy] = useState<"accept" | "reject" | null>(null);
 
   async function handleAccept() {
@@ -38,8 +41,16 @@ export function PendingOrderModal({ order, queueCount, onAccept, onReject }: Pen
   }
 
   return (
-    <div className="joker-modal-overlay" role="dialog" aria-modal="true" aria-label="Pedido pendiente">
-      <div className="joker-modal-card joker-pending-order-modal">
+    <div
+      className="joker-modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Pedido pendiente"
+      onClick={() => {
+        if (isBusy === null) onDismiss();
+      }}
+    >
+      <div className="joker-modal-card joker-pending-order-modal" onClick={(event) => event.stopPropagation()}>
         <p className="joker-eyebrow">Mostrador</p>
         <h2>Pedido pendiente{queueCount > 1 ? ` (1 de ${queueCount})` : ""}</h2>
 
@@ -80,6 +91,10 @@ export function PendingOrderModal({ order, queueCount, onAccept, onReject }: Pen
             {isBusy === "accept" ? "Aceptando..." : "Aceptar"}
           </button>
         </div>
+
+        <button type="button" className="joker-pending-order-modal__dismiss" disabled={isBusy !== null} onClick={onDismiss}>
+          Ahora no, decido despues
+        </button>
       </div>
     </div>
   );

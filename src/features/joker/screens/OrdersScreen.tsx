@@ -72,9 +72,27 @@ export function OrdersScreen({
     // El rol "Usuario" arma el pedido igual que siempre, pero no lo
     // confirma solo: queda pendiente hasta que el Administrador lo acepte
     // o lo rechace (ver PendingOrderModal en JokerHomePage). No pasa por
-    // caja, ticket ni cuenta corriente todavia -- eso pasa recien al
-    // aceptar.
+    // ticket ni cuenta corriente todavia -- eso pasa recien al aceptar.
+    // La caja si se respeta igual (si esta cerrada, no se puede mandar
+    // pedido), pero a diferencia del Administrador, Usuario no tiene
+    // permiso para abrirla -- si esta cerrada, se frena aca nomas.
     if (role === "usuario") {
+      setIsPrinting(true);
+      try {
+        const registerState = await getRegisterState();
+        if (!registerState.isOpen) {
+          toast.error("Caja cerrada.");
+          setIsPrinting(false);
+          return;
+        }
+      } catch (stateError) {
+        toast.error(
+          stateError instanceof Error ? `No se pudo verificar la caja: ${stateError.message}` : "No se pudo verificar la caja."
+        );
+        setIsPrinting(false);
+        return;
+      }
+
       await submitPendingOrder(paymentMethod, clientId);
       return;
     }
