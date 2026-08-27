@@ -8,6 +8,7 @@ import {
   DOUBLE_SIZE_ON,
   ESC_INIT,
   TALL_SIZE_ON,
+  TICKET_WIDTH,
   TRIPLE_SIZE_ON,
   decorativeBorder,
   divider,
@@ -203,7 +204,11 @@ function buildSingleTicketLines(
 
   lines.push(`${decorativeBorder()}\n`);
   lines.push(BOLD_ON, DOUBLE_SIZE_ON);
-  lines.push(`${rightAlignedLine("Total ", formatMoney(total))}\n`);
+  // DOUBLE_SIZE_ON duplica tambien el ancho: a este tamano entran la mitad
+  // de columnas por renglon fisico, asi que el padding se calcula para
+  // TICKET_WIDTH / 2 (si no, la linea calculada para 48 columnas no entraba
+  // en las 24 reales y el valor se iba a un renglon aparte).
+  lines.push(`${rightAlignedLine("Total ", formatMoney(total), TICKET_WIDTH / 2)}\n`);
   lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
   lines.push("\n");
 

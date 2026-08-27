@@ -33,9 +33,14 @@ export function parseDeliveryCost(value: string) {
 }
 
 // Arma una linea con el label a la izquierda y el valor pegado a la derecha,
-// rellenando el medio con espacios.
-export function rightAlignedLine(label: string, value: string) {
-  const gap = Math.max(1, TICKET_WIDTH - label.length - value.length);
+// rellenando el medio con espacios. width es la cantidad de caracteres que
+// entran por linea fisica -- normal es TICKET_WIDTH, pero con DOUBLE_SIZE_ON
+// (o cualquier tamano que duplique el ancho) entran la mitad: sin pasar un
+// width mas chico ahi, la linea calculada para 48 columnas no entraba en las
+// 24 reales y la impresora la cortaba a la mitad, mandando el valor a un
+// renglon aparte.
+export function rightAlignedLine(label: string, value: string, width: number = TICKET_WIDTH) {
+  const gap = Math.max(1, width - label.length - value.length);
   return `${label}${" ".repeat(gap)}${value}`;
 }
 
