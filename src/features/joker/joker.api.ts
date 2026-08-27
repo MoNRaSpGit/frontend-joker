@@ -91,7 +91,9 @@ export async function createOrder(
   customerName?: string,
   orderDate?: string,
   courierId?: number,
-  deliveryCost?: number
+  deliveryCost?: number,
+  clientId?: number,
+  pending?: boolean
 ): Promise<OrderResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders`, {
     method: "POST",
@@ -100,9 +102,11 @@ export async function createOrder(
       address,
       paymentMethod,
       customerName,
+      clientId,
       orderDate: orderDate || undefined,
       courierId,
       deliveryCost,
+      pending,
       items: order.map((item) => ({
         productId: item.productId,
         productName: item.productName,
@@ -148,6 +152,23 @@ export async function listCurrentPeriodOrders(courierId?: number): Promise<Order
   const params = courierId ? `?courierId=${courierId}` : "";
   const response = await fetch(`${API_BASE_URL}/joker/orders/current-period${params}`, { cache: "no-store" });
   return readJson<OrderListResponse>(response);
+}
+
+// Pedidos de mostrador (rol Usuario) en espera de que el Administrador los
+// acepte o rechace.
+export async function listPendingOrders(): Promise<OrderListResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/orders/pending`, { cache: "no-store" });
+  return readJson<OrderListResponse>(response);
+}
+
+export async function acceptOrder(orderId: number): Promise<OrderResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/orders/${orderId}/accept`, { method: "POST" });
+  return readJson<OrderResponse>(response);
+}
+
+export async function rejectOrder(orderId: number): Promise<OrderResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/orders/${orderId}/reject`, { method: "POST" });
+  return readJson<OrderResponse>(response);
 }
 
 type CourierListResponse = {

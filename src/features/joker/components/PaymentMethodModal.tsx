@@ -9,9 +9,18 @@ type PaymentMethodModalProps = {
   isSubmitting: boolean;
   onClose: () => void;
   onConfirm: (paymentMethod: JokerPaymentMethod, clientId?: number, customerName?: string) => void;
+  confirmLabel?: string;
+  confirmBusyLabel?: string;
 };
 
-export function PaymentMethodModal({ clients, isSubmitting, onClose, onConfirm }: PaymentMethodModalProps) {
+export function PaymentMethodModal({
+  clients,
+  isSubmitting,
+  onClose,
+  onConfirm,
+  confirmLabel = "Imprimir",
+  confirmBusyLabel = "Imprimiendo..."
+}: PaymentMethodModalProps) {
   const [selected, setSelected] = useState<JokerPaymentMethod>("efectivo");
   const [clientId, setClientId] = useState("");
   const [transferCustomerName, setTransferCustomerName] = useState("");
@@ -91,7 +100,7 @@ export function PaymentMethodModal({ clients, isSubmitting, onClose, onConfirm }
             onClick={handleConfirm}
             disabled={isSubmitting || !canConfirm}
           >
-            {isSubmitting ? "Imprimiendo..." : "Imprimir"}
+            {isSubmitting ? confirmBusyLabel : confirmLabel}
           </button>
         </div>
       </div>

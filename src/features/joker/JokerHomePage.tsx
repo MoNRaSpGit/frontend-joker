@@ -1,21 +1,28 @@
 import { Menu, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import { JokerRoleLoginScreen } from "./components/JokerRoleLoginScreen";
+import { PendingOrderModal } from "./components/PendingOrderModal";
 import { PrinterSettingsModal } from "./components/PrinterSettingsModal";
 import {
+  acceptOrder,
+  createAccountEntry,
   createClient,
   deleteClient,
   enableCourier,
   listAccountEntries,
   listClients,
   listCouriers,
+  listPendingOrders,
   listProducts,
+  rejectOrder,
   settleAccount,
   settleCourier,
   updateCourier
 } from "./joker.api";
+import { printOrderTicket } from "./services/joker.print";
 import { getPreferredPrinterName } from "./services/joker.qzPrint";
-import type { JokerAccountEntry, JokerClient, JokerCourier, JokerProduct, JokerRole } from "./joker.types";
+import type { JokerAccountEntry, JokerClient, JokerCourier, JokerOrderItem, JokerOrderRecord, JokerProduct, JokerRole } from "./joker.types";
 import { CuentaCorrienteScreen } from "./screens/CuentaCorrienteScreen";
 import { DeliveryScreen } from "./screens/DeliveryScreen";
 import { MesScreen } from "./screens/MesScreen";
@@ -75,6 +82,33 @@ export function JokerHomePage() {
   const [clientsLoadError, setClientsLoadError] = useState<string | null>(null);
   const [accountEntries, setAccountEntries] = useState<JokerAccountEntry[]>([]);
   const [couriers, setCouriers] = useState<JokerCourier[]>([]);
+  const [pendingOrders, setPendingOrders] = useState<JokerOrderRecord[]>([]);
+
+  // Solo el Administrador ve el pop-up de pedidos pendientes de mostrador
+  // (el rol Usuario es quien los manda, no tendria sentido que se
+  // autoaprobara). Sin websockets: se chequea cada 8s.
+  useEffect(() => {
+    if (role !== "administrador") return;
+
+    let cancelled = false;
+    async function poll() {
+      try {
+        const result = await listPendingOrders();
+        if (!cancelled) setPendingOrders(result.items);
+      } catch {
+        // Silencioso: un pedido pendiente no es urgente al punto de tapar
+        // la pantalla con un error de red pasajero, se reintenta solo en
+        // 8s.
+      }
+    }
+
+    void poll();
+    const intervalId = window.setInterval(() => void poll(), 8000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [role]);
 
   // La cuenta corriente se recalcula en el backend apenas se edita un
   // pedido (ver joker.service.ts#syncAccountEntryForOrder), pero esta
@@ -220,6 +254,89 @@ export function JokerHomePage() {
     await loadAccountEntries();
   }
 
+  // Acepta un pedido pendiente de mostrador: recien aca se le asigna el
+  // numero real de cocina y se descuenta el stock (ver
+  // JokerOrdersService#acceptOrder), asi que imprime el ticket igual que
+  // un pedido normal recien creado. Si se pago "a cuenta", genera el
+  // movimiento de cuenta corriente ahora (no se genero al mandarlo, para
+  // no cargarle nada al cliente si el pedido terminaba rechazado).
+  async function handleAcceptPendingOrder(order: JokerOrderRecord) {
+    let accepted: JokerOrderRecord;
+    try {
+      const result = await acceptOrder(order.id);
+      accepted = result.item;
+    } catch (error) {
+      toast.error(error instanceof Error ? `No se pudo aceptar el pedido: ${error.message}` : "No se pudo aceptar el pedido.");
+      return;
+    }
+
+    setPendingOrders((current) => current.filter((item) => item.id !== order.id));
+
+    if (accepted.displayNumber === null) {
+      toast.error("El pedido se acepto pero no se pudo obtener su numero para imprimir.");
+      return;
+    }
+
+    const printableItems: JokerOrderItem[] = accepted.items.map((item, index) => ({
+      lineId: `pending-${accepted.id}-${index}`,
+      productId: item.productId,
+      productName: item.productName,
+      unitPrice: item.unitPrice,
+      quantity: item.quantity,
+      detail: item.detail ?? ""
+    }));
+
+    try {
+      await printOrderTicket(
+        printableItems,
+        accepted.address,
+        3,
+        accepted.paymentMethod,
+        accepted.customerName ?? "",
+        accepted.deliveryCost ? String(accepted.deliveryCost) : "",
+        accepted.displayNumber,
+        ""
+      );
+      toast.success(`Pedido #${accepted.displayNumber} aceptado e impreso.`);
+    } catch (printError) {
+      toast.error(
+        printError instanceof Error
+          ? `El pedido #${accepted.displayNumber} se acepto pero no se pudo imprimir: ${printError.message}`
+          : `El pedido #${accepted.displayNumber} se acepto pero no se pudo imprimir.`
+      );
+    }
+
+    if (accepted.paymentMethod === "cuenta" && accepted.clientId) {
+      try {
+        await createAccountEntry(
+          accepted.clientId,
+          accepted.total,
+          accepted.items.map((item) => ({ productName: item.productName, quantity: item.quantity, unitPrice: item.unitPrice })),
+          accepted.id
+        );
+        await loadAccountEntries();
+      } catch (accountError) {
+        toast.error(
+          accountError instanceof Error
+            ? `El pedido se acepto pero no se guardo en la cuenta corriente: ${accountError.message}`
+            : "El pedido se acepto pero no se guardo en la cuenta corriente."
+        );
+      }
+    }
+
+    await loadProducts();
+  }
+
+  async function handleRejectPendingOrder(order: JokerOrderRecord) {
+    try {
+      await rejectOrder(order.id);
+      setPendingOrders((current) => current.filter((item) => item.id !== order.id));
+      toast.info("Pedido cancelado.");
+    } catch (error) {
+      toast.error(error instanceof Error ? `No se pudo cancelar el pedido: ${error.message}` : "No se pudo cancelar el pedido.");
+    }
+  }
+
   if (!role) {
     return <JokerRoleLoginScreen onSelectRole={handleSelectRole} />;
   }
@@ -334,6 +451,7 @@ export function JokerHomePage() {
             clients={clients}
             onAccountEntryRegistered={loadAccountEntries}
             customizeMode={customizeMode}
+            role={role}
           />
         ) : activeTab === "productos" ? (
           <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
@@ -374,6 +492,15 @@ export function JokerHomePage() {
           currentPrinterName={preferredPrinterName}
           onClose={() => setIsPrinterModalOpen(false)}
           onPrinterChange={setPreferredPrinterNameState}
+        />
+      ) : null}
+
+      {role === "administrador" && pendingOrders.length ? (
+        <PendingOrderModal
+          order={pendingOrders[0]}
+          queueCount={pendingOrders.length}
+          onAccept={handleAcceptPendingOrder}
+          onReject={handleRejectPendingOrder}
         />
       ) : null}
     </div>

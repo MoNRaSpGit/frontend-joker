@@ -74,13 +74,17 @@ export const JOKER_PAYMENT_METHOD_LABELS: Record<JokerPaymentMethod, string> = {
   cuenta: "Cuenta"
 };
 
+export type JokerOrderStatus = "confirmado" | "pendiente" | "rechazado";
+
 export type JokerOrderRecord = {
   id: number;
-  displayNumber: number;
+  displayNumber: number | null;
+  status: JokerOrderStatus;
   total: number;
   address: string;
   paymentMethod: JokerPaymentMethod;
   customerName: string | null;
+  clientId: number | null;
   items: Array<{
     productId: number;
     productName: string;

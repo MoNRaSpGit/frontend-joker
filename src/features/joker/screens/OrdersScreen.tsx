@@ -9,7 +9,7 @@ import { useJokerOrder } from "../hooks/useJokerOrder";
 import { createAccountEntry, createOrder, getRegisterState, openRegister } from "../joker.api";
 import { printOrderTicket } from "../services/joker.print";
 import { isComboComponentLine } from "../joker.types";
-import type { JokerClient, JokerOrderItem, JokerPaymentMethod, JokerProduct } from "../joker.types";
+import type { JokerClient, JokerOrderItem, JokerPaymentMethod, JokerProduct, JokerRole } from "../joker.types";
 
 type OrdersScreenProps = {
   products: JokerProduct[];
@@ -19,6 +19,7 @@ type OrdersScreenProps = {
   clients: JokerClient[];
   onAccountEntryRegistered: () => void;
   customizeMode: "cliente" | "dev";
+  role: JokerRole;
 };
 
 export function OrdersScreen({
@@ -28,7 +29,8 @@ export function OrdersScreen({
   onReload,
   clients,
   onAccountEntryRegistered,
-  customizeMode
+  customizeMode,
+  role
 }: OrdersScreenProps) {
   const [selectedVariants, setSelectedVariants] = useState<JokerProduct[] | null>(null);
   const [editingItem, setEditingItem] = useState<JokerOrderItem | null>(null);
@@ -67,6 +69,16 @@ export function OrdersScreen({
   async function handleConfirmPayment(paymentMethod: JokerPaymentMethod, clientId?: number, customerName?: string) {
     if (!order.length || isPrinting) return;
 
+    // El rol "Usuario" arma el pedido igual que siempre, pero no lo
+    // confirma solo: queda pendiente hasta que el Administrador lo acepte
+    // o lo rechace (ver PendingOrderModal en JokerHomePage). No pasa por
+    // caja, ticket ni cuenta corriente todavia -- eso pasa recien al
+    // aceptar.
+    if (role === "usuario") {
+      await submitPendingOrder(paymentMethod, clientId, customerName);
+      return;
+    }
+
     setIsPrinting(true);
     let registerState;
     try {
@@ -89,6 +101,31 @@ export function OrdersScreen({
     }
 
     await proceedWithSale(paymentMethod, clientId, customerName);
+  }
+
+  async function submitPendingOrder(paymentMethod: JokerPaymentMethod, clientId?: number, customerName?: string) {
+    setIsPrinting(true);
+    try {
+      const parsedDeliveryCost = orderDeliveryCost.trim() ? Number(orderDeliveryCost) : undefined;
+      await createOrder(
+        order,
+        orderAddress,
+        paymentMethod,
+        customerName,
+        orderDate,
+        undefined,
+        Number.isFinite(parsedDeliveryCost) ? parsedDeliveryCost : undefined,
+        clientId,
+        true
+      );
+      toast.success("Pedido enviado. Queda esperando que el administrador lo acepte.");
+      clearOrder();
+      setIsPaymentModalOpen(false);
+    } catch (saveError) {
+      toast.error(saveError instanceof Error ? `No se pudo enviar el pedido: ${saveError.message}` : "No se pudo enviar el pedido.");
+    } finally {
+      setIsPrinting(false);
+    }
   }
 
   async function handleConfirmOpenRegisterAndSale() {
@@ -128,6 +165,15 @@ export function OrdersScreen({
         undefined,
         Number.isFinite(parsedDeliveryCost) ? parsedDeliveryCost : undefined
       );
+      // Este flujo nunca crea un pedido "pending" (eso lo maneja
+      // PendingOrderForm para el rol Usuario), asi que siempre viene con
+      // numero real -- el guard es solo para que TypeScript sepa que no es
+      // null en este punto.
+      if (saved.item.displayNumber === null) {
+        toast.error("El pedido se guardo pero no se pudo obtener su numero.");
+        setIsPrinting(false);
+        return;
+      }
       displayNumber = saved.item.displayNumber;
       orderId = saved.item.id;
     } catch (saveError) {
@@ -246,6 +292,8 @@ export function OrdersScreen({
           isSubmitting={isPrinting}
           onClose={() => setIsPaymentModalOpen(false)}
           onConfirm={handleConfirmPayment}
+          confirmLabel={role === "usuario" ? "Enviar pedido" : undefined}
+          confirmBusyLabel={role === "usuario" ? "Enviando..." : undefined}
         />
       ) : null}
 
