@@ -127,7 +127,7 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
               </label>
               <button
                 type="button"
-                className="joker-button joker-button--ghost joker-button--auto"
+                className="joker-button joker-button--dark joker-button--auto"
                 disabled={isSaving}
                 onClick={() => void handleAddMovement("inicial", initialCashInput)}
               >
@@ -146,7 +146,7 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
               </label>
               <button
                 type="button"
-                className="joker-button joker-button--ghost joker-button--auto"
+                className="joker-button joker-button--dark joker-button--auto"
                 disabled={isSaving}
                 onClick={() => void handleAddMovement("gasto", expenseAmountInput, expenseDescriptionInput.trim() || undefined)}
               >
@@ -161,7 +161,7 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
               </label>
               <button
                 type="button"
-                className="joker-button joker-button--primary joker-button--auto"
+                className="joker-button joker-button--dark joker-button--auto"
                 disabled={isSaving}
                 onClick={() => void handleAddMovement("entrega", handoverAmountInput)}
               >

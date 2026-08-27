@@ -526,7 +526,18 @@ textarea {
   box-shadow: 0 10px 22px rgba(214, 31, 38, 0.4);
 }
 
+.joker-button--dark {
+  border: none;
+  background: #111111;
+  color: #fff;
+}
+
+.joker-button--dark:hover {
+  background: #2a2a2a;
+}
+
 .joker-button--primary:disabled,
+.joker-button--dark:disabled,
 .joker-button--ghost:disabled,
 .joker-button--danger:disabled {
   opacity: 0.55;
