@@ -114,13 +114,18 @@ function pushCustomerSection(
   lines.push(ALIGN_LEFT);
   lines.push(`${decorativeBorder()}\n`);
   lines.push(DOUBLE_SIZE_ON);
-  lines.push(`Cliente: ${customerName.trim() || "-"}\n`);
   // Los pedidos de mostrador (Usuario) siempre vienen con el nombre
   // marcado "... MOSTRADOR" (ver OrdersScreen#submitPendingOrder) y sin
-  // direccion -- ahi conviene que diga "MOSTRADOR" en vez del generico
-  // "Retira en local" de un pedido por WhatsApp que se retira en el
-  // local.
-  const isCounterOrder = customerName.trim().toUpperCase().includes("MOSTRADOR");
+  // direccion -- en el ticket no interesa repetir "MOSTRADOR" pegado al
+  // nombre del cliente, asi que se saca de la linea "Cliente" y queda
+  // solo, reemplazando a la direccion (en vez del generico "Retira en
+  // local" de un pedido por WhatsApp que se retira en el local).
+  const trimmedCustomerName = customerName.trim();
+  const isCounterOrder = trimmedCustomerName.toUpperCase().includes("MOSTRADOR");
+  const displayCustomerName = isCounterOrder
+    ? trimmedCustomerName.replace(/\s*MOSTRADOR\s*$/i, "").trim()
+    : trimmedCustomerName;
+  lines.push(`Cliente: ${displayCustomerName || "-"}\n`);
   lines.push(
     orderAddress.trim() ? `Direccion: ${orderAddress.trim()}\n` : isCounterOrder ? "MOSTRADOR\n" : "Retira en local\n"
   );

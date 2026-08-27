@@ -84,10 +84,12 @@ export function JokerHomePage() {
   const [accountEntries, setAccountEntries] = useState<JokerAccountEntry[]>([]);
   const [couriers, setCouriers] = useState<JokerCourier[]>([]);
   const [pendingOrders, setPendingOrders] = useState<JokerOrderRecord[]>([]);
-  // El pop-up de pedidos pendientes no se abre solo -- el cartelito fijo
-  // (PendingOrderBadge) avisa sin tapar la pantalla, y esto se pone en
-  // true recien cuando el admin le hace click.
-  const [isPendingOrderModalOpen, setIsPendingOrderModalOpen] = useState(false);
+  // El pop-up de un pedido pendiente no se abre solo -- cada pedido tiene
+  // su propio cartelito fijo (PendingOrderBadge) que avisa sin tapar la
+  // pantalla, y esto se pone en el id del pedido recien cuando el admin le
+  // hace click a su cartelito.
+  const [activePendingOrderId, setActivePendingOrderId] = useState<number | null>(null);
+  const activePendingOrder = pendingOrders.find((order) => order.id === activePendingOrderId) ?? null;
 
   // Solo el Administrador ve el pop-up de pedidos pendientes de mostrador
   // (el rol Usuario es quien los manda, no tendria sentido que se
@@ -115,14 +117,15 @@ export function JokerHomePage() {
     };
   }, [role]);
 
-  // Si ya no queda ningun pendiente (se aceptaron/rechazaron todos), el
+  // Si el pedido que estaba abierto en el modal ya no esta en la lista
+  // (se acepto o rechazo, desde este cartelito o desde otro lado), el
   // modal se cierra solo. La proxima vez que llegue uno nuevo arranca de
   // nuevo como cartelito, no se abre solo tapando la pantalla.
   useEffect(() => {
-    if (!pendingOrders.length) {
-      setIsPendingOrderModalOpen(false);
+    if (activePendingOrderId !== null && !pendingOrders.some((order) => order.id === activePendingOrderId)) {
+      setActivePendingOrderId(null);
     }
-  }, [pendingOrders.length]);
+  }, [pendingOrders, activePendingOrderId]);
 
   // La cuenta corriente se recalcula en el backend apenas se edita un
   // pedido (ver joker.service.ts#syncAccountEntryForOrder), pero esta
@@ -513,18 +516,26 @@ export function JokerHomePage() {
         />
       ) : null}
 
-      {role === "administrador" && pendingOrders.length ? (
-        <PendingOrderBadge count={pendingOrders.length} onClick={() => setIsPendingOrderModalOpen(true)} />
-      ) : null}
+      {role === "administrador"
+        ? pendingOrders.map((order, index) => (
+            // Un cartelito por pedido, escalonados: el mas viejo (index 0)
+            // arriba, los mas nuevos van apilandose mas abajo.
+            <PendingOrderBadge
+              key={order.id}
+              bottomOffset={16 + (pendingOrders.length - 1 - index) * 56}
+              onClick={() => setActivePendingOrderId(order.id)}
+            />
+          ))
+        : null}
 
-      {role === "administrador" && pendingOrders.length && isPendingOrderModalOpen ? (
+      {role === "administrador" && activePendingOrder ? (
         <PendingOrderModal
-          key={pendingOrders[0].id}
-          order={pendingOrders[0]}
+          key={activePendingOrder.id}
+          order={activePendingOrder}
           queueCount={pendingOrders.length}
           onAccept={handleAcceptPendingOrder}
           onReject={handleRejectPendingOrder}
-          onDismiss={() => setIsPendingOrderModalOpen(false)}
+          onDismiss={() => setActivePendingOrderId(null)}
         />
       ) : null}
     </div>

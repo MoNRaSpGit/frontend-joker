@@ -53,7 +53,7 @@ export function PendingOrderModal({ order, queueCount, onAccept, onReject, onDis
     >
       <div className="joker-modal-card joker-pending-order-modal" onClick={(event) => event.stopPropagation()}>
         <p className="joker-eyebrow">Mostrador</p>
-        <h2>Pedido pendiente{queueCount > 1 ? ` (1 de ${queueCount})` : ""}</h2>
+        <h2>Pedido pendiente{queueCount > 1 ? ` (quedan ${queueCount})` : ""}</h2>
 
         <ul className="joker-order-detail-list">
           {order.items.map((item, index) => (
