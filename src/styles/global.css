@@ -1821,6 +1821,27 @@ textarea {
   text-align: center;
 }
 
+.joker-delivery-stat-card--clickable {
+  width: 100%;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.joker-delivery-stat-card--clickable:hover {
+  border-color: var(--joker-accent);
+}
+
+.joker-delivery-stat-card--clickable:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.joker-delivery-stat-card--clickable.is-active {
+  border-color: var(--joker-accent);
+  background: #fff4f0;
+}
+
 .joker-delivery-stat-card__label {
   font-size: 10px;
   font-weight: 700;

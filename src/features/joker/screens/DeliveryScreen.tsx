@@ -16,6 +16,8 @@ function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
 }
 
+type CashMovementType = "inicial" | "gasto" | "entrega";
+
 function CourierCash({ courier }: { courier: JokerCourier }) {
   const [summary, setSummary] = useState<JokerCourierCashSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,7 +26,11 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
   const [expenseDescriptionInput, setExpenseDescriptionInput] = useState("");
   const [handoverAmountInput, setHandoverAmountInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [showForms, setShowForms] = useState(false);
+  // Cual de las 3 cajitas (Inicial/Gastos/Entregas) esta abierta para
+  // cargar un monto -- "Cobrado" no tiene form, se carga solo por cada
+  // pedido efectivo que se le asigna. Se abre/cierra clickeando la
+  // cajita misma, sin un boton "Cargar" aparte.
+  const [activeForm, setActiveForm] = useState<CashMovementType | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,7 +50,12 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
     };
   }, [courier.id, courier.status]);
 
-  async function handleAddMovement(type: "inicial" | "gasto" | "entrega", amountInput: string, description?: string) {
+  function toggleForm(type: CashMovementType) {
+    if (courier.status !== "activo") return;
+    setActiveForm((current) => (current === type ? null : type));
+  }
+
+  async function handleAddMovement(type: CashMovementType, amountInput: string, description?: string) {
     const parsedAmount = Number(amountInput);
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       toast.error("Ingresa un monto valido mayor a 0.");
@@ -61,6 +72,7 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
         setExpenseDescriptionInput("");
       }
       if (type === "entrega") setHandoverAmountInput("");
+      setActiveForm(null);
       toast.success(type === "inicial" ? "Caja inicial cargada." : type === "gasto" ? "Gasto registrado." : "Entrega registrada.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo guardar el movimiento.");
@@ -88,87 +100,113 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
       </div>
 
       <div className="joker-delivery-stat-grid">
-        <div className="joker-delivery-stat-card">
+        <button
+          type="button"
+          className={`joker-delivery-stat-card joker-delivery-stat-card--clickable${activeForm === "inicial" ? " is-active" : ""}`}
+          disabled={courier.status !== "activo"}
+          onClick={() => toggleForm("inicial")}
+        >
           <span className="joker-delivery-stat-card__label">Inicial</span>
           <strong className="joker-delivery-stat-card__value">{formatPrice(summary.initialCash)}</strong>
-        </div>
+        </button>
         <div className="joker-delivery-stat-card">
           <span className="joker-delivery-stat-card__label">Cobrado ({summary.ordersCashCount})</span>
           <strong className="joker-delivery-stat-card__value">{formatPrice(summary.ordersCashTotal)}</strong>
         </div>
-        <div className="joker-delivery-stat-card">
+        <button
+          type="button"
+          className={`joker-delivery-stat-card joker-delivery-stat-card--clickable${activeForm === "gasto" ? " is-active" : ""}`}
+          disabled={courier.status !== "activo"}
+          onClick={() => toggleForm("gasto")}
+        >
           <span className="joker-delivery-stat-card__label">Gastos</span>
           <strong className="joker-delivery-stat-card__value">{formatPrice(summary.expensesTotal)}</strong>
-        </div>
-        <div className="joker-delivery-stat-card">
+        </button>
+        <button
+          type="button"
+          className={`joker-delivery-stat-card joker-delivery-stat-card--clickable${activeForm === "entrega" ? " is-active" : ""}`}
+          disabled={courier.status !== "activo"}
+          onClick={() => toggleForm("entrega")}
+        >
           <span className="joker-delivery-stat-card__label">Entregas</span>
           <strong className="joker-delivery-stat-card__value">{formatPrice(summary.handoversTotal)}</strong>
-        </div>
+        </button>
       </div>
 
       {courier.status !== "activo" ? (
         <p className="joker-empty-state">Habilita al repartidor para cargar caja inicial, gastos o entregas.</p>
-      ) : (
-        <div className="joker-delivery-toggle-row">
-          <p className="joker-delivery-section-title">Carga de datos</p>
-          <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => setShowForms((current) => !current)}>
-            {showForms ? "Ocultar" : "Cargar"}
+      ) : activeForm === "inicial" ? (
+        <div className="joker-delivery-cash-form">
+          <label className="joker-form-field">
+            <span>Caja inicial</span>
+            <input
+              autoFocus
+              type="number"
+              min="0"
+              step="1"
+              value={initialCashInput}
+              onChange={(event) => setInitialCashInput(event.target.value)}
+              placeholder="Ej: 1000"
+            />
+          </label>
+          <button
+            type="button"
+            className="joker-button joker-button--dark joker-button--auto"
+            disabled={isSaving}
+            onClick={() => void handleAddMovement("inicial", initialCashInput)}
+          >
+            Agregar
           </button>
         </div>
-      )}
-
-      {courier.status === "activo" && showForms ? (
-        <div className="joker-delivery-collapsible">
-          <div className="joker-delivery-cash-forms">
-            <div className="joker-delivery-cash-form">
-              <label className="joker-form-field">
-                <span>Caja inicial</span>
-                <input type="number" min="0" step="1" value={initialCashInput} onChange={(event) => setInitialCashInput(event.target.value)} placeholder="Ej: 1000" />
-              </label>
-              <button
-                type="button"
-                className="joker-button joker-button--dark joker-button--auto"
-                disabled={isSaving}
-                onClick={() => void handleAddMovement("inicial", initialCashInput)}
-              >
-                Agregar
-              </button>
-            </div>
-
-            <div className="joker-delivery-cash-form">
-              <label className="joker-form-field">
-                <span>Gasto (compra para el local)</span>
-                <input type="number" min="0" step="1" value={expenseAmountInput} onChange={(event) => setExpenseAmountInput(event.target.value)} placeholder="Ej: 500" />
-              </label>
-              <label className="joker-form-field">
-                <span>Detalle (opcional)</span>
-                <input type="text" value={expenseDescriptionInput} onChange={(event) => setExpenseDescriptionInput(event.target.value)} placeholder="Ej: Muzzarella" />
-              </label>
-              <button
-                type="button"
-                className="joker-button joker-button--dark joker-button--auto"
-                disabled={isSaving}
-                onClick={() => void handleAddMovement("gasto", expenseAmountInput, expenseDescriptionInput.trim() || undefined)}
-              >
-                Registrar gasto
-              </button>
-            </div>
-
-            <div className="joker-delivery-cash-form">
-              <label className="joker-form-field">
-                <span>Entrega al local</span>
-                <input type="number" min="0" step="1" value={handoverAmountInput} onChange={(event) => setHandoverAmountInput(event.target.value)} placeholder="Ej: 2000" />
-              </label>
-              <button
-                type="button"
-                className="joker-button joker-button--dark joker-button--auto"
-                disabled={isSaving}
-                onClick={() => void handleAddMovement("entrega", handoverAmountInput)}
-              >
-                Registrar entrega
-              </button>
-            </div>
-          </div>
+      ) : activeForm === "gasto" ? (
+        <div className="joker-delivery-cash-form">
+          <label className="joker-form-field">
+            <span>Gasto (compra para el local)</span>
+            <input
+              autoFocus
+              type="number"
+              min="0"
+              step="1"
+              value={expenseAmountInput}
+              onChange={(event) => setExpenseAmountInput(event.target.value)}
+              placeholder="Ej: 500"
+            />
+          </label>
+          <label className="joker-form-field">
+            <span>Detalle (opcional)</span>
+            <input type="text" value={expenseDescriptionInput} onChange={(event) => setExpenseDescriptionInput(event.target.value)} placeholder="Ej: Muzzarella" />
+          </label>
+          <button
+            type="button"
+            className="joker-button joker-button--dark joker-button--auto"
+            disabled={isSaving}
+            onClick={() => void handleAddMovement("gasto", expenseAmountInput, expenseDescriptionInput.trim() || undefined)}
+          >
+            Registrar gasto
+          </button>
+        </div>
+      ) : activeForm === "entrega" ? (
+        <div className="joker-delivery-cash-form">
+          <label className="joker-form-field">
+            <span>Entrega al local</span>
+            <input
+              autoFocus
+              type="number"
+              min="0"
+              step="1"
+              value={handoverAmountInput}
+              onChange={(event) => setHandoverAmountInput(event.target.value)}
+              placeholder="Ej: 2000"
+            />
+          </label>
+          <button
+            type="button"
+            className="joker-button joker-button--dark joker-button--auto"
+            disabled={isSaving}
+            onClick={() => void handleAddMovement("entrega", handoverAmountInput)}
+          >
+            Registrar entrega
+          </button>
         </div>
       ) : null}
 
