@@ -1,5 +1,5 @@
 import { isComboComponentLine } from "../joker.types";
-import type { JokerOrderItem } from "../joker.types";
+import type { JokerOrderItem, JokerRole } from "../joker.types";
 
 type OrderListProps = {
   order: JokerOrderItem[];
@@ -19,6 +19,7 @@ type OrderListProps = {
   onEditItem: (item: JokerOrderItem) => void;
   onRemoveItem: (lineId: string) => void;
   onPrint: () => void;
+  role: JokerRole;
 };
 
 function formatPrice(price: number) {
@@ -42,7 +43,8 @@ export function OrderList({
   onTicketCopiesChange,
   onEditItem,
   onRemoveItem,
-  onPrint
+  onPrint,
+  role
 }: OrderListProps) {
   // Las lineas hijas de un combo (a $0) son para que el backend descuente
   // el stock de lo que realmente se eligio -- no van en esta lista porque
@@ -51,17 +53,22 @@ export function OrderList({
   // detalle del combo, y otra vez como renglon propio a $0.
   const visibleOrder = order.filter((item) => !isComboComponentLine(item));
   const total = order.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  // El rol Usuario es siempre venta de mostrador: direccion, costo de
+  // envio y fecha (para cargar a mano un pedido de otro dia) no le sirven,
+  // solo confunden. Eso lo carga el Administrador cuando el pedido es por
+  // WhatsApp/delivery.
+  const isCounterOrder = role === "usuario";
 
   return (
     <section className="joker-panel">
       <div className="joker-panel__heading">
         <p className="joker-eyebrow">Pedido</p>
-        <h2>Ticket a imprimir{visibleOrder.length ? ` (${visibleOrder.length})` : ""}</h2>
+        <h2>{isCounterOrder ? "Pedido" : "Ticket a imprimir"}{visibleOrder.length ? ` (${visibleOrder.length})` : ""}</h2>
       </div>
 
       <div className="joker-form-row">
         <label className="joker-form-field">
-          <span>Nombre del cliente</span>
+          <span>Nombre del cliente (opcional)</span>
           <input
             type="text"
             value={orderCustomerName}
@@ -70,34 +77,38 @@ export function OrderList({
           />
         </label>
 
-        <label className="joker-form-field">
-          <span>Direccion del pedido (si es delivery)</span>
-          <input
-            type="text"
-            value={orderAddress}
-            onChange={(event) => onAddressChange(event.target.value)}
-            placeholder="Ej: Av. 18 de Julio 1234"
-          />
-        </label>
+        {isCounterOrder ? null : (
+          <label className="joker-form-field">
+            <span>Direccion del pedido (si es delivery)</span>
+            <input
+              type="text"
+              value={orderAddress}
+              onChange={(event) => onAddressChange(event.target.value)}
+              placeholder="Ej: Av. 18 de Julio 1234"
+            />
+          </label>
+        )}
       </div>
 
-      <div className="joker-form-row">
-        <label className="joker-form-field">
-          <span>Costo de envio (si corresponde)</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={orderDeliveryCost}
-            onChange={(event) => onDeliveryCostChange(event.target.value)}
-            placeholder="Ej: 150"
-          />
-        </label>
+      {isCounterOrder ? null : (
+        <div className="joker-form-row">
+          <label className="joker-form-field">
+            <span>Costo de envio (si corresponde)</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={orderDeliveryCost}
+              onChange={(event) => onDeliveryCostChange(event.target.value)}
+              placeholder="Ej: 150"
+            />
+          </label>
 
-        <label className="joker-form-field">
-          <span>Fecha del pedido (solo si es de otro dia)</span>
-          <input type="date" value={orderDate} onChange={(event) => onOrderDateChange(event.target.value)} />
-        </label>
-      </div>
+          <label className="joker-form-field">
+            <span>Fecha del pedido (solo si es de otro dia)</span>
+            <input type="date" value={orderDate} onChange={(event) => onOrderDateChange(event.target.value)} />
+          </label>
+        </div>
+      )}
 
       <label className="joker-form-field">
         <span>Nota (solo sale en el ticket de mostrador)</span>
@@ -150,31 +161,33 @@ export function OrderList({
         <p className="joker-order-item__excluded joker-order-item__excluded--full">Total a pagar: {formatPrice(total)}</p>
       ) : null}
 
-      <div className="joker-category-chips">
-        <button
-          type="button"
-          className={`joker-category-chip${ticketCopies === 1 ? " is-active" : ""}`}
-          onClick={() => onTicketCopiesChange(1)}
-        >
-          1 tick
-        </button>
-        <button
-          type="button"
-          className={`joker-category-chip${ticketCopies === 3 ? " is-active" : ""}`}
-          onClick={() => onTicketCopiesChange(3)}
-        >
-          3 tick
-        </button>
-        <button
-          type="button"
-          className={`joker-category-chip${ticketCopies === 0 ? " is-active" : ""}`}
-          onClick={() => onTicketCopiesChange(0)}
-          style={{ marginLeft: 8 }}
-          title="Registra el pedido pero no imprime nada (venta interna)"
-        >
-          0 tick
-        </button>
-      </div>
+      {isCounterOrder ? null : (
+        <div className="joker-category-chips">
+          <button
+            type="button"
+            className={`joker-category-chip${ticketCopies === 1 ? " is-active" : ""}`}
+            onClick={() => onTicketCopiesChange(1)}
+          >
+            1 tick
+          </button>
+          <button
+            type="button"
+            className={`joker-category-chip${ticketCopies === 3 ? " is-active" : ""}`}
+            onClick={() => onTicketCopiesChange(3)}
+          >
+            3 tick
+          </button>
+          <button
+            type="button"
+            className={`joker-category-chip${ticketCopies === 0 ? " is-active" : ""}`}
+            onClick={() => onTicketCopiesChange(0)}
+            style={{ marginLeft: 8 }}
+            title="Registra el pedido pero no imprime nada (venta interna)"
+          >
+            0 tick
+          </button>
+        </div>
+      )}
 
       <button
         type="button"
@@ -182,7 +195,15 @@ export function OrderList({
         onClick={onPrint}
         disabled={!order.length || isPrinting}
       >
-        {isPrinting ? "Guardando..." : ticketCopies === 0 ? "Guardar pedido (sin ticket)" : "Imprimir pedido"}
+        {isPrinting
+          ? isCounterOrder
+            ? "Enviando..."
+            : "Guardando..."
+          : isCounterOrder
+            ? "Enviar pedido"
+            : ticketCopies === 0
+              ? "Guardar pedido (sin ticket)"
+              : "Imprimir pedido"}
       </button>
     </section>
   );

@@ -75,7 +75,7 @@ export function OrdersScreen({
     // caja, ticket ni cuenta corriente todavia -- eso pasa recien al
     // aceptar.
     if (role === "usuario") {
-      await submitPendingOrder(paymentMethod, clientId, customerName);
+      await submitPendingOrder(paymentMethod, clientId);
       return;
     }
 
@@ -103,18 +103,25 @@ export function OrdersScreen({
     await proceedWithSale(paymentMethod, clientId, customerName);
   }
 
-  async function submitPendingOrder(paymentMethod: JokerPaymentMethod, clientId?: number, customerName?: string) {
+  async function submitPendingOrder(paymentMethod: JokerPaymentMethod, clientId?: number) {
     setIsPrinting(true);
     try {
-      const parsedDeliveryCost = orderDeliveryCost.trim() ? Number(orderDeliveryCost) : undefined;
+      // El campo "Nombre del cliente" del mostrador (orderCustomerName) es
+      // el que llena el Usuario -- no el que arma el modal de pago para
+      // transferencia/cuenta. Se le agrega "MOSTRADOR" para que se note en
+      // el pop-up del admin y en el ticket que es una venta de mostrador,
+      // no un pedido por WhatsApp.
+      const trimmedName = orderCustomerName.trim();
+      const counterCustomerName = trimmedName ? `${trimmedName} MOSTRADOR` : "MOSTRADOR";
+
       await createOrder(
         order,
-        orderAddress,
+        "",
         paymentMethod,
-        customerName,
-        orderDate,
+        counterCustomerName,
         undefined,
-        Number.isFinite(parsedDeliveryCost) ? parsedDeliveryCost : undefined,
+        undefined,
+        undefined,
         clientId,
         true
       );
@@ -284,6 +291,7 @@ export function OrdersScreen({
         onEditItem={setEditingItem}
         onRemoveItem={removeItem}
         onPrint={() => setIsPaymentModalOpen(true)}
+        role={role}
       />
 
       {isPaymentModalOpen ? (
