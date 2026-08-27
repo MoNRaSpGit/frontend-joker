@@ -392,8 +392,6 @@ export function buildCourierSummaryTicketLines(
   const lines: string[] = [];
   const expenseMovements = summary.movements.filter((movement) => movement.type === "gasto");
   const handoverMovements = summary.movements.filter((movement) => movement.type === "entrega");
-  const ordersWithDeliveryCost = orders.filter((order) => order.deliveryCost);
-  const deliveryCostTotal = ordersWithDeliveryCost.reduce((sum, order) => sum + (order.deliveryCost || 0), 0);
 
   lines.push(ESC_INIT);
   lines.push(ALIGN_CENTER);
@@ -428,21 +426,14 @@ export function buildCourierSummaryTicketLines(
   lines.push(BOLD_OFF);
   if (orders.length) {
     orders.forEach((order) => {
-      lines.push(
-        `${rightAlignedLine(
-          `Pedido #${order.displayNumber} `,
-          order.deliveryCost ? `Envio ${formatMoney(order.deliveryCost)}` : "Sin envio"
-        )}\n`
-      );
+      lines.push(`${rightAlignedLine(`Pedido #${order.displayNumber} `, formatMoney(order.total))}\n`);
+      if (order.deliveryCost) {
+        lines.push(`${rightAlignedLine("  Envio ", formatMoney(order.deliveryCost))}\n`);
+      }
     });
   } else {
     lines.push("Sin pedidos entregados todavia.\n");
   }
-  lines.push(`${divider()}\n`);
-  lines.push(BOLD_ON);
-  lines.push(`${rightAlignedLine(`Total envios (${ordersWithDeliveryCost.length}) `, formatMoney(deliveryCostTotal))}\n`);
-  lines.push(`${rightAlignedLine(`Cobrado en efectivo (${summary.ordersCashCount}) `, formatMoney(summary.ordersCashTotal))}\n`);
-  lines.push(BOLD_OFF);
 
   lines.push(`${decorativeBorder()}\n`);
   lines.push(BOLD_ON);
