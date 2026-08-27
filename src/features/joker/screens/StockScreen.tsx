@@ -17,11 +17,11 @@ import type { JokerProduct, JokerStockItem, JokerStockItemCategory } from "../jo
 
 const STOCK_REFRESH_INTERVAL_MS = 15000;
 
-// Alta de insumos y editor de recetas: sin esto, un producto nuevo no
-// tiene forma de quedar linkeado a ningun insumo, asi que nunca aparece
-// en el tablero de "Stock bajo" ni descuenta nada al venderse -- queda
-// invisible para el sistema de stock.
-const SHOW_STOCK_ADMIN_TOOLS = true;
+// Alta de insumos y editor de recetas: pantalla de trabajo pesado, no
+// hace falta en el dia a dia -- los productos autonomos ya piden su
+// stock inicial directo al crearse (ver ProductFormModal). Solo queda
+// visible el buscador de insumos y el tablero de "Stock bajo".
+const SHOW_STOCK_ADMIN_TOOLS = false;
 
 type StockScreenProps = {
   products: JokerProduct[];
