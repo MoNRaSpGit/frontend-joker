@@ -13,10 +13,17 @@
   --joker-radius-md: 14px;
   --joker-radius-sm: 10px;
   --joker-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  --joker-sidebar-width: 68px;
 
   font-family: Inter, "Segoe UI", sans-serif;
   color: var(--joker-text);
   background: var(--joker-bg);
+}
+
+@media (min-width: 860px) {
+  :root {
+    --joker-sidebar-width: 208px;
+  }
 }
 
 * {
@@ -46,6 +53,11 @@ textarea {
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr;
+}
+
+.joker-app--with-sidebar {
+  padding-right: var(--joker-sidebar-width);
+  transition: padding-right 0.15s ease;
 }
 
 /* ---------- Login de rol ---------- */
@@ -205,6 +217,113 @@ textarea {
   height: 1px;
   background: #262626;
   margin: 6px 4px;
+}
+
+/* ---------- Sidebar ---------- */
+
+.joker-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--joker-sidebar-width);
+  background: #0d0d0d;
+  border-left: 1px solid #262626;
+  box-shadow: -12px 0 30px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 10px;
+  gap: 14px;
+  z-index: 45;
+  overflow-y: auto;
+}
+
+.joker-sidebar__mark {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.joker-sidebar__divider {
+  width: 32px;
+  height: 1px;
+  background: #262626;
+}
+
+.joker-sidebar__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  gap: 6px;
+}
+
+.joker-sidebar__item {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: #b8b8b8;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.joker-sidebar__item:hover {
+  background: #1c1c1c;
+  color: #f1f1f1;
+}
+
+.joker-sidebar__item.is-active {
+  background: var(--joker-accent);
+  border-color: var(--joker-accent);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(107, 27, 35, 0.4);
+}
+
+.joker-sidebar__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-align: center;
+  line-height: 1.2;
+}
+
+@media (min-width: 860px) {
+  .joker-sidebar {
+    align-items: stretch;
+    padding: 22px 14px;
+  }
+
+  .joker-sidebar__mark {
+    width: 48px;
+    height: 48px;
+    align-self: center;
+  }
+
+  .joker-sidebar__divider {
+    width: 100%;
+  }
+
+  .joker-sidebar__item {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 11px 14px;
+    gap: 12px;
+  }
+
+  .joker-sidebar__label {
+    font-size: 14px;
+    text-align: left;
+  }
 }
 
 /* ---------- Shell / content ---------- */

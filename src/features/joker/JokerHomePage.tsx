@@ -2,6 +2,7 @@ import { Menu, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { JokerRoleLoginScreen } from "./components/JokerRoleLoginScreen";
+import { JokerSidebar } from "./components/JokerSidebar";
 import { PendingOrderBadge } from "./components/PendingOrderBadge";
 import { PendingOrderModal } from "./components/PendingOrderModal";
 import { PrinterSettingsModal } from "./components/PrinterSettingsModal";
@@ -35,7 +36,6 @@ import { StockScreen } from "./screens/StockScreen";
 type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock" | "delivery" | "mes";
 type CustomizeMode = "cliente" | "dev";
 
-const CUSTOMIZE_MODE_STORAGE_KEY = "joker.customizeMode";
 const ROLE_STORAGE_KEY = "joker.role";
 
 // Tabs que puede ver un "usuario" -- solo armar pedidos. El resto de la
@@ -69,14 +69,11 @@ export function JokerHomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  // Alterna entre la version "Cliente" (detalle en texto libre, lo que
-  // pidio el cliente) y "Dev" (checklist de ingredientes/extras/salsa,
-  // para mostrarle las dos opciones en vivo). Se guarda en el navegador,
-  // no afecta a otros dispositivos ni al backend.
-  const [customizeMode, setCustomizeMode] = useState<CustomizeMode>(() => {
-    if (typeof window === "undefined") return "cliente";
-    return window.localStorage.getItem(CUSTOMIZE_MODE_STORAGE_KEY) === "dev" ? "dev" : "cliente";
-  });
+  // Antes alternaba entre "Cliente" (detalle en texto libre) y "Dev"
+  // (checklist de ingredientes/extras/salsa) para mostrarle las dos
+  // opciones en vivo a un cliente potencial. Ya no hace falta el toggle:
+  // queda fijo en "Dev".
+  const customizeMode: CustomizeMode = "dev";
 
   const [clients, setClients] = useState<JokerClient[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
@@ -247,15 +244,6 @@ export function JokerHomePage() {
     setIsMenuOpen(false);
   }
 
-  function toggleCustomizeMode() {
-    setCustomizeMode((current) => {
-      const next = current === "cliente" ? "dev" : "cliente";
-      window.localStorage.setItem(CUSTOMIZE_MODE_STORAGE_KEY, next);
-      return next;
-    });
-    setIsMenuOpen(false);
-  }
-
   async function handleAddClient(name: string, phone?: string, address?: string) {
     await createClient({ name, phone: phone?.trim() || undefined, address: address?.trim() || undefined });
     await loadClients();
@@ -368,7 +356,7 @@ export function JokerHomePage() {
   }
 
   return (
-    <div className="joker-app">
+    <div className={`joker-app${role === "administrador" ? " joker-app--with-sidebar" : ""}`}>
       <header className="joker-topbar">
         <div className="joker-topbar__inner">
           <div className="joker-brand">
@@ -390,63 +378,6 @@ export function JokerHomePage() {
 
             {isMenuOpen ? (
               <div className="joker-user-dropdown">
-                <button
-                  type="button"
-                  className={`joker-user-dropdown-item${activeTab === "pedidos" ? " is-active" : ""}`}
-                  onClick={() => goToTab("pedidos")}
-                >
-                  Pedidos
-                </button>
-                {role === "administrador" ? (
-                  <>
-                    <button
-                      type="button"
-                      className={`joker-user-dropdown-item${activeTab === "productos" ? " is-active" : ""}`}
-                      onClick={() => goToTab("productos")}
-                    >
-                      Productos
-                    </button>
-                    <button
-                      type="button"
-                      className={`joker-user-dropdown-item${activeTab === "panel" ? " is-active" : ""}`}
-                      onClick={() => goToTab("panel")}
-                    >
-                      Panel
-                    </button>
-                    <button
-                      type="button"
-                      className={`joker-user-dropdown-item${activeTab === "cuenta" ? " is-active" : ""}`}
-                      onClick={() => goToTab("cuenta")}
-                    >
-                      Cuenta corriente
-                    </button>
-                    <button
-                      type="button"
-                      className={`joker-user-dropdown-item${activeTab === "stock" ? " is-active" : ""}`}
-                      onClick={() => goToTab("stock")}
-                    >
-                      Stock
-                    </button>
-                    <button
-                      type="button"
-                      className={`joker-user-dropdown-item${activeTab === "delivery" ? " is-active" : ""}`}
-                      onClick={() => goToTab("delivery")}
-                    >
-                      Delivery
-                    </button>
-                    <button
-                      type="button"
-                      className={`joker-user-dropdown-item${activeTab === "mes" ? " is-active" : ""}`}
-                      onClick={() => goToTab("mes")}
-                    >
-                      Mes
-                    </button>
-                  </>
-                ) : null}
-                <div className="joker-user-dropdown-divider" />
-                <button type="button" className="joker-user-dropdown-item" onClick={toggleCustomizeMode}>
-                  ⚙️ Modo: {customizeMode === "dev" ? "Dev" : "Cliente"}
-                </button>
                 <button
                   type="button"
                   className="joker-user-dropdown-item"
@@ -512,6 +443,8 @@ export function JokerHomePage() {
           <MesScreen />
         ) : null}
       </main>
+
+      {role === "administrador" ? <JokerSidebar activeTab={activeTab} isAdmin={role === "administrador"} onNavigate={goToTab} /> : null}
 
       {isPrinterModalOpen ? (
         <PrinterSettingsModal
