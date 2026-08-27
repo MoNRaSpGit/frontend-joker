@@ -89,7 +89,8 @@ export function JokerHomePage() {
   // pantalla, y esto se pone en el id del pedido recien cuando el admin le
   // hace click a su cartelito.
   const [activePendingOrderId, setActivePendingOrderId] = useState<number | null>(null);
-  const activePendingOrder = pendingOrders.find((order) => order.id === activePendingOrderId) ?? null;
+  const activePendingOrderIndex = pendingOrders.findIndex((order) => order.id === activePendingOrderId);
+  const activePendingOrder = activePendingOrderIndex >= 0 ? pendingOrders[activePendingOrderIndex] : null;
 
   // Solo el Administrador ve el pop-up de pedidos pendientes de mostrador
   // (el rol Usuario es quien los manda, no tendria sentido que se
@@ -522,6 +523,7 @@ export function JokerHomePage() {
             // arriba, los mas nuevos van apilandose mas abajo.
             <PendingOrderBadge
               key={order.id}
+              arrivalNumber={index + 1}
               bottomOffset={16 + (pendingOrders.length - 1 - index) * 56}
               onClick={() => setActivePendingOrderId(order.id)}
             />
@@ -532,6 +534,7 @@ export function JokerHomePage() {
         <PendingOrderModal
           key={activePendingOrder.id}
           order={activePendingOrder}
+          arrivalNumber={activePendingOrderIndex + 1}
           queueCount={pendingOrders.length}
           onAccept={handleAcceptPendingOrder}
           onReject={handleRejectPendingOrder}

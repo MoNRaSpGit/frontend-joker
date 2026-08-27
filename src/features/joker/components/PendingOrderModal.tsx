@@ -8,6 +8,7 @@ function formatPrice(amount: number) {
 
 type PendingOrderModalProps = {
   order: JokerOrderRecord;
+  arrivalNumber: number;
   queueCount: number;
   onAccept: (order: JokerOrderRecord, ticketCopies: 0 | 1 | 3) => Promise<void>;
   onReject: (order: JokerOrderRecord) => Promise<void>;
@@ -18,8 +19,9 @@ type PendingOrderModalProps = {
 // pedido: queda "pendiente" hasta que aca se lo acepta (recien ahi entra a
 // cocina con numero real) o se lo rechaza. Se abre solo al hacer click en
 // el cartelito (PendingOrderBadge) -- no aparece solo tapando la pantalla,
-// para no interrumpir lo que este haciendo el admin.
-export function PendingOrderModal({ order, queueCount, onAccept, onReject, onDismiss }: PendingOrderModalProps) {
+// para no interrumpir lo que este haciendo el admin. arrivalNumber es el
+// orden de llegada (1, 2, 3...), no el numero real de cocina.
+export function PendingOrderModal({ order, arrivalNumber, queueCount, onAccept, onReject, onDismiss }: PendingOrderModalProps) {
   const [isBusy, setIsBusy] = useState<"accept" | "reject" | null>(null);
   const [ticketCopies, setTicketCopies] = useState<0 | 1 | 3>(3);
 
@@ -53,7 +55,10 @@ export function PendingOrderModal({ order, queueCount, onAccept, onReject, onDis
     >
       <div className="joker-modal-card joker-pending-order-modal" onClick={(event) => event.stopPropagation()}>
         <p className="joker-eyebrow">Mostrador</p>
-        <h2>Pedido pendiente{queueCount > 1 ? ` (quedan ${queueCount})` : ""}</h2>
+        <h2>
+          Pedido pendiente #{arrivalNumber}
+          {queueCount > 1 ? ` (quedan ${queueCount})` : ""}
+        </h2>
 
         <ul className="joker-order-detail-list">
           {order.items.map((item, index) => (
