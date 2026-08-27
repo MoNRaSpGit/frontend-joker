@@ -76,11 +76,12 @@ export function buildOrderTicketLines(
 }
 
 // Encabezado del ticket. En el mostrador va completo: nombre, direccion,
-// telefono, fecha/hora y "Uso interno". En la comanda (includeStoreDetails
-// = false) solo va el titulo, la fecha/hora y "Uso interno". La forma de
-// pago no va aca: se muestra junto con Cliente/Direccion en
-// pushCustomerSection, para dejar el encabezado mas limpio.
-function pushHeader(lines: string[], heading: string, includeStoreDetails: boolean) {
+// telefono, fecha y "Uso interno". En la comanda (includeStoreDetails =
+// false) solo va el titulo, la fecha y "Uso interno". La forma de pago no
+// va aca: se muestra junto con Cliente/Direccion en pushCustomerSection,
+// para dejar el encabezado mas limpio. La hora solo se imprime en el
+// Archivo (includeTime) -- en Joker y Comanda solo interesa la fecha.
+function pushHeader(lines: string[], heading: string, includeStoreDetails: boolean, includeTime: boolean) {
   lines.push(ALIGN_CENTER);
   lines.push(BOLD_ON, DOUBLE_SIZE_ON);
   lines.push(`${heading}\n`);
@@ -89,7 +90,11 @@ function pushHeader(lines: string[], heading: string, includeStoreDetails: boole
     lines.push(`${STORE_ADDRESS}\n`);
     lines.push(`${STORE_PHONE}\n`);
   }
-  lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
+  const now = new Date();
+  const dateLabel = includeTime
+    ? now.toLocaleString("es-UY", { timeZone: "America/Montevideo" })
+    : now.toLocaleDateString("es-UY", { timeZone: "America/Montevideo" });
+  lines.push(`${dateLabel}\n`);
   lines.push(`${INTERNAL_USE_NOTE}\n`);
 }
 
@@ -159,7 +164,7 @@ function buildSingleTicketLines(
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
-  pushHeader(lines, STORE_NAME, true);
+  pushHeader(lines, STORE_NAME, true, false);
   lines.push(`Pedido #${ticketNumber}\n`);
   pushCustomerSection(lines, orderAddress, customerName, paymentMethod, note);
 
@@ -197,7 +202,7 @@ function buildSingleTicketLines(
   }
 
   lines.push(`${decorativeBorder()}\n`);
-  lines.push(BOLD_ON, TALL_SIZE_ON);
+  lines.push(BOLD_ON, DOUBLE_SIZE_ON);
   lines.push(`${rightAlignedLine("Total ", formatMoney(total))}\n`);
   lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
   lines.push("\n");
@@ -245,7 +250,7 @@ function buildCompactTicketLines(
   const noteSize = isKitchenCopy ? TRIPLE_SIZE_ON : TALL_SIZE_ON;
 
   lines.push(ESC_INIT);
-  pushHeader(lines, heading, false);
+  pushHeader(lines, heading, false, heading === "ARCHIVO");
   lines.push(`Pedido #${ticketNumber}\n`);
   pushCustomerSection(lines, orderAddress, customerName, undefined, note, noteSize);
 
