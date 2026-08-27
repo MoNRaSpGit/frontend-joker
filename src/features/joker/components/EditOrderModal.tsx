@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerOrderRecord, JokerProduct } from "../joker.types";
 
@@ -34,7 +33,6 @@ function formatDateTime(isoDate: string) {
 
 export function EditOrderModal({ order, products, isSaving, onClose, onSave }: EditOrderModalProps) {
   const [lines, setLines] = useState<EditableLine[]>(() => order.items.map((item) => ({ ...item })));
-  const [confirmingCancelAll, setConfirmingCancelAll] = useState(false);
   const [productSearch, setProductSearch] = useState("");
   const [orderDate, setOrderDate] = useState(() => order.orderDate ?? order.createdAt.slice(0, 10));
 
@@ -73,16 +71,8 @@ export function EditOrderModal({ order, products, isSaving, onClose, onSave }: E
   }
 
   function handleSaveClick() {
-    if (!lines.length) {
-      setConfirmingCancelAll(true);
-      return;
-    }
+    if (!lines.length) return;
     void onSave(lines, orderDate);
-  }
-
-  async function handleConfirmCancelAll() {
-    await onSave([], orderDate);
-    setConfirmingCancelAll(false);
   }
 
   return (
@@ -182,7 +172,10 @@ export function EditOrderModal({ order, products, isSaving, onClose, onSave }: E
                 </div>
               ))
             ) : (
-              <p className="joker-empty-state">Sacaste todos los productos. Si guardás así, se cancela el pedido entero.</p>
+              <p className="joker-empty-state">
+                Sacaste todos los productos. Para eliminar el pedido completo, cerrá esta edición y usá "Eliminar pedido"
+                en el panel.
+              </p>
             )}
           </div>
 
@@ -198,26 +191,18 @@ export function EditOrderModal({ order, products, isSaving, onClose, onSave }: E
               <button type="button" className="joker-button joker-button--ghost" onClick={onClose} disabled={isSaving}>
                 Cancelar edición
               </button>
-              <button type="button" className="joker-button joker-button--primary" onClick={handleSaveClick} disabled={isSaving}>
+              <button
+                type="button"
+                className="joker-button joker-button--primary"
+                onClick={handleSaveClick}
+                disabled={isSaving || !lines.length}
+              >
                 {isSaving ? "Guardando..." : "Guardar cambios"}
               </button>
             </div>
           </div>
         </div>
       </div>
-
-      {confirmingCancelAll ? (
-        <ConfirmDeleteModal
-          title="Cancelar pedido"
-          message={`Sacaste todos los productos del pedido #${order.displayNumber}. ¿Seguro que querés cancelarlo entero? El stock descontado se devuelve.`}
-          confirmLabel="Cancelar pedido"
-          confirmLabelBusy="Cancelando..."
-          variant="danger"
-          isDeleting={isSaving}
-          onCancel={() => setConfirmingCancelAll(false)}
-          onConfirm={handleConfirmCancelAll}
-        />
-      ) : null}
     </>
   );
 }

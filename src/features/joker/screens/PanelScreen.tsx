@@ -12,6 +12,9 @@ import type { JokerCourier, JokerOrderRecord, JokerPaymentMethod, JokerProduct, 
 const PROFIT_RATE_STORAGE_KEY = "joker.profitRatePercent";
 const DEFAULT_PROFIT_RATE_PERCENT = 30;
 const PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "cuenta"];
+// "cuenta" queda afuera de la correccion rapida: pasar a/desde cuenta
+// corriente necesita elegir un cliente, no es parte de este ajuste.
+const EDITABLE_PAYMENT_METHODS: Array<"efectivo" | "tarjeta" | "transferencia"> = ["efectivo", "tarjeta", "transferencia"];
 const MOVEMENTS_PREVIEW_COUNT = 3;
 
 function getStoredProfitRatePercent() {
@@ -87,6 +90,10 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
   const [assigningCourierOrderId, setAssigningCourierOrderId] = useState<number | null>(null);
   const [isSavingCourier, setIsSavingCourier] = useState(false);
   const [blockedCloseCourierNames, setBlockedCloseCourierNames] = useState<string[] | null>(null);
+  const [editingPaymentOrderId, setEditingPaymentOrderId] = useState<number | null>(null);
+  const [isSavingPayment, setIsSavingPayment] = useState(false);
+  const [pendingDeleteOrder, setPendingDeleteOrder] = useState<JokerOrderRecord | null>(null);
+  const [isDeletingOrder, setIsDeletingOrder] = useState(false);
 
   function handleSaveProfitRate(percent: number) {
     setProfitRatePercent(percent);
@@ -197,6 +204,48 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
       toast.error(error instanceof Error ? error.message : "No se pudo asignar el delivery.");
     } finally {
       setIsSavingCourier(false);
+    }
+  }
+
+  // Corrige el metodo de pago de un pedido ya cargado con un click sobre
+  // el globito (ej: se caragó "efectivo" pero era "transferencia"). Si el
+  // pedido era "a cuenta", el backend borra el movimiento de cuenta
+  // corriente asociado -- por eso se refresca esa pantalla igual que al
+  // editar el pedido completo.
+  async function handleChangePaymentMethod(order: JokerOrderRecord, paymentMethod: "efectivo" | "tarjeta" | "transferencia") {
+    setIsSavingPayment(true);
+    try {
+      const response = await updateOrder(order.id, order.items, order.orderDate ?? undefined, undefined, undefined, paymentMethod);
+      setOrders((current) => current.map((item) => (item.id === order.id ? response.item : item)));
+      setEditingPaymentOrderId(null);
+      toast.success("Metodo de pago actualizado.");
+      if (order.paymentMethod === "cuenta") {
+        onAccountEntryRegistered();
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo actualizar el metodo de pago.");
+    } finally {
+      setIsSavingPayment(false);
+    }
+  }
+
+  // Elimina el pedido directo desde el panel (sin pasar por Editar pedido
+  // sacando linea por linea): mismo mecanismo que "cancelar" con el
+  // pedido vacio -- queda marcado "Eliminado", el stock descontado se
+  // devuelve y, si era "a cuenta", el movimiento se borra.
+  async function handleConfirmDeleteOrder() {
+    if (!pendingDeleteOrder) return;
+    setIsDeletingOrder(true);
+    try {
+      await updateOrder(pendingDeleteOrder.id, [], pendingDeleteOrder.orderDate ?? undefined);
+      toast.success("Pedido eliminado.");
+      setPendingDeleteOrder(null);
+      await loadOrders();
+      onAccountEntryRegistered();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo eliminar el pedido.");
+    } finally {
+      setIsDeletingOrder(false);
     }
   }
 
@@ -336,26 +385,82 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
           <ul className="joker-order-list">
             {visibleOrders.map((order) => (
               <li key={order.id} className="joker-order-item joker-order-item--stacked">
-                <button
-                  type="button"
-                  className={`joker-order-item joker-order-item--flat joker-order-item--clickable${!order.items.length ? " joker-order-item--cancelled" : ""}`}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className={`joker-order-item joker-order-item--flat joker-order-item--clickable joker-order-item--with-delete${!order.items.length ? " joker-order-item--cancelled" : ""}`}
                   onClick={() => setExpandedOrderId((current) => (current === order.id ? null : order.id))}
                   onDoubleClick={() => setEditingOrder(order)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setExpandedOrderId((current) => (current === order.id ? null : order.id));
+                    }
+                  }}
                   title="Doble click para editar el pedido"
                 >
                   <strong>
                     Pedido #{order.displayNumber}
                     {!order.items.length ? <span className="joker-cancelled-badge">Eliminado</span> : null}
                   </strong>
+
+                  {order.items.length ? (
+                    <button
+                      type="button"
+                      className="joker-order-item__delete-mid"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setPendingDeleteOrder(order);
+                      }}
+                    >
+                      Eliminar pedido
+                    </button>
+                  ) : (
+                    <span />
+                  )}
+
                   <strong className="joker-amount-plus">+{formatPrice(order.total)}</strong>
-                </button>
+                </div>
 
                 {expandedOrderId === order.id ? (
                   <ul className="joker-order-detail-list">
                     <li className="joker-order-detail-list__meta">
                       <div className="joker-order-meta-row">
                         <span className="joker-order-meta-chip">{formatDateTime(order.createdAt, order.orderDate)}</span>
-                        <span className="joker-order-meta-chip">{JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}</span>
+
+                        {editingPaymentOrderId === order.id ? (
+                          <span className="joker-delivery-assign">
+                            {EDITABLE_PAYMENT_METHODS.map((method) => (
+                              <button
+                                key={method}
+                                type="button"
+                                className={`joker-category-chip${method === order.paymentMethod ? " is-active" : ""}`}
+                                disabled={isSavingPayment}
+                                onClick={() => void handleChangePaymentMethod(order, method)}
+                              >
+                                {JOKER_PAYMENT_METHOD_LABELS[method]}
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              className="joker-mini-button"
+                              disabled={isSavingPayment}
+                              onClick={() => setEditingPaymentOrderId(null)}
+                            >
+                              Cancelar
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="joker-order-meta-chip joker-order-meta-chip--clickable"
+                            disabled={order.paymentMethod === "cuenta"}
+                            title={order.paymentMethod === "cuenta" ? "Un pedido a cuenta no se corrige aca" : "Corregir metodo de pago"}
+                            onClick={() => setEditingPaymentOrderId(order.id)}
+                          >
+                            {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}
+                          </button>
+                        )}
 
                         {order.customerName?.trim().toUpperCase().includes("MOSTRADOR") ? (
                           // Un pedido de mostrador no sale a reparto, asi que
@@ -503,6 +608,19 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
           isDeleting={isClosingRegister}
           onCancel={() => setConfirmRegisterAction(null)}
           onConfirm={handleConfirmRegisterAction}
+        />
+      ) : null}
+
+      {pendingDeleteOrder ? (
+        <ConfirmDeleteModal
+          title="Eliminar pedido"
+          message={`Seguro que queres eliminar el pedido #${pendingDeleteOrder.displayNumber}? El stock descontado se devuelve.`}
+          confirmLabel="Eliminar pedido"
+          confirmLabelBusy="Eliminando..."
+          variant="danger"
+          isDeleting={isDeletingOrder}
+          onCancel={() => setPendingDeleteOrder(null)}
+          onConfirm={handleConfirmDeleteOrder}
         />
       ) : null}
 

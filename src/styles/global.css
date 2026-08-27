@@ -965,6 +965,34 @@ textarea {
   margin-left: auto;
 }
 
+.joker-order-item--with-delete {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+}
+
+.joker-order-item--with-delete .joker-amount-plus {
+  margin-left: 0;
+  justify-self: end;
+}
+
+.joker-order-item__delete-mid {
+  justify-self: center;
+  border: 1px solid var(--joker-danger);
+  background: transparent;
+  color: var(--joker-danger);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.joker-order-item__delete-mid:hover {
+  background: var(--joker-danger);
+  color: #fff;
+}
+
 .joker-order-item--cancelled {
   opacity: 0.55;
 }
@@ -1054,6 +1082,22 @@ textarea {
   padding: 4px 10px;
   border-radius: 999px;
   background: #f0f0f0;
+}
+
+.joker-order-meta-chip--clickable {
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.joker-order-meta-chip--clickable:hover:not(:disabled) {
+  border-color: var(--joker-accent);
+  background: #f7f7f7;
+}
+
+.joker-order-meta-chip--clickable:disabled {
+  cursor: default;
+  opacity: 0.7;
 }
 
 .joker-delivery-chip {
