@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { addCourierCashMovement, getCourierCashSummary, listCurrentPeriodOrders } from "../joker.api";
@@ -9,17 +9,8 @@ type DeliveryScreenProps = {
   couriers: JokerCourier[];
   onRenameCourier: (courierId: number, name: string) => Promise<void>;
   onEnableCourier: (courierId: number) => Promise<void>;
-  onSettleCourier: (courierId: number, hourlyRate?: number, hoursWorked?: number) => Promise<void>;
+  onSettleCourier: (courierId: number) => Promise<void>;
 };
-
-type SettlementPreview = {
-  hourlyRate: number;
-  hoursWorked: number;
-  grandTotal: number;
-};
-
-const DEFAULT_HOURLY_RATE = "120";
-const DEFAULT_HOURS_WORKED = "5";
 
 function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
@@ -34,7 +25,6 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
   const [handoverAmountInput, setHandoverAmountInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showForms, setShowForms] = useState(false);
-  const [showMovements, setShowMovements] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -181,25 +171,20 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
           </div>
 
           {summary.movements.length ? (
-            <div className="joker-delivery-toggle-row">
-              <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => setShowMovements((current) => !current)}>
-                {showMovements ? "Ocultar movimientos" : `Ver movimientos (${summary.movements.length})`}
-              </button>
-            </div>
-          ) : null}
-
-          {showMovements && summary.movements.length ? (
-            <ul className="joker-order-list">
-              {summary.movements.map((movement) => (
-                <li key={movement.id} className="joker-order-item joker-order-item--flat">
-                  <span>
-                    {movement.type === "gasto" ? "🧾 Gasto" : "📦 Entrega"}
-                    {movement.description ? ` · ${movement.description}` : ""}
-                  </span>
-                  <span className="joker-order-item__excluded">{formatPrice(movement.amount)}</span>
-                </li>
-              ))}
-            </ul>
+            <>
+              <p className="joker-delivery-section-title">Historial</p>
+              <ul className="joker-order-list">
+                {summary.movements.map((movement) => (
+                  <li key={movement.id} className="joker-order-item joker-order-item--flat">
+                    <span>
+                      {movement.type === "inicial" ? "💰 Caja inicial" : movement.type === "gasto" ? "🧾 Gasto" : "📦 Entrega"}
+                      {movement.description ? ` · ${movement.description}` : ""}
+                    </span>
+                    <span className="joker-order-item__excluded">{formatPrice(movement.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
           ) : null}
         </div>
       ) : null}
@@ -207,28 +192,11 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
   );
 }
 
-function CourierSettlement({
-  courier,
-  onTotalChange
-}: {
-  courier: JokerCourier;
-  onTotalChange: (courierId: number, preview: SettlementPreview) => void;
-}) {
+function CourierSettlement({ courier }: { courier: JokerCourier }) {
   const [orders, setOrders] = useState<JokerOrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [hourlyRate, setHourlyRate] = useState(DEFAULT_HOURLY_RATE);
-  const [hoursWorked, setHoursWorked] = useState(DEFAULT_HOURS_WORKED);
   const [showOrders, setShowOrders] = useState(false);
-  const [isPrintingSummary, setIsPrintingSummary] = useState(false);
-
-  // Cada turno arranca con las horas estandar de nuevo (la tarifa por hora
-  // se mantiene, ya que rara vez cambia): sin esto, si el turno anterior
-  // se edito por una hora extra, ese valor quedaba pegado en el turno
-  // siguiente sin que nadie lo notara.
-  useEffect(() => {
-    setHoursWorked(DEFAULT_HOURS_WORKED);
-  }, [courier.activeSince]);
 
   useEffect(() => {
     let cancelled = false;
@@ -253,109 +221,39 @@ function CourierSettlement({
     };
   }, [courier.id, courier.status]);
 
-  const deliveryCostTotal = orders.reduce((sum, order) => sum + (order.deliveryCost || 0), 0);
-  const ordersWithDeliveryCost = orders.filter((order) => order.deliveryCost);
-  const parsedRate = Number(hourlyRate) || 0;
-  const parsedHours = Number(hoursWorked) || 0;
-  const hoursTotal = parsedRate * parsedHours;
-  const grandTotal = hoursTotal + deliveryCostTotal;
-
-  useEffect(() => {
-    onTotalChange(courier.id, { hourlyRate: parsedRate, hoursWorked: parsedHours, grandTotal });
-  }, [courier.id, parsedRate, parsedHours, grandTotal, onTotalChange]);
-
-  // Resumen del turno en curso (caja inicial, pedidos entregados con su
-  // costo de envio, gastos y entregas al mostrador) -- pide la caja
-  // fresca en el momento en vez de reusar la de CourierCash para no tener
-  // que levantar ese estado y arriesgar romper lo que ya funciona ahi.
-  async function handlePrintSummary() {
-    setIsPrintingSummary(true);
-    try {
-      const summary = await getCourierCashSummary(courier.id);
-      await printCourierSummaryTicket(courier, summary, orders);
-      toast.success("Resumen enviado a imprimir.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo imprimir el resumen.");
-    } finally {
-      setIsPrintingSummary(false);
-    }
-  }
-
   return (
     <div className="joker-delivery-settlement">
       <CourierCash courier={courier} />
-
-      <div className="joker-delivery-toggle-row">
-        <p className="joker-delivery-section-title">Liquidacion</p>
-        <button
-          type="button"
-          className="joker-button joker-button--ghost joker-button--auto"
-          disabled={isPrintingSummary}
-          onClick={() => void handlePrintSummary()}
-        >
-          {isPrintingSummary ? "Imprimiendo..." : "🖨️ Resumen del turno"}
-        </button>
-      </div>
 
       {isLoading ? (
         <p className="joker-empty-state">Cargando pedidos...</p>
       ) : loadError ? (
         <p className="joker-order-item__excluded">{loadError}</p>
       ) : (
-        <>
-          <div className="joker-delivery-toggle-row">
-            <p className="joker-delivery-settlement__count">
-              {orders.length} {orders.length === 1 ? "pedido realizado" : "pedidos realizados"} desde el ultimo cierre
-            </p>
-            {orders.length ? (
-              <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => setShowOrders((current) => !current)}>
-                {showOrders ? "Ocultar" : "Ver pedidos"}
-              </button>
-            ) : null}
-          </div>
-
-          {showOrders && orders.length ? (
-            <ul className="joker-order-list">
-              {orders.map((order) => (
-                <li key={order.id} className="joker-order-item joker-order-item--flat">
-                  <span>Pedido #{order.displayNumber}</span>
-                  <span className={order.deliveryCost ? "joker-delivery-cost-tag" : "joker-order-item__excluded"}>
-                    {order.deliveryCost ? `Envio ${formatPrice(order.deliveryCost)}` : "Sin costo de envio"}
-                  </span>
-                </li>
-              ))}
-            </ul>
+        <div className="joker-delivery-toggle-row">
+          <p className="joker-delivery-settlement__count">
+            {orders.length} {orders.length === 1 ? "pedido realizado" : "pedidos realizados"} desde el ultimo cierre
+          </p>
+          {orders.length ? (
+            <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => setShowOrders((current) => !current)}>
+              {showOrders ? "Ocultar" : "Ver pedidos"}
+            </button>
           ) : null}
-
-          <div className="joker-form-row">
-            <label className="joker-form-field">
-              <span>Tarifa por hora</span>
-              <input type="number" min="0" step="1" value={hourlyRate} onChange={(event) => setHourlyRate(event.target.value)} />
-            </label>
-            <label className="joker-form-field">
-              <span>Horas trabajadas</span>
-              <input type="number" min="0" step="0.5" value={hoursWorked} onChange={(event) => setHoursWorked(event.target.value)} />
-            </label>
-          </div>
-
-          <div className="joker-delivery-summary">
-            <div className="joker-delivery-summary__row">
-              <span>
-                Horas ({parsedHours} hs x {formatPrice(parsedRate)})
-              </span>
-              <strong>{formatPrice(hoursTotal)}</strong>
-            </div>
-            <div className="joker-delivery-summary__row">
-              <span>Envio ({ordersWithDeliveryCost.length})</span>
-              <strong>{formatPrice(deliveryCostTotal)}</strong>
-            </div>
-            <div className="joker-delivery-summary__row joker-delivery-summary__row--total">
-              <span>Total a pagar</span>
-              <strong>{formatPrice(grandTotal)}</strong>
-            </div>
-          </div>
-        </>
+        </div>
       )}
+
+      {showOrders && orders.length ? (
+        <ul className="joker-order-list">
+          {orders.map((order) => (
+            <li key={order.id} className="joker-order-item joker-order-item--flat">
+              <span>Pedido #{order.displayNumber}</span>
+              <span className={order.deliveryCost ? "joker-delivery-cost-tag" : "joker-order-item__excluded"}>
+                {order.deliveryCost ? `Envio ${formatPrice(order.deliveryCost)}` : "Sin costo de envio"}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -367,69 +265,55 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
   const [isSavingName, setIsSavingName] = useState(false);
   const [togglingCourierId, setTogglingCourierId] = useState<number | null>(null);
   const [courierPendingSettlement, setCourierPendingSettlement] = useState<JokerCourier | null>(null);
-  const [courierPreviews, setCourierPreviews] = useState<Record<number, SettlementPreview>>({});
 
-  // CourierSettlement (montado solo cuando la tarjeta esta expandida) avisa
-  // aca cada vez que recalcula la liquidacion, para que el modal de
-  // liquidar pueda mostrar el total a pagar y mandarlo al backend sin
-  // duplicar el fetch de pedidos.
-  const handleTotalChange = useCallback((courierId: number, preview: SettlementPreview) => {
-    setCourierPreviews((current) => {
-      const existing = current[courierId];
-      if (existing && existing.hourlyRate === preview.hourlyRate && existing.hoursWorked === preview.hoursWorked && existing.grandTotal === preview.grandTotal) {
-        return current;
-      }
-      return { ...current, [courierId]: preview };
-    });
-  }, []);
-
-  async function handleToggleStatus(courier: JokerCourier, event: React.MouseEvent) {
+  function handleToggleStatus(courier: JokerCourier, event: React.MouseEvent) {
     event.stopPropagation();
 
     if (courier.status === "activo") {
-      if (courierPreviews[courier.id] === undefined) {
-        setTogglingCourierId(courier.id);
-        try {
-          const result = await listCurrentPeriodOrders(courier.id);
-          const deliveryCostTotal = result.items.reduce((sum, order) => sum + (order.deliveryCost || 0), 0);
-          const hourlyRate = Number(DEFAULT_HOURLY_RATE);
-          const hoursWorked = Number(DEFAULT_HOURS_WORKED);
-          handleTotalChange(courier.id, { hourlyRate, hoursWorked, grandTotal: hourlyRate * hoursWorked + deliveryCostTotal });
-        } catch (error) {
-          toast.error(error instanceof Error ? error.message : "No se pudo calcular la liquidacion.");
-        } finally {
-          setTogglingCourierId(null);
-        }
-      }
       setCourierPendingSettlement(courier);
       return;
     }
 
     setTogglingCourierId(courier.id);
-    try {
-      await onEnableCourier(courier.id);
-      toast.success(`${courier.name}: habilitado.`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo habilitar.");
-    } finally {
-      setTogglingCourierId(null);
-    }
+    onEnableCourier(courier.id)
+      .then(() => toast.success(`${courier.name}: habilitado.`))
+      .catch((error) => toast.error(error instanceof Error ? error.message : "No se pudo habilitar."))
+      .finally(() => setTogglingCourierId(null));
   }
 
+  // Al liquidar se imprime el resumen del turno (caja inicial, pedidos
+  // entregados con su costo de envio, gastos, entregas) y recien despues
+  // se cierra: hay que juntar los datos frescos aca mismo, antes de
+  // liquidar, porque liquidar archiva y resetea la caja del repartidor.
+  // Si la impresora falla o no contesta (QZ Tray cerrado, sin red, etc.)
+  // no se bloquea la liquidacion -- un problema de impresora no tiene por
+  // que trabar el cierre del turno, asi que se le pone un limite de
+  // espera en vez de esperar lo que tarde qz-tray en darse por vencido.
   async function handleConfirmSettlement() {
     if (!courierPendingSettlement) return;
     const courier = courierPendingSettlement;
-    const preview = courierPreviews[courier.id];
     setTogglingCourierId(courier.id);
     try {
-      await onSettleCourier(courier.id, preview?.hourlyRate, preview?.hoursWorked);
+      const [summary, ordersResult] = await Promise.all([
+        getCourierCashSummary(courier.id),
+        listCurrentPeriodOrders(courier.id)
+      ]);
+      try {
+        await Promise.race([
+          printCourierSummaryTicket(courier, summary, ordersResult.items),
+          new Promise((_resolve, reject) => {
+            window.setTimeout(() => reject(new Error("La impresora no respondio a tiempo.")), 8000);
+          })
+        ]);
+      } catch (printError) {
+        toast.error(
+          printError instanceof Error ? `No se pudo imprimir el resumen: ${printError.message}` : "No se pudo imprimir el resumen."
+        );
+      }
+
+      await onSettleCourier(courier.id);
       toast.success(`${courier.name}: turno liquidado.`);
       setCourierPendingSettlement(null);
-      setCourierPreviews((current) => {
-        const next = { ...current };
-        delete next[courier.id];
-        return next;
-      });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo liquidar.");
     } finally {
@@ -550,7 +434,7 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
                 </div>
               ) : null}
 
-              {expanded ? <CourierSettlement courier={courier} onTotalChange={handleTotalChange} /> : null}
+              {expanded ? <CourierSettlement courier={courier} /> : null}
             </article>
           );
         })}
@@ -559,11 +443,7 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
       {courierPendingSettlement ? (
         <ConfirmDeleteModal
           title="Liquidar repartidor"
-          message={
-            courierPreviews[courierPendingSettlement.id] !== undefined
-              ? `Pagar ${formatPrice(courierPreviews[courierPendingSettlement.id].grandTotal)} a ${courierPendingSettlement.name}. Al liquidar, su caja y su liquidacion quedan archivadas y el turno arranca de nuevo en 0 la proxima vez que lo habilites. Seguro?`
-              : `Se va a cerrar el turno de ${courierPendingSettlement.name}: su caja queda archivada y arranca de nuevo en 0 la proxima vez que lo habilites. Seguro?`
-          }
+          message={`Se va a imprimir el resumen del turno de ${courierPendingSettlement.name} y su caja queda archivada, arrancando de nuevo en 0 la proxima vez que lo habilites. Seguro?`}
           confirmLabel="Liquidar"
           confirmLabelBusy="Liquidando..."
           variant="danger"

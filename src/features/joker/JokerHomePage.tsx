@@ -221,8 +221,12 @@ export function JokerHomePage() {
     setCouriers((current) => current.map((courier) => (courier.id === courierId ? response.item : courier)));
   }
 
-  async function handleSettleCourier(courierId: number, hourlyRate?: number, hoursWorked?: number) {
-    const response = await settleCourier(courierId, hourlyRate, hoursWorked);
+  // Se manda 0/0 de tarifa/horas: ya no se le pide esos datos al admin (ver
+  // DeliveryScreen), asi que el "total a pagar" archivado en el historial
+  // de liquidaciones queda como el costo de envios solo, sin inventar un
+  // valor de horas que nadie cargo.
+  async function handleSettleCourier(courierId: number) {
+    const response = await settleCourier(courierId, 0, 0);
     setCouriers((current) => current.map((courier) => (courier.id === courierId ? response.item : courier)));
   }
 
