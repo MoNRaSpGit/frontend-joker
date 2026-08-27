@@ -9,7 +9,7 @@ function formatPrice(amount: number) {
 type PendingOrderModalProps = {
   order: JokerOrderRecord;
   queueCount: number;
-  onAccept: (order: JokerOrderRecord) => Promise<void>;
+  onAccept: (order: JokerOrderRecord, ticketCopies: 0 | 1 | 3) => Promise<void>;
   onReject: (order: JokerOrderRecord) => Promise<void>;
   onDismiss: () => void;
 };
@@ -21,11 +21,12 @@ type PendingOrderModalProps = {
 // para no interrumpir lo que este haciendo el admin.
 export function PendingOrderModal({ order, queueCount, onAccept, onReject, onDismiss }: PendingOrderModalProps) {
   const [isBusy, setIsBusy] = useState<"accept" | "reject" | null>(null);
+  const [ticketCopies, setTicketCopies] = useState<0 | 1 | 3>(3);
 
   async function handleAccept() {
     setIsBusy("accept");
     try {
-      await onAccept(order);
+      await onAccept(order, ticketCopies);
     } finally {
       setIsBusy(null);
     }
@@ -72,6 +73,35 @@ export function PendingOrderModal({ order, queueCount, onAccept, onReject, onDis
         </div>
 
         <p className="joker-pending-order-modal__total">Total: {formatPrice(order.total)}</p>
+
+        <div className="joker-category-chips">
+          <button
+            type="button"
+            className={`joker-category-chip${ticketCopies === 1 ? " is-active" : ""}`}
+            disabled={isBusy !== null}
+            onClick={() => setTicketCopies(1)}
+          >
+            1 tick
+          </button>
+          <button
+            type="button"
+            className={`joker-category-chip${ticketCopies === 3 ? " is-active" : ""}`}
+            disabled={isBusy !== null}
+            onClick={() => setTicketCopies(3)}
+          >
+            3 tick
+          </button>
+          <button
+            type="button"
+            className={`joker-category-chip${ticketCopies === 0 ? " is-active" : ""}`}
+            disabled={isBusy !== null}
+            onClick={() => setTicketCopies(0)}
+            style={{ marginLeft: 8 }}
+            title="Registra el pedido pero no imprime nada (venta interna)"
+          >
+            0 tick
+          </button>
+        </div>
 
         <div className="joker-pending-order-modal__actions">
           <button

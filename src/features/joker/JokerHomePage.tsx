@@ -274,7 +274,7 @@ export function JokerHomePage() {
   // un pedido normal recien creado. Si se pago "a cuenta", genera el
   // movimiento de cuenta corriente ahora (no se genero al mandarlo, para
   // no cargarle nada al cliente si el pedido terminaba rechazado).
-  async function handleAcceptPendingOrder(order: JokerOrderRecord) {
+  async function handleAcceptPendingOrder(order: JokerOrderRecord, ticketCopies: 0 | 1 | 3) {
     let accepted: JokerOrderRecord;
     try {
       const result = await acceptOrder(order.id);
@@ -291,33 +291,37 @@ export function JokerHomePage() {
       return;
     }
 
-    const printableItems: JokerOrderItem[] = accepted.items.map((item, index) => ({
-      lineId: `pending-${accepted.id}-${index}`,
-      productId: item.productId,
-      productName: item.productName,
-      unitPrice: item.unitPrice,
-      quantity: item.quantity,
-      detail: item.detail ?? ""
-    }));
+    if (ticketCopies === 0) {
+      toast.success(`Pedido #${accepted.displayNumber} aceptado (sin ticket).`);
+    } else {
+      const printableItems: JokerOrderItem[] = accepted.items.map((item, index) => ({
+        lineId: `pending-${accepted.id}-${index}`,
+        productId: item.productId,
+        productName: item.productName,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        detail: item.detail ?? ""
+      }));
 
-    try {
-      await printOrderTicket(
-        printableItems,
-        accepted.address,
-        3,
-        accepted.paymentMethod,
-        accepted.customerName ?? "",
-        accepted.deliveryCost ? String(accepted.deliveryCost) : "",
-        accepted.displayNumber,
-        ""
-      );
-      toast.success(`Pedido #${accepted.displayNumber} aceptado e impreso.`);
-    } catch (printError) {
-      toast.error(
-        printError instanceof Error
-          ? `El pedido #${accepted.displayNumber} se acepto pero no se pudo imprimir: ${printError.message}`
-          : `El pedido #${accepted.displayNumber} se acepto pero no se pudo imprimir.`
-      );
+      try {
+        await printOrderTicket(
+          printableItems,
+          accepted.address,
+          ticketCopies,
+          accepted.paymentMethod,
+          accepted.customerName ?? "",
+          accepted.deliveryCost ? String(accepted.deliveryCost) : "",
+          accepted.displayNumber,
+          ""
+        );
+        toast.success(`Pedido #${accepted.displayNumber} aceptado e impreso.`);
+      } catch (printError) {
+        toast.error(
+          printError instanceof Error
+            ? `El pedido #${accepted.displayNumber} se acepto pero no se pudo imprimir: ${printError.message}`
+            : `El pedido #${accepted.displayNumber} se acepto pero no se pudo imprimir.`
+        );
+      }
     }
 
     if (accepted.paymentMethod === "cuenta" && accepted.clientId) {
@@ -515,6 +519,7 @@ export function JokerHomePage() {
 
       {role === "administrador" && pendingOrders.length && isPendingOrderModalOpen ? (
         <PendingOrderModal
+          key={pendingOrders[0].id}
           order={pendingOrders[0]}
           queueCount={pendingOrders.length}
           onAccept={handleAcceptPendingOrder}
