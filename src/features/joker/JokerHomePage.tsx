@@ -1,5 +1,6 @@
 import { Menu, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { JokerRoleLoginScreen } from "./components/JokerRoleLoginScreen";
 import { PrinterSettingsModal } from "./components/PrinterSettingsModal";
 import {
   createClient,
@@ -14,7 +15,7 @@ import {
   updateCourier
 } from "./joker.api";
 import { getPreferredPrinterName } from "./services/joker.qzPrint";
-import type { JokerAccountEntry, JokerClient, JokerCourier, JokerProduct } from "./joker.types";
+import type { JokerAccountEntry, JokerClient, JokerCourier, JokerProduct, JokerRole } from "./joker.types";
 import { CuentaCorrienteScreen } from "./screens/CuentaCorrienteScreen";
 import { DeliveryScreen } from "./screens/DeliveryScreen";
 import { MesScreen } from "./screens/MesScreen";
@@ -27,6 +28,12 @@ type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock" | "delive
 type CustomizeMode = "cliente" | "dev";
 
 const CUSTOMIZE_MODE_STORAGE_KEY = "joker.customizeMode";
+const ROLE_STORAGE_KEY = "joker.role";
+
+// Tabs que puede ver un "usuario" -- solo armar pedidos. El resto de la
+// app queda reservado para "administrador". Sin contraseña ni backend, es
+// solo para mostrarle al cliente la idea de roles diferenciados.
+const USER_ROLE_ALLOWED_TABS: JokerTab[] = ["pedidos"];
 
 const TAB_TITLES: Record<JokerTab, string> = {
   pedidos: "Armar pedido",
@@ -40,6 +47,11 @@ const TAB_TITLES: Record<JokerTab, string> = {
 
 
 export function JokerHomePage() {
+  const [role, setRole] = useState<JokerRole | null>(() => {
+    if (typeof window === "undefined") return null;
+    const stored = window.localStorage.getItem(ROLE_STORAGE_KEY);
+    return stored === "administrador" || stored === "usuario" ? stored : null;
+  });
   const [activeTab, setActiveTab] = useState<JokerTab>("pedidos");
   const [products, setProducts] = useState<JokerProduct[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
@@ -78,6 +90,15 @@ export function JokerHomePage() {
     const intervalId = window.setInterval(() => void loadAccountEntries(), 15000);
     return () => window.clearInterval(intervalId);
   }, []);
+
+  // Si el rol es "usuario" y por algun motivo activeTab quedo en una
+  // pestana que no le corresponde (ej: cambio de rol en caliente sin
+  // recargar), lo vuelve a Pedidos.
+  useEffect(() => {
+    if (role === "usuario" && !USER_ROLE_ALLOWED_TABS.includes(activeTab)) {
+      setActiveTab("pedidos");
+    }
+  }, [role, activeTab]);
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -158,6 +179,18 @@ export function JokerHomePage() {
     setIsMenuOpen(false);
   }
 
+  function handleSelectRole(nextRole: JokerRole) {
+    window.localStorage.setItem(ROLE_STORAGE_KEY, nextRole);
+    setRole(nextRole);
+    setActiveTab("pedidos");
+  }
+
+  function handleLogout() {
+    window.localStorage.removeItem(ROLE_STORAGE_KEY);
+    setRole(null);
+    setIsMenuOpen(false);
+  }
+
   function toggleCustomizeMode() {
     setCustomizeMode((current) => {
       const next = current === "cliente" ? "dev" : "cliente";
@@ -185,6 +218,10 @@ export function JokerHomePage() {
   async function handleSettleAccount(clientId: number) {
     await settleAccount(clientId);
     await loadAccountEntries();
+  }
+
+  if (!role) {
+    return <JokerRoleLoginScreen onSelectRole={handleSelectRole} />;
   }
 
   return (
@@ -217,48 +254,52 @@ export function JokerHomePage() {
                 >
                   Pedidos
                 </button>
-                <button
-                  type="button"
-                  className={`joker-user-dropdown-item${activeTab === "productos" ? " is-active" : ""}`}
-                  onClick={() => goToTab("productos")}
-                >
-                  Productos
-                </button>
-                <button
-                  type="button"
-                  className={`joker-user-dropdown-item${activeTab === "panel" ? " is-active" : ""}`}
-                  onClick={() => goToTab("panel")}
-                >
-                  Panel
-                </button>
-                <button
-                  type="button"
-                  className={`joker-user-dropdown-item${activeTab === "cuenta" ? " is-active" : ""}`}
-                  onClick={() => goToTab("cuenta")}
-                >
-                  Cuenta corriente
-                </button>
-                <button
-                  type="button"
-                  className={`joker-user-dropdown-item${activeTab === "stock" ? " is-active" : ""}`}
-                  onClick={() => goToTab("stock")}
-                >
-                  Stock
-                </button>
-                <button
-                  type="button"
-                  className={`joker-user-dropdown-item${activeTab === "delivery" ? " is-active" : ""}`}
-                  onClick={() => goToTab("delivery")}
-                >
-                  Delivery
-                </button>
-                <button
-                  type="button"
-                  className={`joker-user-dropdown-item${activeTab === "mes" ? " is-active" : ""}`}
-                  onClick={() => goToTab("mes")}
-                >
-                  Mes
-                </button>
+                {role === "administrador" ? (
+                  <>
+                    <button
+                      type="button"
+                      className={`joker-user-dropdown-item${activeTab === "productos" ? " is-active" : ""}`}
+                      onClick={() => goToTab("productos")}
+                    >
+                      Productos
+                    </button>
+                    <button
+                      type="button"
+                      className={`joker-user-dropdown-item${activeTab === "panel" ? " is-active" : ""}`}
+                      onClick={() => goToTab("panel")}
+                    >
+                      Panel
+                    </button>
+                    <button
+                      type="button"
+                      className={`joker-user-dropdown-item${activeTab === "cuenta" ? " is-active" : ""}`}
+                      onClick={() => goToTab("cuenta")}
+                    >
+                      Cuenta corriente
+                    </button>
+                    <button
+                      type="button"
+                      className={`joker-user-dropdown-item${activeTab === "stock" ? " is-active" : ""}`}
+                      onClick={() => goToTab("stock")}
+                    >
+                      Stock
+                    </button>
+                    <button
+                      type="button"
+                      className={`joker-user-dropdown-item${activeTab === "delivery" ? " is-active" : ""}`}
+                      onClick={() => goToTab("delivery")}
+                    >
+                      Delivery
+                    </button>
+                    <button
+                      type="button"
+                      className={`joker-user-dropdown-item${activeTab === "mes" ? " is-active" : ""}`}
+                      onClick={() => goToTab("mes")}
+                    >
+                      Mes
+                    </button>
+                  </>
+                ) : null}
                 <div className="joker-user-dropdown-divider" />
                 <button type="button" className="joker-user-dropdown-item" onClick={toggleCustomizeMode}>
                   ⚙️ Modo: {customizeMode === "dev" ? "Dev" : "Cliente"}
@@ -272,6 +313,10 @@ export function JokerHomePage() {
                   }}
                 >
                   🖨️ {preferredPrinterName || "Elegir impresora"}
+                </button>
+                <div className="joker-user-dropdown-divider" />
+                <button type="button" className="joker-user-dropdown-item" onClick={handleLogout}>
+                  🚪 Cerrar sesion ({role === "administrador" ? "Admin" : "Usuario"})
                 </button>
               </div>
             ) : null}

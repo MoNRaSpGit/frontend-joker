@@ -48,6 +48,45 @@ textarea {
   grid-template-rows: auto 1fr;
 }
 
+/* ---------- Login de rol ---------- */
+
+.joker-login-screen {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.joker-login-card {
+  width: min(360px, 100%);
+  text-align: center;
+  align-content: start;
+  justify-items: center;
+  gap: 10px;
+}
+
+.joker-login-card__logo {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 4px;
+}
+
+.joker-login-card h1 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.joker-login-card__hint {
+  margin: 0 0 6px;
+  color: var(--joker-muted);
+  font-size: 13px;
+}
+
+.joker-login-card__actions {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
 /* ---------- Topbar ---------- */
 
 .joker-topbar {
