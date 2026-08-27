@@ -56,7 +56,7 @@ const TAB_TITLES: Record<JokerTab, string> = {
 export function JokerHomePage() {
   const [role, setRole] = useState<JokerRole | null>(() => {
     if (typeof window === "undefined") return null;
-    const stored = window.localStorage.getItem(ROLE_STORAGE_KEY);
+    const stored = window.sessionStorage.getItem(ROLE_STORAGE_KEY);
     return stored === "administrador" || stored === "usuario" ? stored : null;
   });
   const [activeTab, setActiveTab] = useState<JokerTab>("pedidos");
@@ -214,13 +214,13 @@ export function JokerHomePage() {
   }
 
   function handleSelectRole(nextRole: JokerRole) {
-    window.localStorage.setItem(ROLE_STORAGE_KEY, nextRole);
+    window.sessionStorage.setItem(ROLE_STORAGE_KEY, nextRole);
     setRole(nextRole);
     setActiveTab("pedidos");
   }
 
   function handleLogout() {
-    window.localStorage.removeItem(ROLE_STORAGE_KEY);
+    window.sessionStorage.removeItem(ROLE_STORAGE_KEY);
     setRole(null);
     setIsMenuOpen(false);
   }

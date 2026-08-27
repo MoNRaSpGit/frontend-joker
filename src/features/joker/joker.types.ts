@@ -1,7 +1,9 @@
 // Rol de acceso, sin contraseña ni backend: "usuario" solo arma pedidos,
 // "administrador" ve todo. Se elige en un login clasico al abrir la app y
-// se guarda en el navegador (localStorage), no es seguridad real, es para
-// mostrarle al cliente la idea de roles diferenciados.
+// se guarda en el navegador con sessionStorage (dura mientras la
+// pestaña/app sigue abierta; al cerrarla se pierde y toca elegir rol de
+// nuevo). No es seguridad real, es para mostrarle al cliente la idea de
+// roles diferenciados.
 export type JokerRole = "administrador" | "usuario";
 
 // Slot de eleccion dentro de un combo (ej: "Hamburguesa" o "Refresco"): el
