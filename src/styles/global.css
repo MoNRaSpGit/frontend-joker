@@ -955,6 +955,12 @@ textarea {
   border-color: #c7dcf5;
 }
 
+.joker-delivery-chip--counter {
+  background: #fff4e0;
+  color: #8a5a12;
+  border-color: #f0d9ad;
+}
+
 .joker-delivery-assign {
   display: inline-flex;
   align-items: center;

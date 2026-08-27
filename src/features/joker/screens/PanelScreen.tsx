@@ -85,7 +85,6 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [breakdownMethod, setBreakdownMethod] = useState<JokerPaymentMethod | null>(null);
   const [assigningCourierOrderId, setAssigningCourierOrderId] = useState<number | null>(null);
-  const [selectedCourierId, setSelectedCourierId] = useState("");
   const [isSavingCourier, setIsSavingCourier] = useState(false);
   const [blockedCloseCourierNames, setBlockedCloseCourierNames] = useState<string[] | null>(null);
 
@@ -182,21 +181,17 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
     }
   }
 
-  // Asigna (o cambia) el repartidor de un pedido ya cargado. Se manda el
-  // mismo array de items sin tocar, el backend solo recalcula el total con
-  // lo que ya tenia (no cambia nada del pedido salvo el repartidor).
-  async function handleSaveCourierAssignment(order: JokerOrderRecord) {
-    if (!selectedCourierId) {
-      toast.error("Elegi un repartidor.");
-      return;
-    }
-
+  // Asigna (o cambia) el repartidor de un pedido ya cargado con un solo
+  // click sobre el globito del repartidor -- sin paso intermedio de
+  // "Guardar". Se manda el mismo array de items sin tocar, el backend
+  // solo recalcula el total con lo que ya tenia (no cambia nada del
+  // pedido salvo el repartidor).
+  async function handleAssignCourier(order: JokerOrderRecord, courierId: number) {
     setIsSavingCourier(true);
     try {
-      const response = await updateOrder(order.id, order.items, order.orderDate ?? undefined, Number(selectedCourierId));
+      const response = await updateOrder(order.id, order.items, order.orderDate ?? undefined, courierId);
       setOrders((current) => current.map((item) => (item.id === order.id ? response.item : item)));
       setAssigningCourierOrderId(null);
-      setSelectedCourierId("");
       toast.success("Delivery asignado.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo asignar el delivery.");
@@ -362,36 +357,33 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
                         <span className="joker-order-meta-chip">{formatDateTime(order.createdAt, order.orderDate)}</span>
                         <span className="joker-order-meta-chip">{JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}</span>
 
-                        {assigningCourierOrderId === order.id ? (
+                        {order.customerName?.trim().toUpperCase().includes("MOSTRADOR") ? (
+                          // Un pedido de mostrador no sale a reparto, asi que
+                          // no tiene sentido ofrecer asignarle repartidor --
+                          // solo se identifica con un chip propio.
+                          <span className="joker-delivery-chip joker-delivery-chip--counter">🏪 Mostrador</span>
+                        ) : assigningCourierOrderId === order.id ? (
                           <span className="joker-delivery-assign">
-                            <select value={selectedCourierId} onChange={(event) => setSelectedCourierId(event.target.value)}>
-                              <option value="">Elegir repartidor</option>
-                              {couriers
-                                .filter((courier) => courier.status === "activo")
-                                .map((courier) => (
-                                <option key={courier.id} value={courier.id}>
-                                  {courier.name}
-                                </option>
+                            {couriers
+                              .filter((courier) => courier.status === "activo")
+                              .map((courier) => (
+                                <button
+                                  key={courier.id}
+                                  type="button"
+                                  className="joker-category-chip"
+                                  disabled={isSavingCourier}
+                                  onClick={() => void handleAssignCourier(order, courier.id)}
+                                >
+                                  🛵 {courier.name}
+                                </button>
                               ))}
-                            </select>
                             <button
                               type="button"
                               className="joker-mini-button"
                               disabled={isSavingCourier}
-                              onClick={() => {
-                                setAssigningCourierOrderId(null);
-                                setSelectedCourierId("");
-                              }}
+                              onClick={() => setAssigningCourierOrderId(null)}
                             >
                               Cancelar
-                            </button>
-                            <button
-                              type="button"
-                              className="joker-button joker-button--primary joker-button--auto"
-                              disabled={isSavingCourier}
-                              onClick={() => void handleSaveCourierAssignment(order)}
-                            >
-                              {isSavingCourier ? "Guardando..." : "Guardar"}
                             </button>
                           </span>
                         ) : order.courierId ? (
@@ -400,10 +392,7 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
                             <button
                               type="button"
                               className="joker-mini-button"
-                              onClick={() => {
-                                setAssigningCourierOrderId(order.id);
-                                setSelectedCourierId(String(order.courierId));
-                              }}
+                              onClick={() => setAssigningCourierOrderId(order.id)}
                             >
                               Cambiar
                             </button>
@@ -412,10 +401,7 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
                           <button
                             type="button"
                             className="joker-delivery-chip joker-delivery-chip--unassigned"
-                            onClick={() => {
-                              setAssigningCourierOrderId(order.id);
-                              setSelectedCourierId("");
-                            }}
+                            onClick={() => setAssigningCourierOrderId(order.id)}
                           >
                             🛵 Asignar delivery
                           </button>
