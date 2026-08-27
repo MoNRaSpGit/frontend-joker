@@ -17,7 +17,15 @@ import {
 } from "./joker.escpos";
 import { abbreviateForKitchen, wrapForKitchenPrinting } from "./joker.kitchenAbbreviations";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerAccountEntry, JokerClient, JokerOrderItem, JokerPaymentMethod } from "../joker.types";
+import type {
+  JokerAccountEntry,
+  JokerClient,
+  JokerCourier,
+  JokerCourierCashSummary,
+  JokerOrderItem,
+  JokerOrderRecord,
+  JokerPaymentMethod
+} from "../joker.types";
 
 export type JokerCashRegisterSummary = {
   paymentTotals: Record<JokerPaymentMethod, number>;
@@ -344,6 +352,119 @@ export function buildAccountStatementTicketLines(client: JokerClient, entries: J
   lines.push(BOLD_ON);
   lines.push(`${rightAlignedLine("Total ", formatMoney(total))}\n`);
   lines.push(BOLD_OFF);
+  lines.push("\n");
+
+  lines.push(ALIGN_CENTER);
+  lines.push(BOLD_ON, TALL_SIZE_ON);
+  lines.push(`${FOOTER_MESSAGE}\n`);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+
+  lines.push("\n\n\n");
+  lines.push(ALIGN_LEFT);
+  lines.push(CUT_PAPER);
+
+  return lines;
+}
+
+// Resumen del turno de un repartidor: caja inicial, pedidos entregados
+// (con costo de envio si tienen), gastos y entregas de dinero al
+// mostrador. Se imprime desde Delivery con el turno todavia activo (antes
+// de liquidar) -- no incluye horas/tarifa ni el total a pagar, eso se
+// termina de definir recien al liquidar.
+export function buildCourierSummaryTicketLines(
+  courier: JokerCourier,
+  summary: JokerCourierCashSummary,
+  orders: JokerOrderRecord[]
+) {
+  const lines: string[] = [];
+  const expenseMovements = summary.movements.filter((movement) => movement.type === "gasto");
+  const handoverMovements = summary.movements.filter((movement) => movement.type === "entrega");
+  const ordersWithDeliveryCost = orders.filter((order) => order.deliveryCost);
+  const deliveryCostTotal = ordersWithDeliveryCost.reduce((sum, order) => sum + (order.deliveryCost || 0), 0);
+
+  lines.push(ESC_INIT);
+  lines.push(ALIGN_CENTER);
+  lines.push(BOLD_ON, DOUBLE_SIZE_ON);
+  lines.push(`${STORE_NAME}\n`);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+  lines.push(BOLD_ON, TALL_SIZE_ON);
+  lines.push("RESUMEN DE REPARTIDOR\n");
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+  lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
+  lines.push(`${INTERNAL_USE_NOTE}\n`);
+
+  lines.push(ALIGN_LEFT);
+  lines.push(`${decorativeBorder()}\n`);
+  lines.push(DOUBLE_SIZE_ON);
+  lines.push(`${courier.name}\n`);
+  lines.push(DOUBLE_SIZE_OFF);
+  if (courier.activeSince) {
+    lines.push(
+      `Turno desde: ${new Date(courier.activeSince).toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`
+    );
+  }
+  lines.push(`${decorativeBorder()}\n`);
+
+  lines.push(BOLD_ON);
+  lines.push(`${rightAlignedLine("Caja inicial ", formatMoney(summary.initialCash))}\n`);
+  lines.push(BOLD_OFF);
+  lines.push(`${divider()}\n`);
+
+  lines.push(BOLD_ON);
+  lines.push(`Pedidos entregados (${orders.length})\n`);
+  lines.push(BOLD_OFF);
+  if (orders.length) {
+    orders.forEach((order) => {
+      lines.push(
+        `${rightAlignedLine(
+          `Pedido #${order.displayNumber} `,
+          order.deliveryCost ? `Envio ${formatMoney(order.deliveryCost)}` : "Sin envio"
+        )}\n`
+      );
+    });
+  } else {
+    lines.push("Sin pedidos entregados todavia.\n");
+  }
+  lines.push(`${divider()}\n`);
+  lines.push(BOLD_ON);
+  lines.push(`${rightAlignedLine(`Total envios (${ordersWithDeliveryCost.length}) `, formatMoney(deliveryCostTotal))}\n`);
+  lines.push(`${rightAlignedLine(`Cobrado en efectivo (${summary.ordersCashCount}) `, formatMoney(summary.ordersCashTotal))}\n`);
+  lines.push(BOLD_OFF);
+
+  lines.push(`${decorativeBorder()}\n`);
+  lines.push(BOLD_ON);
+  lines.push("Gastos\n");
+  lines.push(BOLD_OFF);
+  if (expenseMovements.length) {
+    expenseMovements.forEach((movement) => {
+      lines.push(`${rightAlignedLine(`  ${movement.description?.trim() || "Gasto"} `, formatMoney(movement.amount))}\n`);
+    });
+  } else {
+    lines.push("  Sin gastos registrados.\n");
+  }
+  lines.push(BOLD_ON);
+  lines.push(`${rightAlignedLine("Total gastos ", formatMoney(summary.expensesTotal))}\n`);
+  lines.push(BOLD_OFF);
+
+  lines.push(`${decorativeBorder()}\n`);
+  lines.push(BOLD_ON);
+  lines.push("Entregas al mostrador\n");
+  lines.push(BOLD_OFF);
+  if (handoverMovements.length) {
+    handoverMovements.forEach((movement) => {
+      lines.push(`${rightAlignedLine("  Entrega ", formatMoney(movement.amount))}\n`);
+    });
+  } else {
+    lines.push("  Sin entregas registradas.\n");
+  }
+  lines.push(BOLD_ON);
+  lines.push(`${rightAlignedLine("Total entregado ", formatMoney(summary.handoversTotal))}\n`);
+  lines.push(BOLD_OFF);
+
+  lines.push(`${decorativeBorder()}\n`);
+  lines.push(BOLD_ON, TALL_SIZE_ON);
+  lines.push(`${rightAlignedLine("Caja actual ", formatMoney(summary.cashOnHand))}\n`);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
   lines.push("\n");
 
   lines.push(ALIGN_CENTER);

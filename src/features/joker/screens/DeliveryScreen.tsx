@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { addCourierCashMovement, getCourierCashSummary, listCurrentPeriodOrders } from "../joker.api";
+import { printCourierSummaryTicket } from "../services/joker.print";
 import type { JokerCourier, JokerCourierCashSummary, JokerOrderRecord } from "../joker.types";
 
 type DeliveryScreenProps = {
@@ -219,6 +220,7 @@ function CourierSettlement({
   const [hourlyRate, setHourlyRate] = useState(DEFAULT_HOURLY_RATE);
   const [hoursWorked, setHoursWorked] = useState(DEFAULT_HOURS_WORKED);
   const [showOrders, setShowOrders] = useState(false);
+  const [isPrintingSummary, setIsPrintingSummary] = useState(false);
 
   // Cada turno arranca con las horas estandar de nuevo (la tarifa por hora
   // se mantiene, ya que rara vez cambia): sin esto, si el turno anterior
@@ -262,11 +264,38 @@ function CourierSettlement({
     onTotalChange(courier.id, { hourlyRate: parsedRate, hoursWorked: parsedHours, grandTotal });
   }, [courier.id, parsedRate, parsedHours, grandTotal, onTotalChange]);
 
+  // Resumen del turno en curso (caja inicial, pedidos entregados con su
+  // costo de envio, gastos y entregas al mostrador) -- pide la caja
+  // fresca en el momento en vez de reusar la de CourierCash para no tener
+  // que levantar ese estado y arriesgar romper lo que ya funciona ahi.
+  async function handlePrintSummary() {
+    setIsPrintingSummary(true);
+    try {
+      const summary = await getCourierCashSummary(courier.id);
+      await printCourierSummaryTicket(courier, summary, orders);
+      toast.success("Resumen enviado a imprimir.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo imprimir el resumen.");
+    } finally {
+      setIsPrintingSummary(false);
+    }
+  }
+
   return (
     <div className="joker-delivery-settlement">
       <CourierCash courier={courier} />
 
-      <p className="joker-delivery-section-title">Liquidacion</p>
+      <div className="joker-delivery-toggle-row">
+        <p className="joker-delivery-section-title">Liquidacion</p>
+        <button
+          type="button"
+          className="joker-button joker-button--ghost joker-button--auto"
+          disabled={isPrintingSummary}
+          onClick={() => void handlePrintSummary()}
+        >
+          {isPrintingSummary ? "Imprimiendo..." : "🖨️ Resumen del turno"}
+        </button>
+      </div>
 
       {isLoading ? (
         <p className="joker-empty-state">Cargando pedidos...</p>

@@ -1,7 +1,15 @@
 import { printOrderTicketByQz, printRawLinesByQz } from "./joker.qzPrint";
-import { buildAccountStatementTicketLines, buildCashRegisterCloseTicketLines } from "./joker.ticketFormat";
+import { buildAccountStatementTicketLines, buildCashRegisterCloseTicketLines, buildCourierSummaryTicketLines } from "./joker.ticketFormat";
 import type { JokerCashRegisterSummary } from "./joker.ticketFormat";
-import type { JokerAccountEntry, JokerClient, JokerOrderItem, JokerPaymentMethod } from "../joker.types";
+import type {
+  JokerAccountEntry,
+  JokerClient,
+  JokerCourier,
+  JokerCourierCashSummary,
+  JokerOrderItem,
+  JokerOrderRecord,
+  JokerPaymentMethod
+} from "../joker.types";
 
 export async function printOrderTicket(
   order: JokerOrderItem[],
@@ -25,6 +33,16 @@ export async function printAccountStatementTicket(client: JokerClient, entries: 
 
 export async function printCashRegisterCloseTicket(summary: JokerCashRegisterSummary) {
   const lines = buildCashRegisterCloseTicketLines(summary);
+  await printRawLinesByQz(lines);
+  return { method: "qz" as const };
+}
+
+export async function printCourierSummaryTicket(
+  courier: JokerCourier,
+  summary: JokerCourierCashSummary,
+  orders: JokerOrderRecord[]
+) {
+  const lines = buildCourierSummaryTicketLines(courier, summary, orders);
   await printRawLinesByQz(lines);
   return { method: "qz" as const };
 }
