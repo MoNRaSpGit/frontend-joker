@@ -17,10 +17,11 @@ import type { JokerProduct, JokerStockItem, JokerStockItemCategory } from "../jo
 
 const STOCK_REFRESH_INTERVAL_MS = 15000;
 
-// Por ahora solo se muestra el tablero de comidas (En vivo). El resto
-// (alta de insumos, lista completa, editor de recetas) queda armado pero
-// oculto hasta que se decida si hace falta mostrarlo.
-const SHOW_STOCK_ADMIN_TOOLS = false;
+// Alta de insumos y editor de recetas: sin esto, un producto nuevo no
+// tiene forma de quedar linkeado a ningun insumo, asi que nunca aparece
+// en el tablero de "Stock bajo" ni descuenta nada al venderse -- queda
+// invisible para el sistema de stock.
+const SHOW_STOCK_ADMIN_TOOLS = true;
 
 type StockScreenProps = {
   products: JokerProduct[];

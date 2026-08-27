@@ -30,6 +30,10 @@ export type JokerProductInput = {
   name: string;
   category: string;
   price: number;
+  // Solo se usa al crear un producto autonomo (ver ProductFormModal): el
+  // backend le crea de una un insumo propio con esta cantidad. updateProduct
+  // lo ignora si viene, el DTO de edicion no lo contempla.
+  initialStock?: number;
 };
 
 type OrderListResponse = {

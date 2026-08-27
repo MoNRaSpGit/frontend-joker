@@ -17,6 +17,13 @@ export function ProductFormModal({ product, products, categories, onClose, onSav
   const [name, setName] = useState(product?.name ?? "");
   const [category, setCategory] = useState(product?.category ?? "");
   const [price, setPrice] = useState(product ? String(product.price) : "");
+  // Solo tiene sentido al crear: para un producto nuevo "autonomo" (ej:
+  // alcohol en gel), en vez de mandar aparte a Stock a crear el insumo y
+  // la receta, esto lo hace de una -- 1 producto = 1 insumo propio,
+  // vender 1 descuenta 1. Productos con receta compartida o mas
+  // compleja (ej. una hamburguesa) se siguen armando desde la pestana
+  // Stock, no hace falta este campo al editarlos.
+  const [initialStock, setInitialStock] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -57,10 +64,19 @@ export function ProductFormModal({ product, products, categories, onClose, onSav
       return;
     }
 
+    let parsedInitialStock: number | undefined;
+    if (!isEditing && initialStock.trim()) {
+      parsedInitialStock = Number(initialStock);
+      if (Number.isNaN(parsedInitialStock) || parsedInitialStock < 0) {
+        setError("El stock inicial tiene que ser un numero valido.");
+        return;
+      }
+    }
+
     setIsSaving(true);
     setError(null);
     try {
-      await onSave({ name: trimmedName, category: trimmedCategory, price: parsedPrice });
+      await onSave({ name: trimmedName, category: trimmedCategory, price: parsedPrice, initialStock: parsedInitialStock });
       onClose();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "No se pudo guardar el producto.");
@@ -142,6 +158,25 @@ export function ProductFormModal({ product, products, categories, onClose, onSav
               disabled={isSaving}
             />
           </label>
+
+          {!isEditing ? (
+            <label className="joker-form-field">
+              <span>Stock inicial (opcional)</span>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Ej: 20"
+                value={initialStock}
+                onChange={(event) => setInitialStock(event.target.value)}
+                disabled={isSaving}
+              />
+              <p className="joker-order-item__excluded">
+                Para un producto que no comparte ingredientes con otros (ej: alcohol en gel). Si vende recetas o insumos
+                compartidos, cargalo despues desde Stock.
+              </p>
+            </label>
+          ) : null}
 
           {error ? <p className="joker-order-item__excluded">{error}</p> : null}
 
