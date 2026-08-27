@@ -362,10 +362,17 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
 
           return (
             <article key={courier.id} className={`joker-delivery-card${expanded ? " joker-delivery-card--expanded" : ""}`}>
-              <button
-                type="button"
+              <div
+                role="button"
+                tabIndex={0}
                 className="joker-delivery-card__header"
                 onClick={() => setExpandedCourierId(expanded ? null : courier.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setExpandedCourierId(expanded ? null : courier.id);
+                  }
+                }}
               >
                 <span className="joker-delivery-card__icon">🛵</span>
 
@@ -387,7 +394,7 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
                   </button>
                   <span className={`joker-delivery-card__chevron${expanded ? " joker-delivery-card__chevron--open" : ""}`}>›</span>
                 </span>
-              </button>
+              </div>
 
               {expanded ? (
                 <div className="joker-delivery-edit-name-row">
