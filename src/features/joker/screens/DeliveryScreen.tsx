@@ -169,24 +169,24 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
               </button>
             </div>
           </div>
-
-          {summary.movements.length ? (
-            <>
-              <p className="joker-delivery-section-title">Historial</p>
-              <ul className="joker-order-list">
-                {summary.movements.map((movement) => (
-                  <li key={movement.id} className="joker-order-item joker-order-item--flat">
-                    <span>
-                      {movement.type === "inicial" ? "💰 Caja inicial" : movement.type === "gasto" ? "🧾 Gasto" : "📦 Entrega"}
-                      {movement.description ? ` · ${movement.description}` : ""}
-                    </span>
-                    <span className="joker-order-item__excluded">{formatPrice(movement.amount)}</span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
         </div>
+      ) : null}
+
+      {summary.movements.length ? (
+        <>
+          <p className="joker-delivery-section-title">Historial</p>
+          <ul className="joker-order-list">
+            {summary.movements.map((movement) => (
+              <li key={movement.id} className="joker-order-item joker-order-item--flat">
+                <span>
+                  {movement.type === "inicial" ? "💰 Caja inicial" : movement.type === "gasto" ? "🧾 Gasto" : "📦 Entrega"}
+                  {movement.description ? ` · ${movement.description}` : ""}
+                </span>
+                <span className="joker-order-item__excluded">{formatPrice(movement.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        </>
       ) : null}
     </div>
   );
