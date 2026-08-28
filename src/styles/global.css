@@ -1109,6 +1109,51 @@ textarea {
   justify-content: flex-end;
 }
 
+/* Metodo de pago y delivery: mismo formato (valor actual + boton de
+   accion), alineados a la derecha de la celda, uno debajo del otro. */
+.joker-order-action-card {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.joker-order-action-card__value {
+  font-size: 12px;
+  color: var(--joker-muted);
+  white-space: nowrap;
+}
+
+.joker-order-action-card__value strong {
+  color: var(--joker-text);
+  font-weight: 700;
+}
+
+.joker-order-action-card__button {
+  appearance: none;
+  border: 1px solid var(--joker-accent);
+  background: #fff;
+  color: var(--joker-accent);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.joker-order-action-card__button:hover:not(:disabled) {
+  background: var(--joker-accent);
+  color: #fff;
+}
+
+.joker-order-action-card__button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .joker-order-meta-chip {
   font-size: 12px;
   font-weight: 700;
