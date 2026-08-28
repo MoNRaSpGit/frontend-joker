@@ -470,123 +470,107 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
                   <ul className="joker-order-detail-list">
                     <li className="joker-order-detail-list__meta">
                       <div className="joker-order-meta-row">
+                        <div className="joker-order-meta-section">
+                          <span className="joker-order-meta-chip">{formatDateTime(order.createdAt, order.orderDate)}</span>
+
+                          {editingPaymentOrderId === order.id ? (
+                            <span className="joker-delivery-assign">
+                              {EDITABLE_PAYMENT_METHODS.map((method) => (
+                                <button
+                                  key={method}
+                                  type="button"
+                                  className={`joker-category-chip${method === order.paymentMethod ? " is-active" : ""}`}
+                                  disabled={isSavingPayment}
+                                  onClick={() => {
+                                    if (method === "cuenta") {
+                                      setCuentaPickerOrder(order);
+                                      return;
+                                    }
+                                    void handleChangePaymentMethod(order, method);
+                                  }}
+                                >
+                                  {JOKER_PAYMENT_METHOD_LABELS[method]}
+                                </button>
+                              ))}
+                              <button
+                                type="button"
+                                className="joker-mini-button"
+                                disabled={isSavingPayment}
+                                onClick={() => setEditingPaymentOrderId(null)}
+                              >
+                                Cancelar
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="joker-order-meta-chip joker-order-meta-chip--clickable"
+                              disabled={order.paymentMethod === "cuenta"}
+                              title={order.paymentMethod === "cuenta" ? "Un pedido a cuenta no se corrige aca" : "Corregir metodo de pago"}
+                              onClick={() => setEditingPaymentOrderId(order.id)}
+                            >
+                              {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}
+                            </button>
+                          )}
+                        </div>
+
                         {!order.customerName?.trim().toUpperCase().includes("MOSTRADOR") &&
                         (order.customerName?.trim() || order.address?.trim()) ? (
                           <div className="joker-order-meta-customer">
-                            {order.customerName?.trim() ? (
-                              <span>
-                                Nombre: <strong>{order.customerName}</strong>
-                              </span>
-                            ) : null}
-                            {order.address?.trim() ? (
-                              <span>
-                                Direccion: <strong>{order.address}</strong>
-                              </span>
-                            ) : null}
+                            {order.customerName?.trim() ? <strong>{order.customerName}</strong> : null}
+                            {order.address?.trim() ? <span>{order.address}</span> : null}
                           </div>
                         ) : null}
 
-                        <div className="joker-order-meta-actions">
-                          <span className="joker-order-meta-chip">{formatDateTime(order.createdAt, order.orderDate)}</span>
-
-                          <div className="joker-order-action-card">
-                            {editingPaymentOrderId === order.id ? (
-                              <span className="joker-delivery-assign">
-                                {EDITABLE_PAYMENT_METHODS.map((method) => (
-                                  <button
-                                    key={method}
-                                    type="button"
-                                    className={`joker-category-chip${method === order.paymentMethod ? " is-active" : ""}`}
-                                    disabled={isSavingPayment}
-                                    onClick={() => {
-                                      if (method === "cuenta") {
-                                        setCuentaPickerOrder(order);
-                                        return;
-                                      }
-                                      void handleChangePaymentMethod(order, method);
-                                    }}
-                                  >
-                                    {JOKER_PAYMENT_METHOD_LABELS[method]}
-                                  </button>
-                                ))}
-                                <button
-                                  type="button"
-                                  className="joker-mini-button"
-                                  disabled={isSavingPayment}
-                                  onClick={() => setEditingPaymentOrderId(null)}
-                                >
-                                  Cancelar
-                                </button>
-                              </span>
-                            ) : (
-                              <>
-                                <span className="joker-order-action-card__value">
-                                  Pago: <strong>{JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}</strong>
-                                </span>
-                                <button
-                                  type="button"
-                                  className="joker-order-action-card__button"
-                                  disabled={order.paymentMethod === "cuenta"}
-                                  title={order.paymentMethod === "cuenta" ? "Un pedido a cuenta no se corrige aca" : "Corregir metodo de pago"}
-                                  onClick={() => setEditingPaymentOrderId(order.id)}
-                                >
-                                  Cambiar metodo de pago
-                                </button>
-                              </>
-                            )}
-                          </div>
-
+                        <div className="joker-order-meta-section">
                           {order.customerName?.trim().toUpperCase().includes("MOSTRADOR") ? (
                             // Un pedido de mostrador no sale a reparto, asi que
                             // no tiene sentido ofrecer asignarle repartidor --
                             // solo se identifica con un chip propio.
                             <span className="joker-delivery-chip joker-delivery-chip--counter">🏪 Mostrador</span>
-                          ) : (
-                            <div className="joker-order-action-card">
-                              {assigningCourierOrderId === order.id ? (
-                                <span className="joker-delivery-assign">
-                                  {couriers
-                                    .filter((courier) => courier.status === "activo")
-                                    .map((courier) => (
-                                      <button
-                                        key={courier.id}
-                                        type="button"
-                                        className="joker-category-chip"
-                                        disabled={isSavingCourier}
-                                        onClick={() => void handleAssignCourier(order, courier.id)}
-                                      >
-                                        🛵 {courier.name}
-                                      </button>
-                                    ))}
+                          ) : assigningCourierOrderId === order.id ? (
+                            <span className="joker-delivery-assign">
+                              {couriers
+                                .filter((courier) => courier.status === "activo")
+                                .map((courier) => (
                                   <button
+                                    key={courier.id}
                                     type="button"
-                                    className="joker-mini-button"
+                                    className="joker-category-chip"
                                     disabled={isSavingCourier}
-                                    onClick={() => setAssigningCourierOrderId(null)}
+                                    onClick={() => void handleAssignCourier(order, courier.id)}
                                   >
-                                    Cancelar
+                                    🛵 {courier.name}
                                   </button>
-                                </span>
-                              ) : (
-                                <>
-                                  <span className="joker-order-action-card__value">
-                                    Delivery:{" "}
-                                    <strong>
-                                      {order.courierId
-                                        ? (couriers.find((courier) => courier.id === order.courierId)?.name ?? "Repartidor")
-                                        : "Sin designar"}
-                                    </strong>
-                                  </span>
-                                  <button
-                                    type="button"
-                                    className="joker-order-action-card__button"
-                                    onClick={() => setAssigningCourierOrderId(order.id)}
-                                  >
-                                    {order.courierId ? "Cambiar delivery" : "Seleccionar delivery"}
-                                  </button>
-                                </>
-                              )}
-                            </div>
+                                ))}
+                              <button
+                                type="button"
+                                className="joker-mini-button"
+                                disabled={isSavingCourier}
+                                onClick={() => setAssigningCourierOrderId(null)}
+                              >
+                                Cancelar
+                              </button>
+                            </span>
+                          ) : order.courierId ? (
+                            <span className="joker-delivery-chip joker-delivery-chip--assigned">
+                              🛵 {couriers.find((courier) => courier.id === order.courierId)?.name ?? "Repartidor"}
+                              <button
+                                type="button"
+                                className="joker-mini-button"
+                                onClick={() => setAssigningCourierOrderId(order.id)}
+                              >
+                                Cambiar
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="joker-delivery-chip joker-delivery-chip--unassigned"
+                              onClick={() => setAssigningCourierOrderId(order.id)}
+                            >
+                              🛵 Asignar delivery
+                            </button>
                           )}
                         </div>
                       </div>
