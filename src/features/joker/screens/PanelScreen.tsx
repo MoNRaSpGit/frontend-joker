@@ -432,10 +432,21 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
                   }}
                   title="Doble click para editar el pedido"
                 >
-                  <strong>
-                    Pedido #{order.displayNumber}
-                    {!order.items.length ? <span className="joker-cancelled-badge">Eliminado</span> : null}
-                  </strong>
+                  <div className="joker-order-item__title-group">
+                    <strong>
+                      Pedido #{order.displayNumber}
+                      {!order.items.length ? <span className="joker-cancelled-badge">Eliminado</span> : null}
+                    </strong>
+                    {order.items.length ? (
+                      order.courierId ? (
+                        <span className="joker-delivery-chip joker-delivery-chip--assigned joker-delivery-chip--mini">
+                          🛵 {couriers.find((courier) => courier.id === order.courierId)?.name ?? "Repartidor"}
+                        </span>
+                      ) : (
+                        <span className="joker-order-item__excluded">Sin designar</span>
+                      )
+                    ) : null}
+                  </div>
 
                   {order.items.length ? (
                     <button
