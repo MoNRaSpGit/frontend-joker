@@ -416,6 +416,7 @@ export function JokerHomePage() {
           <PanelScreen
             products={products}
             couriers={couriers}
+            clients={clients}
             onAccountEntryRegistered={loadAccountEntries}
             onGoToDelivery={() => goToTab("delivery")}
           />

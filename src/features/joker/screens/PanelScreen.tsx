@@ -4,17 +4,20 @@ import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { EditOrderModal } from "../components/EditOrderModal";
 import { PaymentBreakdownModal } from "../components/PaymentBreakdownModal";
 import { ProfitRateModal } from "../components/ProfitRateModal";
+import { SelectClientModal } from "../components/SelectClientModal";
 import { closeRegister, getRegisterState, listCurrentPeriodOrders, openRegister, updateOrder } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerCourier, JokerOrderRecord, JokerPaymentMethod, JokerProduct, JokerRegisterState } from "../joker.types";
+import type { JokerClient, JokerCourier, JokerOrderRecord, JokerPaymentMethod, JokerProduct, JokerRegisterState } from "../joker.types";
 
 const PROFIT_RATE_STORAGE_KEY = "joker.profitRatePercent";
 const DEFAULT_PROFIT_RATE_PERCENT = 30;
 const PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "cuenta"];
-// "cuenta" queda afuera de la correccion rapida: pasar a/desde cuenta
-// corriente necesita elegir un cliente, no es parte de este ajuste.
-const EDITABLE_PAYMENT_METHODS: Array<"efectivo" | "tarjeta" | "transferencia"> = ["efectivo", "tarjeta", "transferencia"];
+// Las 3 primeras se corrigen con un click directo. "Cuenta" tambien se
+// puede elegir aca, pero abre el modal de elegir cliente en vez de
+// guardar directo (ver handleSelectCuenta/handleConfirmCuenta) -- pasar a
+// cuenta corriente sin elegir a quien no tiene sentido.
+const EDITABLE_PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "cuenta"];
 const MOVEMENTS_PREVIEW_COUNT = 3;
 
 function getStoredProfitRatePercent() {
@@ -69,11 +72,12 @@ function buildRanking(orders: JokerOrderRecord[]) {
 type PanelScreenProps = {
   products: JokerProduct[];
   couriers: JokerCourier[];
+  clients: JokerClient[];
   onAccountEntryRegistered: () => void;
   onGoToDelivery: () => void;
 };
 
-export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGoToDelivery }: PanelScreenProps) {
+export function PanelScreen({ products, couriers, clients, onAccountEntryRegistered, onGoToDelivery }: PanelScreenProps) {
   const [orders, setOrders] = useState<JokerOrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -92,6 +96,7 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
   const [blockedCloseCourierNames, setBlockedCloseCourierNames] = useState<string[] | null>(null);
   const [editingPaymentOrderId, setEditingPaymentOrderId] = useState<number | null>(null);
   const [isSavingPayment, setIsSavingPayment] = useState(false);
+  const [cuentaPickerOrder, setCuentaPickerOrder] = useState<JokerOrderRecord | null>(null);
   const [pendingDeleteOrder, setPendingDeleteOrder] = useState<JokerOrderRecord | null>(null);
   const [isDeletingOrder, setIsDeletingOrder] = useState(false);
 
@@ -224,6 +229,34 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo actualizar el metodo de pago.");
+    } finally {
+      setIsSavingPayment(false);
+    }
+  }
+
+  // Pasar un pedido a "cuenta" es mas delicado (crea un movimiento de
+  // cuenta corriente de verdad), asi que en vez de guardar directo como
+  // los otros metodos, primero abre el modal a elegir el cliente.
+  async function handleConfirmCuenta(clientId: number) {
+    if (!cuentaPickerOrder) return;
+    setIsSavingPayment(true);
+    try {
+      const response = await updateOrder(
+        cuentaPickerOrder.id,
+        cuentaPickerOrder.items,
+        cuentaPickerOrder.orderDate ?? undefined,
+        undefined,
+        undefined,
+        "cuenta",
+        clientId
+      );
+      setOrders((current) => current.map((item) => (item.id === cuentaPickerOrder.id ? response.item : item)));
+      setEditingPaymentOrderId(null);
+      setCuentaPickerOrder(null);
+      toast.success("Metodo de pago actualizado.");
+      onAccountEntryRegistered();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo pasar el pedido a cuenta corriente.");
     } finally {
       setIsSavingPayment(false);
     }
@@ -436,7 +469,13 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
                                 type="button"
                                 className={`joker-category-chip${method === order.paymentMethod ? " is-active" : ""}`}
                                 disabled={isSavingPayment}
-                                onClick={() => void handleChangePaymentMethod(order, method)}
+                                onClick={() => {
+                                  if (method === "cuenta") {
+                                    setCuentaPickerOrder(order);
+                                    return;
+                                  }
+                                  void handleChangePaymentMethod(order, method);
+                                }}
                               >
                                 {JOKER_PAYMENT_METHOD_LABELS[method]}
                               </button>
@@ -635,6 +674,17 @@ export function PanelScreen({ products, couriers, onAccountEntryRegistered, onGo
             setBlockedCloseCourierNames(null);
             onGoToDelivery();
           }}
+        />
+      ) : null}
+
+      {cuentaPickerOrder ? (
+        <SelectClientModal
+          title="Pasar a cuenta corriente"
+          hint={`Pedido #${cuentaPickerOrder.displayNumber} · ${formatPrice(cuentaPickerOrder.total)}`}
+          clients={clients}
+          isSubmitting={isSavingPayment}
+          onClose={() => setCuentaPickerOrder(null)}
+          onConfirm={(clientId) => void handleConfirmCuenta(clientId)}
         />
       ) : null}
     </>

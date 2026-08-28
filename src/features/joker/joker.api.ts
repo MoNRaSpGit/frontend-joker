@@ -133,21 +133,21 @@ export type UpdateOrderItemInput = {
 
 // Recalcula el total solo, nunca se manda a mano; el backend ajusta el
 // stock automaticamente por la diferencia entre lo viejo y lo nuevo.
-// paymentMethod nunca puede ser "cuenta" aca (pasar a/desde cuenta
-// corriente necesita elegir un cliente, no es parte de esta correccion
-// rapida) -- el backend lo rechaza si se manda.
+// paymentMethod puede pasar a "cuenta" (correccion rapida desde el Panel),
+// pero solo junto con clientId -- el backend lo rechaza si falta.
 export async function updateOrder(
   orderId: number,
   items: UpdateOrderItemInput[],
   orderDate?: string,
   courierId?: number,
   deliveryCost?: number,
-  paymentMethod?: "efectivo" | "tarjeta" | "transferencia"
+  paymentMethod?: "efectivo" | "tarjeta" | "transferencia" | "cuenta",
+  clientId?: number
 ): Promise<OrderResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders/${orderId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items, orderDate, courierId, deliveryCost, paymentMethod })
+    body: JSON.stringify({ items, orderDate, courierId, deliveryCost, paymentMethod, clientId })
   });
   return readJson<OrderResponse>(response);
 }

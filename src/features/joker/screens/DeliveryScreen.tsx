@@ -284,7 +284,9 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
         <ul className="joker-order-list">
           {orders.map((order) => (
             <li key={order.id} className="joker-order-item joker-order-item--flat">
-              <span>Pedido #{order.displayNumber}</span>
+              <span>
+                Pedido #{order.displayNumber} · {formatPrice(order.total)}
+              </span>
               <span className={order.deliveryCost ? "joker-delivery-cost-tag" : "joker-order-item__excluded"}>
                 {order.deliveryCost ? `Envio ${formatPrice(order.deliveryCost)}` : "Sin costo de envio"}
               </span>
