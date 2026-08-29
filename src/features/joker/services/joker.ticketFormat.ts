@@ -302,13 +302,52 @@ function buildCompactTicketLines(
   return lines;
 }
 
-// Comprobante de pago de cuenta corriente: se usa desde "Pago" e
-// "Imprimir" en el detalle del cliente. Muestra el listado de consumos
-// pendientes y el total. No usa forma de pago (no aplica aca: esto es lo
-// que se esta saldando, no un pedido nuevo).
-export function buildAccountStatementTicketLines(client: JokerClient, entries: JokerAccountEntry[]) {
+// Un movimiento del ciclo actual de cuenta corriente (desde la ultima vez
+// que el cliente quedo en $0): una compra suma al saldo, un pago resta.
+// balanceAfter es el saldo que quedaba justo despues de ese movimiento --
+// asi el ticket cuenta la historia completa de por que el saldo es el que
+// es, en vez de mostrar solo el numero final.
+type JokerAccountCycleMovement =
+  | { type: "compra"; date: string; amount: number; items: JokerAccountEntry["items"]; balanceAfter: number }
+  | { type: "pago"; date: string; amount: number; coveredEntries: JokerAccountPayment["coveredEntries"]; balanceAfter: number };
+
+// Junta compras (boletas abiertas) y pagos (solo los abiertos, del ciclo
+// actual) en una sola linea de tiempo ordenada por fecha, con el saldo
+// corriente despues de cada uno. No hace falta filtrar por "ciclo": las
+// boletas abiertas y los pagos abiertos SON el ciclo actual (un pago total
+// archiva las boletas y cierra los pagos, asi que ya no aparecen aca).
+function buildAccountCycleMovements(entries: JokerAccountEntry[], openPayments: JokerAccountPayment[]): JokerAccountCycleMovement[] {
+  const compras: JokerAccountCycleMovement[] = entries.map((entry) => ({
+    type: "compra",
+    date: entry.createdAt,
+    amount: entry.total,
+    items: entry.items,
+    balanceAfter: 0
+  }));
+  const pagos: JokerAccountCycleMovement[] = openPayments.map((payment) => ({
+    type: "pago",
+    date: payment.createdAt,
+    amount: payment.amount,
+    coveredEntries: payment.coveredEntries,
+    balanceAfter: 0
+  }));
+
+  const merged = [...compras, ...pagos].sort((a, b) => a.date.localeCompare(b.date));
+
+  let balance = 0;
+  return merged.map((movement) => {
+    balance = Math.round((balance + (movement.type === "compra" ? movement.amount : -movement.amount)) * 100) / 100;
+    return { ...movement, balanceAfter: balance };
+  });
+}
+
+// Encabezado + linea de tiempo de movimientos + saldo final, compartido
+// entre el comprobante de cuenta corriente ("Imprimir") y el de un pago
+// puntual ("Pago") -- las dos situaciones cuentan la misma historia
+// (compras y pagos del ciclo actual), solo cambia el titulo.
+function buildAccountCycleTicketLines(client: JokerClient, title: string, movements: JokerAccountCycleMovement[]) {
   const lines: string[] = [];
-  const total = entries.reduce((sum, entry) => sum + entry.total, 0);
+  const currentBalance = movements.length ? movements[movements.length - 1].balanceAfter : 0;
 
   lines.push(ESC_INIT);
   lines.push(ALIGN_CENTER);
@@ -329,14 +368,13 @@ export function buildAccountStatementTicketLines(client: JokerClient, entries: J
   lines.push(`${decorativeBorder()}\n`);
 
   lines.push(BOLD_ON);
-  lines.push("Comprobante de cuenta corriente\n");
+  lines.push(`${title}\n`);
   lines.push(BOLD_OFF);
   lines.push(`${divider()}\n`);
 
-  if (entries.length) {
-    entries.forEach((entry, index) => {
-      const dateSource = entry.orderDate ? new Date(`${entry.orderDate}T00:00:00`) : new Date(entry.createdAt);
-      const dateLabel = dateSource.toLocaleDateString("es-UY", {
+  if (movements.length) {
+    movements.forEach((movement, index) => {
+      const dateLabel = new Date(movement.date).toLocaleDateString("es-UY", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric"
@@ -346,35 +384,34 @@ export function buildAccountStatementTicketLines(client: JokerClient, entries: J
       lines.push(`${dateLabel}\n`);
       lines.push(BOLD_OFF);
 
-      // unitPrice puede faltar en consumos viejos, guardados antes de que el
-      // ticket empezara a mostrar precio por producto: en ese caso se listan
-      // los productos sin precio (como antes) y se muestra solo el total del
-      // consumo, en vez de inventar un precio en $0 por linea.
-      const hasPrices = entry.items.every((item) => item.unitPrice != null);
-      entry.items.forEach((item) => {
-        if (hasPrices) {
-          lines.push(`${rightAlignedLine(`  ${item.quantity}x ${item.productName} `, formatMoney(item.unitPrice * item.quantity))}\n`);
-        } else {
-          lines.push(`  ${item.quantity}x ${item.productName}\n`);
-        }
-      });
-      if (!hasPrices || entry.items.length > 1) {
-        lines.push(BOLD_ON);
-        lines.push(`${rightAlignedLine(hasPrices ? "Subtotal " : "", formatMoney(entry.total))}\n`);
-        lines.push(BOLD_OFF);
+      if (movement.type === "compra") {
+        // unitPrice puede faltar en consumos viejos, guardados antes de
+        // que el ticket empezara a mostrar precio por producto.
+        const hasPrices = movement.items.every((item) => item.unitPrice != null);
+        movement.items.forEach((item) => {
+          if (hasPrices) {
+            lines.push(`${rightAlignedLine(`  ${item.quantity}x ${item.productName} `, formatMoney(item.unitPrice * item.quantity))}\n`);
+          } else {
+            lines.push(`  ${item.quantity}x ${item.productName}\n`);
+          }
+        });
+      } else {
+        lines.push(`${rightAlignedLine("  Pago ", formatMoney(movement.amount))}\n`);
       }
 
-      if (index < entries.length - 1) {
+      lines.push(`${rightAlignedLine("  Saldo ", formatMoney(movement.balanceAfter))}\n`);
+
+      if (index < movements.length - 1) {
         lines.push(`${divider()}\n`);
       }
     });
   } else {
-    lines.push("Sin consumos pendientes.\n");
+    lines.push("Sin movimientos pendientes.\n");
   }
 
   lines.push(`${decorativeBorder()}\n`);
   lines.push(BOLD_ON);
-  lines.push(`${rightAlignedLine("Total ", formatMoney(total))}\n`);
+  lines.push(`${rightAlignedLine("Saldo actual ", formatMoney(Math.max(currentBalance, 0)))}\n`);
   lines.push(BOLD_OFF);
   lines.push("\n");
 
@@ -390,66 +427,26 @@ export function buildAccountStatementTicketLines(client: JokerClient, entries: J
   return lines;
 }
 
-// Comprobante de un pago (parcial o total) de cuenta corriente. No repite
-// el detalle de productos de cada boleta (eso ya lo tiene el comprobante
-// de cuenta corriente) -- solo dice cuanto se pago, a que boletas
-// correspondio y cuanto queda pendiente, para no imprimir de mas.
+// Comprobante de cuenta corriente ("Imprimir" en el detalle del cliente):
+// no toca nada, solo muestra el historial completo del ciclo actual
+// (compras y pagos) y el saldo real de hoy -- antes mostraba la suma
+// bruta de las boletas, sin restar los pagos ya hechos.
+export function buildAccountStatementTicketLines(client: JokerClient, entries: JokerAccountEntry[], openPayments: JokerAccountPayment[]) {
+  const movements = buildAccountCycleMovements(entries, openPayments);
+  return buildAccountCycleTicketLines(client, "Comprobante de cuenta corriente", movements);
+}
+
+// Comprobante de un pago (parcial o total) de cuenta corriente: mismo
+// historial que el de arriba (compras + pagos del ciclo, hasta este pago
+// inclusive), asi queda claro de donde sale el saldo actual.
 export function buildAccountPaymentTicketLines(
   client: JokerClient,
-  payment: JokerAccountPayment,
-  balanceRemaining: number
+  entriesBeforePayment: JokerAccountEntry[],
+  openPaymentsIncludingNew: JokerAccountPayment[]
 ) {
-  const lines: string[] = [];
-
-  lines.push(ESC_INIT);
-  lines.push(ALIGN_CENTER);
-  lines.push(BOLD_ON, DOUBLE_SIZE_ON);
-  lines.push(`${STORE_NAME}\n`);
-  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-  lines.push(`${STORE_ADDRESS}\n`);
-  lines.push(`${STORE_PHONE}\n`);
-  lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
-  lines.push(`${INTERNAL_USE_NOTE}\n`);
-
-  lines.push(ALIGN_LEFT);
-  lines.push(`${decorativeBorder()}\n`);
-  lines.push(DOUBLE_SIZE_ON);
-  lines.push(`Cliente: ${client.name}\n`);
-  lines.push(DOUBLE_SIZE_OFF);
-  lines.push(`${decorativeBorder()}\n`);
-
-  lines.push(BOLD_ON);
-  lines.push(balanceRemaining <= 0 ? "Pago total de cuenta corriente\n" : "Pago parcial de cuenta corriente\n");
-  lines.push(BOLD_OFF);
-  lines.push(`${divider()}\n`);
-
-  lines.push(BOLD_ON);
-  lines.push(`${rightAlignedLine("Pago recibido ", formatMoney(payment.amount))}\n`);
-  lines.push(BOLD_OFF);
-
-  if (payment.coveredEntries.length) {
-    lines.push("Corresponde a:\n");
-    payment.coveredEntries.forEach((covered) => {
-      lines.push(`${rightAlignedLine(`  Boleta #${covered.entryId} `, formatMoney(covered.amountApplied))}\n`);
-    });
-  }
-
-  lines.push(`${divider()}\n`);
-  lines.push(BOLD_ON);
-  lines.push(`${rightAlignedLine("Saldo restante ", formatMoney(Math.max(balanceRemaining, 0)))}\n`);
-  lines.push(BOLD_OFF);
-  lines.push("\n");
-
-  lines.push(ALIGN_CENTER);
-  lines.push(BOLD_ON, TALL_SIZE_ON);
-  lines.push(`${FOOTER_MESSAGE}\n`);
-  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-
-  lines.push("\n\n\n");
-  lines.push(ALIGN_LEFT);
-  lines.push(CUT_PAPER);
-
-  return lines;
+  const movements = buildAccountCycleMovements(entriesBeforePayment, openPaymentsIncludingNew);
+  const isFullPayment = !movements.length || movements[movements.length - 1].balanceAfter <= 0;
+  return buildAccountCycleTicketLines(client, isFullPayment ? "Pago total de cuenta corriente" : "Pago parcial de cuenta corriente", movements);
 }
 
 // Resumen del turno de un repartidor: caja inicial, pedidos entregados

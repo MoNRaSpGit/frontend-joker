@@ -138,6 +138,11 @@ export function CuentaCorrienteScreen({
     ? accountEntries.filter((entry) => entry.clientId === selectedClient.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     : [];
   const selectedClientDebt = selectedClient ? debtFor(selectedClient.id) : 0;
+  // Pagos abiertos del cliente seleccionado (ciclo actual) -- para armar
+  // el historial de compras+pagos de los comprobantes. payments ya trae
+  // TODOS los pagos del cliente (abiertos y cerrados), aca se filtran los
+  // abiertos.
+  const selectedClientOpenPayments = payments.filter((payment) => payment.settledAt === null);
 
   async function handleAddClient(name: string, phone?: string, address?: string) {
     await onAddClient(name, phone, address);
@@ -162,13 +167,15 @@ export function CuentaCorrienteScreen({
     }
   }
 
-  // Solo imprime, no toca el historial del cliente.
+  // Solo imprime, no toca el historial del cliente. Muestra el historial
+  // completo del ciclo actual (compras + pagos) y el saldo real de hoy --
+  // no la suma bruta de boletas sin restar lo ya pagado.
   async function handlePrintOnly() {
     if (!selectedClient) return;
 
     setIsPrinting(true);
     try {
-      await printAccountStatementTicket(selectedClient, selectedClientEntries);
+      await printAccountStatementTicket(selectedClient, selectedClientEntries, selectedClientOpenPayments);
       toast.success("Comprobante impreso.");
     } catch (printError) {
       toast.error(printError instanceof Error ? `No se pudo imprimir: ${printError.message}` : "No se pudo imprimir el comprobante.");
@@ -178,22 +185,25 @@ export function CuentaCorrienteScreen({
   }
 
   // Pago (parcial o total, segun el monto que se ingrese en el modal): se
-  // registra primero, y con el saldo restante que devuelve el backend se
-  // imprime el comprobante -- si el monto cubrio todo, el backend ya
-  // archivo las boletas solo (no hace falta un flujo aparte para "pago
-  // total", es el mismo con el monto igual al saldo completo).
+  // registra primero, y el comprobante muestra el mismo historial de
+  // compras+pagos del ciclo, hasta este pago inclusive -- si el monto
+  // cubrio todo, el backend ya archivo las boletas solo (no hace falta un
+  // flujo aparte para "pago total", es el mismo con el monto igual al
+  // saldo completo).
   async function handleConfirmPayment(amount: number) {
     if (!selectedClient) return;
 
     setIsSubmittingPayment(true);
     try {
+      const entriesBeforePayment = selectedClientEntries;
+      const openPaymentsBeforePayment = selectedClientOpenPayments;
       const payment = await onCreateAccountPayment(selectedClient.id, amount);
       const balanceRemaining = Math.max(Math.round((selectedClientDebt - amount) * 100) / 100, 0);
       setIsPayingAccount(false);
       toast.success(balanceRemaining > 0 ? "Pago parcial registrado." : "Pago total registrado.");
 
       try {
-        await printAccountPaymentTicket(selectedClient, payment, balanceRemaining);
+        await printAccountPaymentTicket(selectedClient, entriesBeforePayment, [...openPaymentsBeforePayment, payment]);
       } catch (printError) {
         toast.error(
           printError instanceof Error ? `El pago se guardo pero no se pudo imprimir: ${printError.message}` : "El pago se guardo pero no se pudo imprimir."

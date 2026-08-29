@@ -31,14 +31,18 @@ export async function printOrderTicket(
   return { method: "qz" as const };
 }
 
-export async function printAccountStatementTicket(client: JokerClient, entries: JokerAccountEntry[]) {
-  const lines = buildAccountStatementTicketLines(client, entries);
+export async function printAccountStatementTicket(client: JokerClient, entries: JokerAccountEntry[], openPayments: JokerAccountPayment[]) {
+  const lines = buildAccountStatementTicketLines(client, entries, openPayments);
   await printRawLinesByQz(lines);
   return { method: "qz" as const };
 }
 
-export async function printAccountPaymentTicket(client: JokerClient, payment: JokerAccountPayment, balanceRemaining: number) {
-  const lines = buildAccountPaymentTicketLines(client, payment, balanceRemaining);
+export async function printAccountPaymentTicket(
+  client: JokerClient,
+  entriesBeforePayment: JokerAccountEntry[],
+  openPaymentsIncludingNew: JokerAccountPayment[]
+) {
+  const lines = buildAccountPaymentTicketLines(client, entriesBeforePayment, openPaymentsIncludingNew);
   await printRawLinesByQz(lines);
   return { method: "qz" as const };
 }
