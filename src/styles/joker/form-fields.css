@@ -1,0 +1,88 @@
+/* ---------- Form fields ---------- */
+
+.joker-form-field {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 1rem;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--joker-muted);
+}
+
+.joker-form-field input,
+.joker-form-field select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--joker-border);
+  border-radius: var(--joker-radius-sm);
+  background: #f7f7f7;
+  color: var(--joker-text);
+  font-weight: 400;
+  font-size: 0.98rem;
+}
+
+.joker-form-field input:focus,
+.joker-search-input:focus,
+.joker-detail-input:focus {
+  outline: none;
+  border-color: var(--joker-accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(107, 27, 35, 0.14);
+}
+
+.joker-search-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--joker-border);
+  border-radius: var(--joker-radius-sm);
+  background: #f7f7f7;
+  font-size: 0.98rem;
+}
+
+.joker-category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.joker-category-chip {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid var(--joker-border);
+  border-radius: 999px;
+  background: #f7f7f7;
+  color: var(--joker-text);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.joker-category-chip:hover {
+  background: #eeeeee;
+}
+
+.joker-category-chip.is-active {
+  border-color: transparent;
+  background: #6b1b23;
+  color: #fff;
+}
+
+.joker-category-chip--efectivo.is-active {
+  background: #2f5233;
+}
+
+.joker-category-chip--tarjeta.is-active {
+  background: #1f4e79;
+}
+
+.joker-category-chip--transferencia.is-active {
+  background: #5b3a8e;
+}
+
+.joker-category-chip--cuenta.is-active {
+  background: #6b1b23;
+}

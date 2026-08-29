@@ -1,0 +1,50 @@
+/* ---------- Shell / content ---------- */
+
+.joker-shell {
+  width: min(880px, 100%);
+  margin: 0 auto;
+  padding: 24px 16px 56px;
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+.joker-columns-3 {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+@media (min-width: 720px) {
+  .joker-columns-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.joker-shell--wide {
+  width: min(1400px, 100%);
+}
+
+.joker-cc-layout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+@media (min-width: 860px) {
+  .joker-cc-layout {
+    grid-template-columns: minmax(300px, 360px) 1fr;
+  }
+}
+
+.joker-panel {
+  padding: 20px;
+  border: 1px solid var(--joker-border);
+  border-radius: var(--joker-radius-lg);
+  background: var(--joker-surface);
+  box-shadow: var(--joker-shadow);
+  display: grid;
+  gap: 16px;
+}

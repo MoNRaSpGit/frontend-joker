@@ -1,0 +1,80 @@
+/* ---------- Buttons ---------- */
+
+.joker-button {
+  flex: 1;
+  min-height: 46px;
+  border-radius: var(--joker-radius-sm);
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.joker-button--auto {
+  flex: none;
+}
+
+.joker-button--ghost {
+  border: 1px solid var(--joker-border);
+  background: #fff;
+  color: var(--joker-text);
+}
+
+.joker-button--ghost:hover {
+  background: #f5f5f5;
+}
+
+.joker-button--primary {
+  border: none;
+  background: var(--joker-accent);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(107, 27, 35, 0.32);
+}
+
+.joker-button--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(107, 27, 35, 0.4);
+}
+
+.joker-button--danger {
+  border: none;
+  background: var(--joker-danger);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(214, 31, 38, 0.32);
+}
+
+.joker-button--danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(214, 31, 38, 0.4);
+}
+
+.joker-button--dark {
+  border: none;
+  background: #111111;
+  color: #fff;
+}
+
+.joker-button--dark:hover {
+  background: #2a2a2a;
+}
+
+.joker-button--primary:disabled,
+.joker-button--dark:disabled,
+.joker-button--ghost:disabled,
+.joker-button--danger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.joker-button--small {
+  padding: 6px 12px;
+  font-size: 12px;
+  box-shadow: none;
+}
+
+.joker-product-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}

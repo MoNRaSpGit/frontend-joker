@@ -1,0 +1,61 @@
+:root {
+  --joker-bg: #ffffff;
+  --joker-surface: #ffffff;
+  --joker-border: #dcdcdc;
+  --joker-text: #111111;
+  --joker-muted: #6f6f6f;
+  --joker-accent: #6b1b23;
+  --joker-accent-dark: #4a1218;
+  --joker-accent-2: #6b1b23;
+  --joker-danger: #d61f26;
+  --joker-success: #111111;
+  --joker-radius-lg: 20px;
+  --joker-radius-md: 14px;
+  --joker-radius-sm: 10px;
+  --joker-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  --joker-sidebar-width: 68px;
+
+  font-family: Inter, "Segoe UI", sans-serif;
+  color: var(--joker-text);
+  background: var(--joker-bg);
+}
+
+@media (min-width: 860px) {
+  :root {
+    --joker-sidebar-width: 208px;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: var(--joker-bg);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.joker-app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.joker-app--with-sidebar {
+  padding-right: var(--joker-sidebar-width);
+  transition: padding-right 0.15s ease;
+}
