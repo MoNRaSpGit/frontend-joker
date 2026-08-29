@@ -192,6 +192,30 @@ export type JokerAccountSettlement = {
   settledAt: string;
 };
 
+// A que boleta(s) correspondio un pago (calculado por antiguedad al
+// momento de registrarlo) -- para mostrar "este pago cubrio tal boleta"
+// en vez de solo un monto suelto.
+export type JokerAccountPaymentCoveredEntry = {
+  entryId: number;
+  orderId: number | null;
+  entryTotal: number;
+  amountApplied: number;
+};
+
+// Pago (parcial o total) de cuenta corriente. Nunca se borra -- queda de
+// historial permanente. settledAt no-null = este pago fue parte de un
+// ciclo que termino en pago total (las boletas de ese ciclo ya se
+// archivaron); null = el ciclo sigue abierto y este pago todavia cuenta
+// para el saldo actual del cliente.
+export type JokerAccountPayment = {
+  id: number;
+  clientId: number;
+  amount: number;
+  coveredEntries: JokerAccountPaymentCoveredEntry[];
+  createdAt: string;
+  settledAt: string | null;
+};
+
 export type JokerStockItemCategory = "comida" | "bebida" | "otro";
 
 export type JokerStockItem = {

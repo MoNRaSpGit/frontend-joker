@@ -9,22 +9,32 @@ import { PrinterSettingsModal } from "./components/PrinterSettingsModal";
 import {
   acceptOrder,
   createAccountEntry,
+  createAccountPayment,
   createClient,
   deleteClient,
   enableCourier,
   listAccountEntries,
   listClients,
   listCouriers,
+  listOpenAccountPayments,
   listPendingOrders,
   listProducts,
   rejectOrder,
-  settleAccount,
   settleCourier,
   updateCourier
 } from "./joker.api";
 import { printOrderTicket } from "./services/joker.print";
 import { getPreferredPrinterName } from "./services/joker.qzPrint";
-import type { JokerAccountEntry, JokerClient, JokerCourier, JokerOrderItem, JokerOrderRecord, JokerProduct, JokerRole } from "./joker.types";
+import type {
+  JokerAccountEntry,
+  JokerAccountPayment,
+  JokerClient,
+  JokerCourier,
+  JokerOrderItem,
+  JokerOrderRecord,
+  JokerProduct,
+  JokerRole
+} from "./joker.types";
 import { CuentaCorrienteScreen } from "./screens/CuentaCorrienteScreen";
 import { DeliveryScreen } from "./screens/DeliveryScreen";
 import { MesScreen } from "./screens/MesScreen";
@@ -79,6 +89,10 @@ export function JokerHomePage() {
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [clientsLoadError, setClientsLoadError] = useState<string | null>(null);
   const [accountEntries, setAccountEntries] = useState<JokerAccountEntry[]>([]);
+  // Solo los pagos abiertos (no los ya cerrados por un pago total viejo):
+  // es lo que hace falta, junto con accountEntries, para calcular "Debe
+  // $X" de cada cliente en el listado.
+  const [accountPayments, setAccountPayments] = useState<JokerAccountPayment[]>([]);
   const [couriers, setCouriers] = useState<JokerCourier[]>([]);
   const [pendingOrders, setPendingOrders] = useState<JokerOrderRecord[]>([]);
   // El pop-up de un pedido pendiente no se abre solo -- cada pedido tiene
@@ -134,9 +148,13 @@ export function JokerHomePage() {
     void loadProducts();
     void loadClients();
     void loadAccountEntries();
+    void loadAccountPayments();
     void loadCouriers();
 
-    const intervalId = window.setInterval(() => void loadAccountEntries(), 15000);
+    const intervalId = window.setInterval(() => {
+      void loadAccountEntries();
+      void loadAccountPayments();
+    }, 15000);
     return () => window.clearInterval(intervalId);
   }, []);
 
@@ -198,6 +216,15 @@ export function JokerHomePage() {
     }
   }
 
+  async function loadAccountPayments() {
+    try {
+      const result = await listOpenAccountPayments();
+      setAccountPayments(result.items);
+    } catch {
+      // Mismo criterio que loadAccountEntries: se reintenta solo.
+    }
+  }
+
   async function loadCouriers() {
     try {
       const result = await listCouriers();
@@ -253,15 +280,17 @@ export function JokerHomePage() {
   // cascada del lado del backend), asi que hay que refrescar los dos.
   async function handleDeleteClient(clientId: number) {
     await deleteClient(clientId);
-    await Promise.all([loadClients(), loadAccountEntries()]);
+    await Promise.all([loadClients(), loadAccountEntries(), loadAccountPayments()]);
   }
 
-  // "Pago": salda la cuenta del cliente, pero a diferencia de eliminar el
-  // cliente, el cliente en si se queda (solo se borra su historial de
-  // consumos, que ya se cobro).
-  async function handleSettleAccount(clientId: number) {
-    await settleAccount(clientId);
-    await loadAccountEntries();
+  // Pago parcial (o total, si el monto cubre todo el saldo) de cuenta
+  // corriente -- no borra boletas, ver JokerAccountService#createAccountPayment.
+  // Si el pago cubrio todo, el backend ya archivo las boletas solo, por
+  // eso se refresca tambien accountEntries.
+  async function handleCreateAccountPayment(clientId: number, amount: number) {
+    const response = await createAccountPayment(clientId, amount);
+    await Promise.all([loadAccountEntries(), loadAccountPayments()]);
+    return response.item;
   }
 
   // Acepta un pedido pendiente de mostrador: recien aca se le asigna el
@@ -427,9 +456,10 @@ export function JokerHomePage() {
             clientsLoadError={clientsLoadError}
             onReloadClients={loadClients}
             accountEntries={accountEntries}
+            accountPayments={accountPayments}
             onAddClient={handleAddClient}
             onDeleteClient={handleDeleteClient}
-            onSettleAccount={handleSettleAccount}
+            onCreateAccountPayment={handleCreateAccountPayment}
           />
         ) : activeTab === "stock" ? (
           <StockScreen products={products} />

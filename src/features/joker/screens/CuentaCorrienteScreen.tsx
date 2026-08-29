@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { AccountPaymentModal } from "../components/AccountPaymentModal";
 import { AddClientModal } from "../components/AddClientModal";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
-import { getAccountSettlements } from "../joker.api";
-import { printAccountStatementTicket } from "../services/joker.print";
-import type { JokerAccountEntry, JokerAccountSettlement, JokerClient } from "../joker.types";
+import { getAccountPayments, getAccountSettlements } from "../joker.api";
+import { printAccountPaymentTicket, printAccountStatementTicket } from "../services/joker.print";
+import type { JokerAccountEntry, JokerAccountPayment, JokerAccountSettlement, JokerClient } from "../joker.types";
 
 type CuentaCorrienteScreenProps = {
   clients: JokerClient[];
@@ -12,9 +13,10 @@ type CuentaCorrienteScreenProps = {
   clientsLoadError: string | null;
   onReloadClients: () => void;
   accountEntries: JokerAccountEntry[];
+  accountPayments: JokerAccountPayment[];
   onAddClient: (name: string, phone?: string, address?: string) => Promise<void>;
   onDeleteClient: (clientId: number) => Promise<void>;
-  onSettleAccount: (clientId: number) => Promise<void>;
+  onCreateAccountPayment: (clientId: number, amount: number) => Promise<JokerAccountPayment>;
 };
 
 function formatPrice(amount: number) {
@@ -48,28 +50,55 @@ export function CuentaCorrienteScreen({
   clientsLoadError,
   onReloadClients,
   accountEntries,
+  accountPayments,
   onAddClient,
   onDeleteClient,
-  onSettleAccount
+  onCreateAccountPayment
 }: CuentaCorrienteScreenProps) {
   const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [pendingDeleteClient, setPendingDeleteClient] = useState<JokerClient | null>(null);
   const [isDeletingClient, setIsDeletingClient] = useState(false);
-  const [isConfirmingPago, setIsConfirmingPago] = useState(false);
+  const [isPayingAccount, setIsPayingAccount] = useState(false);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [showSettlements, setShowSettlements] = useState(false);
   const [settlements, setSettlements] = useState<JokerAccountSettlement[]>([]);
   const [isLoadingSettlements, setIsLoadingSettlements] = useState(false);
   const [settlementsError, setSettlementsError] = useState<string | null>(null);
+  const [payments, setPayments] = useState<JokerAccountPayment[]>([]);
+  const [isLoadingPayments, setIsLoadingPayments] = useState(false);
 
   // Al cambiar de cliente se cierra/limpia el historial de pagos anteriores
-  // (es bajo demanda, no se precarga para cada cliente de la lista).
+  // (es bajo demanda, no se precarga para cada cliente de la lista), y se
+  // recarga el historial de pagos de cuenta corriente (ese si siempre
+  // visible, no bajo demanda: es la parte "prolijita" que pidio el cliente).
   useEffect(() => {
     setShowSettlements(false);
     setSettlements([]);
     setSettlementsError(null);
+    setPayments([]);
+
+    if (selectedClientId === null) return;
+
+    let cancelled = false;
+    setIsLoadingPayments(true);
+    getAccountPayments(selectedClientId)
+      .then((result) => {
+        if (!cancelled) setPayments(result.items);
+      })
+      .catch(() => {
+        // Silencioso: se reintenta solo la proxima vez que se seleccione
+        // el cliente.
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingPayments(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [selectedClientId]);
 
   async function handleToggleSettlements() {
@@ -93,8 +122,14 @@ export function CuentaCorrienteScreen({
     }
   }
 
+  // El saldo nunca se guarda como un numero suelto: siempre es la suma de
+  // boletas abiertas menos la suma de pagos abiertos de ese cliente. Asi
+  // nunca puede desincronizarse -- si sumas a mano lo que se ve en
+  // pantalla, siempre da lo mismo que calcula esto.
   function debtFor(clientId: number) {
-    return accountEntries.filter((entry) => entry.clientId === clientId).reduce((sum, entry) => sum + entry.total, 0);
+    const totalEntries = accountEntries.filter((entry) => entry.clientId === clientId).reduce((sum, entry) => sum + entry.total, 0);
+    const totalPaid = accountPayments.filter((payment) => payment.clientId === clientId).reduce((sum, payment) => sum + payment.amount, 0);
+    return Math.max(Math.round((totalEntries - totalPaid) * 100) / 100, 0);
   }
 
   const filteredClients = clients.filter((client) => client.name.toLowerCase().includes(searchQuery.trim().toLowerCase()));
@@ -142,21 +177,36 @@ export function CuentaCorrienteScreen({
     }
   }
 
-  // "Pago": imprime el comprobante y, si sale bien, salda la cuenta
-  // (se borra el historial de consumos que ya se cobro).
-  async function handleConfirmPago() {
+  // Pago (parcial o total, segun el monto que se ingrese en el modal): se
+  // registra primero, y con el saldo restante que devuelve el backend se
+  // imprime el comprobante -- si el monto cubrio todo, el backend ya
+  // archivo las boletas solo (no hace falta un flujo aparte para "pago
+  // total", es el mismo con el monto igual al saldo completo).
+  async function handleConfirmPayment(amount: number) {
     if (!selectedClient) return;
 
-    setIsPrinting(true);
+    setIsSubmittingPayment(true);
     try {
-      await printAccountStatementTicket(selectedClient, selectedClientEntries);
-      await onSettleAccount(selectedClient.id);
-      toast.success("Pago confirmado.");
-      setIsConfirmingPago(false);
-    } catch (printError) {
-      toast.error(printError instanceof Error ? `No se pudo imprimir: ${printError.message}` : "No se pudo imprimir el comprobante.");
+      const payment = await onCreateAccountPayment(selectedClient.id, amount);
+      const balanceRemaining = Math.max(Math.round((selectedClientDebt - amount) * 100) / 100, 0);
+      setIsPayingAccount(false);
+      toast.success(balanceRemaining > 0 ? "Pago parcial registrado." : "Pago total registrado.");
+
+      try {
+        await printAccountPaymentTicket(selectedClient, payment, balanceRemaining);
+      } catch (printError) {
+        toast.error(
+          printError instanceof Error ? `El pago se guardo pero no se pudo imprimir: ${printError.message}` : "El pago se guardo pero no se pudo imprimir."
+        );
+      }
+
+      // Refresca el historial de pagos de este cliente (el nuevo pago que
+      // se acaba de hacer, y si cerro el ciclo, que las boletas de la
+      // izquierda tambien se hayan actualizado ya llega solo por props).
+      const refreshed = await getAccountPayments(selectedClient.id);
+      setPayments(refreshed.items);
     } finally {
-      setIsPrinting(false);
+      setIsSubmittingPayment(false);
     }
   }
 
@@ -247,8 +297,8 @@ export function CuentaCorrienteScreen({
               <button
                 type="button"
                 className="joker-button joker-button--primary"
-                onClick={() => setIsConfirmingPago(true)}
-                disabled={isPrinting || selectedClientEntries.length === 0}
+                onClick={() => setIsPayingAccount(true)}
+                disabled={isPrinting || selectedClientDebt <= 0}
               >
                 Pago
               </button>
@@ -286,6 +336,38 @@ export function CuentaCorrienteScreen({
               </ul>
             ) : (
               <p className="joker-empty-state">Este cliente todavia no tiene consumos en cuenta.</p>
+            )}
+
+            <div className="joker-panel__heading top-gap">
+              <p className="joker-eyebrow">Pagos</p>
+            </div>
+
+            {isLoadingPayments ? (
+              <p className="joker-empty-state">Cargando pagos...</p>
+            ) : payments.length ? (
+              <ul className="joker-cc-history">
+                {payments.map((payment) => (
+                  <li key={payment.id} className="joker-cc-history-row">
+                    <div className="joker-cc-history-row__head">
+                      <strong className="joker-amount-plus">-{formatPrice(payment.amount)}</strong>
+                      <span className="joker-order-item__excluded">{formatDateTime(payment.createdAt)}</span>
+                    </div>
+                    {payment.coveredEntries.length ? (
+                      <ul className="joker-cc-history-row__items">
+                        {payment.coveredEntries.map((covered, index) => (
+                          <li key={index}>
+                            Boleta del {formatDateTime(selectedClientEntries.find((entry) => entry.id === covered.entryId)?.createdAt ?? payment.createdAt)}
+                            {": "}
+                            {formatPrice(covered.amountApplied)} de {formatPrice(covered.entryTotal)}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="joker-empty-state">Este cliente todavia no hizo pagos.</p>
             )}
 
             <div className="joker-panel__heading joker-panel__heading--row top-gap">
@@ -351,16 +433,13 @@ export function CuentaCorrienteScreen({
         />
       ) : null}
 
-      {isConfirmingPago && selectedClient ? (
-        <ConfirmDeleteModal
-          title="Confirmar pago"
-          message={`Confirmar el pago de "${selectedClient.name}" por ${formatPrice(selectedClientDebt)}? Se imprime el comprobante y se borra su historial de cuenta corriente.`}
-          confirmLabel="Confirmar pago"
-          confirmLabelBusy="Imprimiendo..."
-          variant="primary"
-          isDeleting={isPrinting}
-          onCancel={() => setIsConfirmingPago(false)}
-          onConfirm={handleConfirmPago}
+      {isPayingAccount && selectedClient ? (
+        <AccountPaymentModal
+          client={selectedClient}
+          balance={selectedClientDebt}
+          isSubmitting={isSubmittingPayment}
+          onClose={() => setIsPayingAccount(false)}
+          onConfirm={handleConfirmPayment}
         />
       ) : null}
     </div>

@@ -1,6 +1,7 @@
 import { API_BASE_URL } from "../../shared/config/api";
 import type {
   JokerAccountEntry,
+  JokerAccountPayment,
   JokerAccountSettlement,
   JokerClient,
   JokerCourier,
@@ -316,6 +317,42 @@ type AccountSettlementListResponse = {
 export async function getAccountSettlements(clientId: number): Promise<AccountSettlementListResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/account-settlements/client/${clientId}`, { cache: "no-store" });
   return readJson<AccountSettlementListResponse>(response);
+}
+
+type AccountPaymentListResponse = {
+  items: JokerAccountPayment[];
+};
+
+type AccountPaymentResponse = {
+  item: JokerAccountPayment;
+};
+
+// Pago parcial o total de cuenta corriente -- no borra boletas (a
+// diferencia de settleAccount), el backend reparte el monto contra las
+// boletas mas viejas y recien archiva/cierra todo si el pago cubre el
+// saldo completo.
+export async function createAccountPayment(clientId: number, amount: number): Promise<AccountPaymentResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/account-payments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clientId, amount })
+  });
+  return readJson<AccountPaymentResponse>(response);
+}
+
+// Pagos abiertos de todos los clientes -- para calcular "Debe $X" en el
+// listado (boletas abiertas menos pagos abiertos), igual que
+// listAccountEntries.
+export async function listOpenAccountPayments(): Promise<AccountPaymentListResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/account-payments`, { cache: "no-store" });
+  return readJson<AccountPaymentListResponse>(response);
+}
+
+// Historial completo (abiertos + ya cerrados) de pagos de un cliente
+// puntual, para mostrar en su detalle.
+export async function getAccountPayments(clientId: number): Promise<AccountPaymentListResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/account-payments/client/${clientId}`, { cache: "no-store" });
+  return readJson<AccountPaymentListResponse>(response);
 }
 
 type StockItemListResponse = {

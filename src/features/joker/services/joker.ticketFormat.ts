@@ -20,6 +20,7 @@ import { abbreviateForKitchen, wrapForKitchenPrinting } from "./joker.kitchenAbb
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type {
   JokerAccountEntry,
+  JokerAccountPayment,
   JokerClient,
   JokerCourier,
   JokerCourierCashSummary,
@@ -374,6 +375,68 @@ export function buildAccountStatementTicketLines(client: JokerClient, entries: J
   lines.push(`${decorativeBorder()}\n`);
   lines.push(BOLD_ON);
   lines.push(`${rightAlignedLine("Total ", formatMoney(total))}\n`);
+  lines.push(BOLD_OFF);
+  lines.push("\n");
+
+  lines.push(ALIGN_CENTER);
+  lines.push(BOLD_ON, TALL_SIZE_ON);
+  lines.push(`${FOOTER_MESSAGE}\n`);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+
+  lines.push("\n\n\n");
+  lines.push(ALIGN_LEFT);
+  lines.push(CUT_PAPER);
+
+  return lines;
+}
+
+// Comprobante de un pago (parcial o total) de cuenta corriente. No repite
+// el detalle de productos de cada boleta (eso ya lo tiene el comprobante
+// de cuenta corriente) -- solo dice cuanto se pago, a que boletas
+// correspondio y cuanto queda pendiente, para no imprimir de mas.
+export function buildAccountPaymentTicketLines(
+  client: JokerClient,
+  payment: JokerAccountPayment,
+  balanceRemaining: number
+) {
+  const lines: string[] = [];
+
+  lines.push(ESC_INIT);
+  lines.push(ALIGN_CENTER);
+  lines.push(BOLD_ON, DOUBLE_SIZE_ON);
+  lines.push(`${STORE_NAME}\n`);
+  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
+  lines.push(`${STORE_ADDRESS}\n`);
+  lines.push(`${STORE_PHONE}\n`);
+  lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
+  lines.push(`${INTERNAL_USE_NOTE}\n`);
+
+  lines.push(ALIGN_LEFT);
+  lines.push(`${decorativeBorder()}\n`);
+  lines.push(DOUBLE_SIZE_ON);
+  lines.push(`Cliente: ${client.name}\n`);
+  lines.push(DOUBLE_SIZE_OFF);
+  lines.push(`${decorativeBorder()}\n`);
+
+  lines.push(BOLD_ON);
+  lines.push(balanceRemaining <= 0 ? "Pago total de cuenta corriente\n" : "Pago parcial de cuenta corriente\n");
+  lines.push(BOLD_OFF);
+  lines.push(`${divider()}\n`);
+
+  lines.push(BOLD_ON);
+  lines.push(`${rightAlignedLine("Pago recibido ", formatMoney(payment.amount))}\n`);
+  lines.push(BOLD_OFF);
+
+  if (payment.coveredEntries.length) {
+    lines.push("Corresponde a:\n");
+    payment.coveredEntries.forEach((covered) => {
+      lines.push(`${rightAlignedLine(`  Boleta #${covered.entryId} `, formatMoney(covered.amountApplied))}\n`);
+    });
+  }
+
+  lines.push(`${divider()}\n`);
+  lines.push(BOLD_ON);
+  lines.push(`${rightAlignedLine("Saldo restante ", formatMoney(Math.max(balanceRemaining, 0)))}\n`);
   lines.push(BOLD_OFF);
   lines.push("\n");
 
