@@ -13,11 +13,11 @@ type AccountPaymentModalProps = {
   onConfirm: (amount: number) => Promise<void>;
 };
 
-// Pide el monto a pagar (precargado con el saldo completo, editable para
-// un pago parcial). No deja poner mas de lo que debe -- si pasa, el
-// backend igual lo rechaza, pero se avisa antes de intentar.
+// Pide el monto a pagar. Arranca vacio a proposito (antes venia precargado
+// con el saldo completo): con el campo ya lleno, un Enter apurado podia
+// registrar un pago total sin querer cuando en realidad era parcial.
 export function AccountPaymentModal({ client, balance, isSubmitting, onClose, onConfirm }: AccountPaymentModalProps) {
-  const [amountInput, setAmountInput] = useState(String(balance));
+  const [amountInput, setAmountInput] = useState("");
   const [error, setError] = useState("");
 
   const parsedAmount = Number(amountInput.replace(",", "."));
@@ -60,6 +60,7 @@ export function AccountPaymentModal({ client, balance, isSubmitting, onClose, on
               inputMode="decimal"
               value={amountInput}
               onChange={(event) => setAmountInput(event.target.value)}
+              placeholder={`Ej: ${balance}`}
               disabled={isSubmitting}
             />
           </label>
