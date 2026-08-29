@@ -380,13 +380,13 @@ function buildAccountCycleTicketLines(client: JokerClient, title: string, moveme
         year: "numeric"
       });
 
-      // El primer movimiento del ciclo (siempre una compra, arranca de
-      // $0) es la deuda con la que empezo esta cuenta -- se destaca
-      // aparte de las compras/pagos que vienen despues, para que no se
-      // pierda entre el resto del historial.
-      if (index === 0 && movement.type === "compra") {
+      // Toda compra se destaca con un titulo grande para que resalte
+      // entre el resto del historial -- la primera del ciclo (que
+      // siempre arranca de $0) se marca distinto porque es la deuda con
+      // la que empezo esta cuenta, no una compra mas.
+      if (movement.type === "compra") {
         lines.push(BOLD_ON, TALL_SIZE_ON);
-        lines.push("DEUDA INICIAL\n");
+        lines.push(index === 0 ? "DEUDA INICIAL\n" : "COMPRA\n");
         lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
       }
 
