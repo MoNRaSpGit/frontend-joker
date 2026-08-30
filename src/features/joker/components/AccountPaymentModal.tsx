@@ -10,7 +10,7 @@ type AccountPaymentModalProps = {
   balance: number;
   isSubmitting: boolean;
   onClose: () => void;
-  onConfirm: (amount: number) => Promise<void>;
+  onConfirm: (amount: number, shouldPrint: boolean) => Promise<void>;
 };
 
 // Pide el monto a pagar. Arranca vacio a proposito (antes venia precargado
@@ -19,24 +19,36 @@ type AccountPaymentModalProps = {
 export function AccountPaymentModal({ client, balance, isSubmitting, onClose, onConfirm }: AccountPaymentModalProps) {
   const [amountInput, setAmountInput] = useState("");
   const [error, setError] = useState("");
+  const [pendingAction, setPendingAction] = useState<"save" | "print" | null>(null);
 
   const parsedAmount = Number(amountInput.replace(",", "."));
   const isValidAmount = Number.isFinite(parsedAmount) && parsedAmount > 0 && parsedAmount <= balance;
   const isFullPayment = isValidAmount && Math.abs(parsedAmount - balance) < 0.01;
 
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
+  // "Guardar" registra el pago (con sus calculos de saldo/ciclo) sin sacar
+  // el comprobante -- para cuando el cliente no lo necesita o se va a
+  // imprimir despues. "Imprimir" hace lo mismo y ademas saca el ticket,
+  // como era el unico comportamiento antes.
+  async function submitPayment(shouldPrint: boolean) {
     if (!isValidAmount) {
       setError(parsedAmount > balance ? "No podes pagar mas de lo que debe." : "Ingresa un monto valido.");
       return;
     }
 
     setError("");
+    setPendingAction(shouldPrint ? "print" : "save");
     try {
-      await onConfirm(Math.round(parsedAmount * 100) / 100);
+      await onConfirm(Math.round(parsedAmount * 100) / 100, shouldPrint);
     } catch (confirmError) {
       setError(confirmError instanceof Error ? confirmError.message : "No se pudo registrar el pago.");
+    } finally {
+      setPendingAction(null);
     }
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    await submitPayment(true);
   }
 
   return (
@@ -75,8 +87,16 @@ export function AccountPaymentModal({ client, balance, isSubmitting, onClose, on
             <button type="button" className="joker-button joker-button--ghost" onClick={onClose} disabled={isSubmitting}>
               Cancelar
             </button>
+            <button
+              type="button"
+              className="joker-button joker-button--ghost"
+              onClick={() => void submitPayment(false)}
+              disabled={isSubmitting || !isValidAmount}
+            >
+              {pendingAction === "save" ? "Guardando..." : "Guardar"}
+            </button>
             <button type="submit" className="joker-button joker-button--primary" disabled={isSubmitting || !isValidAmount}>
-              {isSubmitting ? "Imprimiendo..." : isFullPayment ? "Pagar todo e imprimir" : "Pagar e imprimir"}
+              {pendingAction === "print" ? "Imprimiendo..." : isFullPayment ? "Pagar todo e imprimir" : "Pagar e imprimir"}
             </button>
           </div>
         </form>

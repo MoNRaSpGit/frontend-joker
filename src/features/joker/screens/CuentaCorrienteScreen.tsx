@@ -190,7 +190,7 @@ export function CuentaCorrienteScreen({
   // cubrio todo, el backend ya archivo las boletas solo (no hace falta un
   // flujo aparte para "pago total", es el mismo con el monto igual al
   // saldo completo).
-  async function handleConfirmPayment(amount: number) {
+  async function handleConfirmPayment(amount: number, shouldPrint: boolean) {
     if (!selectedClient) return;
 
     setIsSubmittingPayment(true);
@@ -202,12 +202,14 @@ export function CuentaCorrienteScreen({
       setIsPayingAccount(false);
       toast.success(balanceRemaining > 0 ? "Pago parcial registrado." : "Pago total registrado.");
 
-      try {
-        await printAccountPaymentTicket(selectedClient, entriesBeforePayment, [...openPaymentsBeforePayment, payment]);
-      } catch (printError) {
-        toast.error(
-          printError instanceof Error ? `El pago se guardo pero no se pudo imprimir: ${printError.message}` : "El pago se guardo pero no se pudo imprimir."
-        );
+      if (shouldPrint) {
+        try {
+          await printAccountPaymentTicket(selectedClient, entriesBeforePayment, [...openPaymentsBeforePayment, payment]);
+        } catch (printError) {
+          toast.error(
+            printError instanceof Error ? `El pago se guardo pero no se pudo imprimir: ${printError.message}` : "El pago se guardo pero no se pudo imprimir."
+          );
+        }
       }
 
       // Refresca el historial de pagos de este cliente (el nuevo pago que
