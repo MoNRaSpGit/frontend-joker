@@ -63,12 +63,13 @@ export async function updateOrder(
   courierId?: number,
   deliveryCost?: number,
   paymentMethod?: "efectivo" | "tarjeta" | "transferencia" | "cuenta",
-  clientId?: number
+  clientId?: number,
+  customerName?: string
 ): Promise<OrderResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders/${orderId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items, orderDate, courierId, deliveryCost, paymentMethod, clientId })
+    body: JSON.stringify({ items, orderDate, courierId, deliveryCost, paymentMethod, clientId, customerName })
   });
   return readJson<OrderResponse>(response);
 }

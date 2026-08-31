@@ -126,17 +126,19 @@ export function OrdersScreen({
     try {
       // El campo "Nombre del cliente" del mostrador (orderCustomerName) es
       // el que llena el Usuario -- no el que arma el modal de pago para
-      // transferencia/cuenta. Se le agrega "MOSTRADOR" para que se note en
-      // el pop-up del admin y en el ticket que es una venta de mostrador,
-      // no un pedido por WhatsApp.
+      // transferencia/cuenta. Antes se le agregaba "MOSTRADOR" automatico
+      // al nombre, pero eso dejaba el pedido marcado como mostrador para
+      // siempre (sin poder asignarle despues un repartidor) aunque en
+      // realidad fuera para delivery -- ahora queda "Sin designar" como
+      // cualquier otro pedido, y el Administrador decide (delivery o
+      // mostrador) desde el Panel, sin importar de donde vino el pedido.
       const trimmedName = orderCustomerName.trim();
-      const counterCustomerName = trimmedName ? `${trimmedName} MOSTRADOR` : "MOSTRADOR";
 
       await createOrder(
         order,
         "",
         paymentMethod,
-        counterCustomerName,
+        trimmedName || undefined,
         undefined,
         undefined,
         undefined,

@@ -86,3 +86,17 @@
 .joker-category-chip--cuenta.is-active {
   background: #6b1b23;
 }
+
+/* Mismo naranja suave del chip "Mostrador" (joker-delivery-chip--counter),
+   para que se distinga a simple vista de los botones de repartidor cuando
+   se esta eligiendo a quien asignar un pedido. Siempre con este color, no
+   solo cuando esta activo -- es la unica opcion de su tipo en la lista. */
+.joker-category-chip--counter {
+  border-color: #f0d9ad;
+  background: #fff4e0;
+  color: #8a5a12;
+}
+
+.joker-category-chip--counter:hover {
+  background: #ffecc7;
+}
