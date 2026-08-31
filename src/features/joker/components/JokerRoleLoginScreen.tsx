@@ -16,10 +16,25 @@ export function JokerRoleLoginScreen({ onSelectRole }: JokerRoleLoginScreenProps
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  function handlePickRole(role: JokerRole) {
+  // TEMPORAL (pedido por Ramon para probar mas comodo, sacar despues):
+  // entra directo con la contrasena fija de cada rol, sin mostrar el paso
+  // de contrasena. Revertir a "setPickedRole(role); setPassword("");
+  // setError("");" (sin login automatico) cuando se termine de probar.
+  async function handlePickRole(role: JokerRole) {
     setPickedRole(role);
     setPassword("");
     setError("");
+
+    const testPassword = role === "administrador" ? "joker123" : "mostrador123";
+    setIsSubmitting(true);
+    try {
+      await loginJoker(role, testPassword);
+      onSelectRole(role);
+    } catch {
+      setError("Contrasena incorrecta.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -48,11 +63,21 @@ export function JokerRoleLoginScreen({ onSelectRole }: JokerRoleLoginScreenProps
           <>
             <p className="joker-login-card__hint">Elegi con que rol queres entrar.</p>
             <div className="joker-login-card__actions">
-              <button type="button" className="joker-button joker-button--primary" onClick={() => handlePickRole("administrador")}>
-                Administrador
+              <button
+                type="button"
+                className="joker-button joker-button--primary"
+                disabled={isSubmitting}
+                onClick={() => void handlePickRole("administrador")}
+              >
+                {isSubmitting && pickedRole === "administrador" ? "Entrando..." : "Administrador"}
               </button>
-              <button type="button" className="joker-button joker-button--ghost" onClick={() => handlePickRole("usuario")}>
-                Usuario
+              <button
+                type="button"
+                className="joker-button joker-button--ghost"
+                disabled={isSubmitting}
+                onClick={() => void handlePickRole("usuario")}
+              >
+                {isSubmitting && pickedRole === "usuario" ? "Entrando..." : "Usuario"}
               </button>
             </div>
           </>
