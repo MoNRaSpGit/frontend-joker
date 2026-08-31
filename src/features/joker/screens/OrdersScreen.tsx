@@ -74,12 +74,24 @@ export function OrdersScreen({
     // confirma solo: queda pendiente hasta que el Administrador lo acepte
     // o lo rechace (ver PendingOrderModal en JokerHomePage). No pasa por
     // ticket ni cuenta corriente todavia -- eso pasa recien al aceptar.
-    // Cada rol respeta SU PROPIA caja (no la del otro): si el Usuario no
-    // tiene la suya abierta, se frena igual que al Administrador, y puede
-    // abrirla el mismo ahi mismo (con su monto inicial) para continuar.
+    // Dos cajas se respetan aca, en este orden:
+    // 1) La caja GENERAL del Administrador -- representa si el local esta
+    //    operando o no ese dia. Si esta cerrada, no se puede mandar ningun
+    //    pedido (ni del Usuario ni del propio Administrador), y el Usuario
+    //    no tiene permiso para abrirla -- se frena aca nomas, sin ofrecerle
+    //    abrirla como con la suya.
+    // 2) Su PROPIA caja -- si esta cerrada, la puede abrir el mismo ahi
+    //    mismo (con su monto inicial) para continuar.
     if (role === "usuario") {
       setIsPrinting(true);
       try {
+        const generalRegisterState = await getRegisterState();
+        if (!generalRegisterState.isOpen) {
+          toast.error("El local esta cerrado (caja general cerrada). No se pueden mandar pedidos.");
+          setIsPrinting(false);
+          return;
+        }
+
         const registerState = await getUserRegisterState();
         if (!registerState.isOpen) {
           setIsPrinting(false);
