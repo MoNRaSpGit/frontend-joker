@@ -92,6 +92,15 @@ export async function listCurrentPeriodOrdersForUser(): Promise<OrderListRespons
   return readJson<OrderListResponse>(response);
 }
 
+// Todos los pedidos confirmados de un dia comercial puntual (5am a 5am),
+// sin importar de que caja/rol salieron -- es la "foto" que usa Historial
+// de ventas. Distinto de listCurrentPeriodOrders (que es el turno de caja
+// actual): aca se puede pedir cualquier fecha pasada.
+export async function listOrdersByDate(date: string): Promise<OrderListResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/orders?date=${date}`, { cache: "no-store" });
+  return readJson<OrderListResponse>(response);
+}
+
 // Pedidos de mostrador (rol Usuario) en espera de que el Administrador los
 // acepte o rechace.
 export async function listPendingOrders(): Promise<OrderListResponse> {

@@ -41,19 +41,21 @@ import { MesScreen } from "./screens/MesScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { PanelScreen } from "./screens/PanelScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
+import { SalesHistoryScreen } from "./screens/SalesHistoryScreen";
 import { StockScreen } from "./screens/StockScreen";
 import { UserPanelScreen } from "./screens/UserPanelScreen";
 
-type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock" | "delivery" | "mes";
+type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock" | "delivery" | "mes" | "historial";
 type CustomizeMode = "cliente" | "dev";
 
 const ROLE_STORAGE_KEY = "joker.role";
 
-// Tabs que puede ver un "usuario": armar pedidos y su propio Panel (con su
-// propia caja, separada de la del Administrador -- ver UserPanelScreen).
-// El resto de la app (Productos, Cuenta corriente, Stock, Delivery, Mes)
-// queda reservado para "administrador".
-const USER_ROLE_ALLOWED_TABS: JokerTab[] = ["pedidos", "panel"];
+// Tabs que puede ver un "usuario": armar pedidos, su propio Panel (con su
+// propia caja, separada de la del Administrador -- ver UserPanelScreen) e
+// Historial de ventas (foto de un dia, solo lectura, la ven los dos roles
+// igual). El resto de la app (Productos, Cuenta corriente, Stock,
+// Delivery, Mes) queda reservado para "administrador".
+const USER_ROLE_ALLOWED_TABS: JokerTab[] = ["pedidos", "panel", "historial"];
 
 const TAB_TITLES: Record<JokerTab, string> = {
   pedidos: "Armar pedido",
@@ -62,7 +64,8 @@ const TAB_TITLES: Record<JokerTab, string> = {
   cuenta: "Cuenta corriente",
   stock: "Stock",
   delivery: "Delivery",
-  mes: "Mes"
+  mes: "Mes",
+  historial: "Historial de ventas"
 };
 
 
@@ -429,7 +432,7 @@ export function JokerHomePage() {
         </div>
       </header>
 
-      <main className={`joker-shell${activeTab === "cuenta" || activeTab === "mes" ? " joker-shell--wide" : ""}`}>
+      <main className={`joker-shell${activeTab === "cuenta" || activeTab === "mes" || activeTab === "historial" ? " joker-shell--wide" : ""}`}>
         {activeTab === "pedidos" ? (
           <OrdersScreen
             products={products}
@@ -478,6 +481,8 @@ export function JokerHomePage() {
           />
         ) : activeTab === "mes" ? (
           <MesScreen />
+        ) : activeTab === "historial" ? (
+          <SalesHistoryScreen couriers={couriers} clients={clients} />
         ) : null}
       </main>
 
