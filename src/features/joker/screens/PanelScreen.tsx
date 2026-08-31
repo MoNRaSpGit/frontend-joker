@@ -9,65 +9,24 @@ import { closeRegister, getRegisterState, listCurrentPeriodOrders, openRegister,
 import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerClient, JokerCourier, JokerOrderRecord, JokerPaymentMethod, JokerProduct, JokerRegisterState } from "../joker.types";
+import {
+  MEDALS,
+  MEDAL_CLASSES,
+  MOVEMENTS_PREVIEW_COUNT,
+  PAYMENT_METHODS,
+  PROFIT_RATE_STORAGE_KEY,
+  buildPaymentTotals,
+  buildRanking,
+  formatDateTime,
+  formatPrice,
+  getStoredProfitRatePercent
+} from "./panelHelpers";
 
-const PROFIT_RATE_STORAGE_KEY = "joker.profitRatePercent";
-const DEFAULT_PROFIT_RATE_PERCENT = 30;
-const PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "cuenta"];
 // Las 3 primeras se corrigen con un click directo. "Cuenta" tambien se
 // puede elegir aca, pero abre el modal de elegir cliente en vez de
 // guardar directo (ver handleSelectCuenta/handleConfirmCuenta) -- pasar a
 // cuenta corriente sin elegir a quien no tiene sentido.
 const EDITABLE_PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "cuenta"];
-const MOVEMENTS_PREVIEW_COUNT = 3;
-
-function getStoredProfitRatePercent() {
-  if (typeof window === "undefined") return DEFAULT_PROFIT_RATE_PERCENT;
-  const raw = window.localStorage.getItem(PROFIT_RATE_STORAGE_KEY);
-  if (raw === null) return DEFAULT_PROFIT_RATE_PERCENT;
-  const stored = Number(raw);
-  return Number.isFinite(stored) && stored >= 0 ? stored : DEFAULT_PROFIT_RATE_PERCENT;
-}
-
-function formatPrice(amount: number) {
-  return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
-}
-
-// Si el pedido tiene una fecha editada a mano (orderDate), esa es la que se
-// muestra; la hora siempre sale de created_at (no se edita).
-function formatDateTime(isoDate: string, orderDate?: string | null) {
-  const date = new Date(isoDate);
-  const dateSource = orderDate ? new Date(`${orderDate}T00:00:00`) : date;
-  const dateLabel = dateSource.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" });
-  const timeLabel = date.toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
-  return `${dateLabel} ${timeLabel}`;
-}
-
-function buildPaymentTotals(orders: JokerOrderRecord[]) {
-  const totals: Record<JokerPaymentMethod, number> = { efectivo: 0, tarjeta: 0, transferencia: 0, cuenta: 0 };
-
-  for (const order of orders) {
-    totals[order.paymentMethod] += order.total;
-  }
-
-  return totals;
-}
-
-const MEDALS = ["🥇", "🥈", "🥉"];
-const MEDAL_CLASSES = ["joker-qty-badge--gold", "joker-qty-badge--silver", "joker-qty-badge--bronze"];
-
-function buildRanking(orders: JokerOrderRecord[]) {
-  const countByProduct = new Map<string, number>();
-
-  for (const order of orders) {
-    for (const item of order.items) {
-      countByProduct.set(item.productName, (countByProduct.get(item.productName) ?? 0) + item.quantity);
-    }
-  }
-
-  return Array.from(countByProduct.entries())
-    .map(([productName, quantity]) => ({ productName, quantity }))
-    .sort((a, b) => b.quantity - a.quantity);
-}
 
 type PanelScreenProps = {
   products: JokerProduct[];
