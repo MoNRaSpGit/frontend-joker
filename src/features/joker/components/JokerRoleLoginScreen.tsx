@@ -16,25 +16,10 @@ export function JokerRoleLoginScreen({ onSelectRole }: JokerRoleLoginScreenProps
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // TEMPORAL (pedido por Ramon para probar mas comodo, sacar despues):
-  // entra directo con la contrasena fija de cada rol, sin mostrar el paso
-  // de contrasena. Revertir a "setPickedRole(role); setPassword("");
-  // setError("");" (sin login automatico) cuando se termine de probar.
-  async function handlePickRole(role: JokerRole) {
+  function handlePickRole(role: JokerRole) {
     setPickedRole(role);
     setPassword("");
     setError("");
-
-    const testPassword = role === "administrador" ? "joker123" : "mostrador123";
-    setIsSubmitting(true);
-    try {
-      await loginJoker(role, testPassword);
-      onSelectRole(role);
-    } catch {
-      setError("Contrasena incorrecta.");
-    } finally {
-      setIsSubmitting(false);
-    }
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -67,7 +52,7 @@ export function JokerRoleLoginScreen({ onSelectRole }: JokerRoleLoginScreenProps
                 type="button"
                 className="joker-button joker-button--primary"
                 disabled={isSubmitting}
-                onClick={() => void handlePickRole("administrador")}
+                onClick={() => handlePickRole("administrador")}
               >
                 {isSubmitting && pickedRole === "administrador" ? "Entrando..." : "Administrador"}
               </button>
@@ -75,7 +60,7 @@ export function JokerRoleLoginScreen({ onSelectRole }: JokerRoleLoginScreenProps
                 type="button"
                 className="joker-button joker-button--ghost"
                 disabled={isSubmitting}
-                onClick={() => void handlePickRole("usuario")}
+                onClick={() => handlePickRole("usuario")}
               >
                 {isSubmitting && pickedRole === "usuario" ? "Entrando..." : "Usuario"}
               </button>
