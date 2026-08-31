@@ -42,16 +42,18 @@ import { OrdersScreen } from "./screens/OrdersScreen";
 import { PanelScreen } from "./screens/PanelScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
 import { StockScreen } from "./screens/StockScreen";
+import { UserPanelScreen } from "./screens/UserPanelScreen";
 
 type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock" | "delivery" | "mes";
 type CustomizeMode = "cliente" | "dev";
 
 const ROLE_STORAGE_KEY = "joker.role";
 
-// Tabs que puede ver un "usuario" -- solo armar pedidos. El resto de la
-// app queda reservado para "administrador". Sin contraseña ni backend, es
-// solo para mostrarle al cliente la idea de roles diferenciados.
-const USER_ROLE_ALLOWED_TABS: JokerTab[] = ["pedidos"];
+// Tabs que puede ver un "usuario": armar pedidos y su propio Panel (con su
+// propia caja, separada de la del Administrador -- ver UserPanelScreen).
+// El resto de la app (Productos, Cuenta corriente, Stock, Delivery, Mes)
+// queda reservado para "administrador".
+const USER_ROLE_ALLOWED_TABS: JokerTab[] = ["pedidos", "panel"];
 
 const TAB_TITLES: Record<JokerTab, string> = {
   pedidos: "Armar pedido",
@@ -385,7 +387,7 @@ export function JokerHomePage() {
   }
 
   return (
-    <div className={`joker-app${role === "administrador" ? " joker-app--with-sidebar" : ""}`}>
+    <div className={`joker-app${role ? " joker-app--with-sidebar" : ""}`}>
       <header className="joker-topbar">
         <div className="joker-topbar__inner">
           <div className="joker-brand">
@@ -442,13 +444,17 @@ export function JokerHomePage() {
         ) : activeTab === "productos" ? (
           <ProductsScreen products={products} isLoading={isLoadingProducts} loadError={loadError} onReload={loadProducts} />
         ) : activeTab === "panel" ? (
-          <PanelScreen
-            products={products}
-            couriers={couriers}
-            clients={clients}
-            onAccountEntryRegistered={loadAccountEntries}
-            onGoToDelivery={() => goToTab("delivery")}
-          />
+          role === "administrador" ? (
+            <PanelScreen
+              products={products}
+              couriers={couriers}
+              clients={clients}
+              onAccountEntryRegistered={loadAccountEntries}
+              onGoToDelivery={() => goToTab("delivery")}
+            />
+          ) : (
+            <UserPanelScreen />
+          )
         ) : activeTab === "cuenta" ? (
           <CuentaCorrienteScreen
             clients={clients}
@@ -475,7 +481,7 @@ export function JokerHomePage() {
         ) : null}
       </main>
 
-      {role === "administrador" ? <JokerSidebar activeTab={activeTab} isAdmin={role === "administrador"} onNavigate={goToTab} /> : null}
+      {role ? <JokerSidebar activeTab={activeTab} isAdmin={role === "administrador"} onNavigate={goToTab} /> : null}
 
       {isPrinterModalOpen ? (
         <PrinterSettingsModal

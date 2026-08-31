@@ -84,6 +84,14 @@ export async function listCurrentPeriodOrders(courierId?: number): Promise<Order
   return readJson<OrderListResponse>(response);
 }
 
+// Igual que arriba, pero para el Panel del Usuario: pedidos del turno de
+// SU caja (desde que la abrio), solo los que el origino (origin_role =
+// 'usuario') -- ver JokerOrdersService#listCurrentPeriodOrdersForUser.
+export async function listCurrentPeriodOrdersForUser(): Promise<OrderListResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/user-register/orders/current-period`, { cache: "no-store" });
+  return readJson<OrderListResponse>(response);
+}
+
 // Pedidos de mostrador (rol Usuario) en espera de que el Administrador los
 // acepte o rechace.
 export async function listPendingOrders(): Promise<OrderListResponse> {

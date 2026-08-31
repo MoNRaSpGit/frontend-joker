@@ -13,7 +13,7 @@ type SidebarItem = {
 const SIDEBAR_ITEMS: SidebarItem[] = [
   { tab: "pedidos", label: "Pedidos", icon: UtensilsCrossed, adminOnly: false },
   { tab: "productos", label: "Productos", icon: Package, adminOnly: true },
-  { tab: "panel", label: "Panel", icon: LayoutDashboard, adminOnly: true },
+  { tab: "panel", label: "Panel", icon: LayoutDashboard, adminOnly: false },
   { tab: "cuenta", label: "Cuenta corriente", icon: Wallet, adminOnly: true },
   { tab: "stock", label: "Stock", icon: Boxes, adminOnly: true },
   { tab: "delivery", label: "Delivery", icon: Bike, adminOnly: true },

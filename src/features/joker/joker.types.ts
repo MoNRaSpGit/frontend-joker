@@ -78,10 +78,16 @@ export const JOKER_PAYMENT_METHOD_LABELS: Record<JokerPaymentMethod, string> = {
 
 export type JokerOrderStatus = "confirmado" | "pendiente" | "rechazado";
 
+// Quien cargo el pedido, fijo desde que se crea -- separa la caja del
+// Usuario de la del Administrador aunque el pedido haya sido "pendiente"
+// y despues aceptado.
+export type JokerOrderOriginRole = "administrador" | "usuario";
+
 export type JokerOrderRecord = {
   id: number;
   displayNumber: number | null;
   status: JokerOrderStatus;
+  originRole: JokerOrderOriginRole;
   total: number;
   address: string;
   paymentMethod: JokerPaymentMethod;
@@ -159,6 +165,15 @@ export type JokerRegisterCloseSummary = {
   ganancia: number;
   paymentTotals: Record<JokerPaymentMethod, number>;
   ranking: Array<{ productName: string; quantity: number }>;
+};
+
+// Caja propia del Usuario, separada de la caja global del Administrador de
+// arriba -- arranca cerrada y necesita un monto inicial para abrirse.
+export type JokerUserRegisterState = {
+  isOpen: boolean;
+  initialCash: number | null;
+  openedAt: string | null;
+  lastClosedAt: string | null;
 };
 
 export type JokerClient = {
