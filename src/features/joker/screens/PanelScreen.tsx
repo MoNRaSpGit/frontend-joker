@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { CloseRegisterModal } from "../components/CloseRegisterModal";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { EditOrderModal } from "../components/EditOrderModal";
 import { PaymentBreakdownModal } from "../components/PaymentBreakdownModal";
@@ -90,34 +91,41 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
     }
   }
 
-  // Cerrar imprime el resumen y marca la caja como cerrada de verdad (el
-  // proximo pedido vuelve a arrancar la numeracion en 1). Abrir solo
-  // levanta el bloqueo, sin imprimir nada.
-  async function handleConfirmRegisterAction() {
-    if (confirmRegisterAction === "close") {
-      const activeCouriers = couriers.filter((courier) => courier.status === "activo");
-      if (activeCouriers.length) {
-        setBlockedCloseCourierNames(activeCouriers.map((courier) => courier.name));
-        setConfirmRegisterAction(null);
-        return;
-      }
-
-      setIsClosingRegister(true);
-      try {
-        await printCashRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking });
-        const state = await closeRegister({ totalVendido, ganancia, paymentTotals, ranking });
-        setRegisterState(state);
-        await loadOrders();
-        toast.success("Caja cerrada.");
-        setConfirmRegisterAction(null);
-      } catch (closeError) {
-        toast.error(closeError instanceof Error ? closeError.message : "No se pudo cerrar la caja.");
-      } finally {
-        setIsClosingRegister(false);
-      }
+  // Antes de siquiera preguntar si imprimir o no, se chequea el bloqueo de
+  // repartidores -- no tiene sentido ofrecer "cerrar caja" si total va a
+  // terminar bloqueado.
+  function handleRequestCloseRegister() {
+    const activeCouriers = couriers.filter((courier) => courier.status === "activo");
+    if (activeCouriers.length) {
+      setBlockedCloseCourierNames(activeCouriers.map((courier) => courier.name));
       return;
     }
 
+    setConfirmRegisterAction("close");
+  }
+
+  // shouldPrint = false: cierra la caja y marca de nuevo la numeracion de
+  // pedidos, pero sin sacar el ticket de resumen -- antes se imprimia
+  // siempre, sin poder evitarlo.
+  async function handleConfirmCloseRegister(shouldPrint: boolean) {
+    setIsClosingRegister(true);
+    try {
+      if (shouldPrint) {
+        await printCashRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking });
+      }
+      const state = await closeRegister({ totalVendido, ganancia, paymentTotals, ranking });
+      setRegisterState(state);
+      await loadOrders();
+      toast.success("Caja cerrada.");
+      setConfirmRegisterAction(null);
+    } catch (closeError) {
+      toast.error(closeError instanceof Error ? closeError.message : "No se pudo cerrar la caja.");
+    } finally {
+      setIsClosingRegister(false);
+    }
+  }
+
+  async function handleConfirmOpenRegister() {
     setIsClosingRegister(true);
     try {
       const state = await openRegister();
@@ -356,7 +364,9 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
             <button
               type="button"
               className={`joker-button joker-button--auto ${registerState?.isOpen === false ? "joker-button--primary" : "joker-button--ghost"}`}
-              onClick={() => setConfirmRegisterAction(registerState?.isOpen === false ? "open" : "close")}
+              onClick={() =>
+                registerState?.isOpen === false ? setConfirmRegisterAction("open") : handleRequestCloseRegister()
+              }
               disabled={isClosingRegister}
             >
               {registerState?.isOpen === false ? "Abrir caja" : "Cerrar caja"}
@@ -692,20 +702,23 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
         />
       ) : null}
 
-      {confirmRegisterAction ? (
+      {confirmRegisterAction === "close" ? (
+        <CloseRegisterModal
+          message="No se van a poder cargar mas pedidos hasta que la abras de nuevo. Elegi si queres sacar el ticket con el resumen o no."
+          isSubmitting={isClosingRegister}
+          onCancel={() => setConfirmRegisterAction(null)}
+          onConfirm={handleConfirmCloseRegister}
+        />
+      ) : confirmRegisterAction === "open" ? (
         <ConfirmDeleteModal
-          title={confirmRegisterAction === "close" ? "Cerrar caja" : "Abrir caja"}
-          message={
-            confirmRegisterAction === "close"
-              ? "Seguro que queres cerrar caja? Se va a imprimir el resumen y no se van a poder cargar mas pedidos hasta que la abras de nuevo."
-              : "Seguro que queres abrir la caja?"
-          }
-          confirmLabel={confirmRegisterAction === "close" ? "Cerrar caja" : "Abrir caja"}
-          confirmLabelBusy={confirmRegisterAction === "close" ? "Cerrando..." : "Abriendo..."}
+          title="Abrir caja"
+          message="Seguro que queres abrir la caja?"
+          confirmLabel="Abrir caja"
+          confirmLabelBusy="Abriendo..."
           variant="primary"
           isDeleting={isClosingRegister}
           onCancel={() => setConfirmRegisterAction(null)}
-          onConfirm={handleConfirmRegisterAction}
+          onConfirm={handleConfirmOpenRegister}
         />
       ) : null}
 

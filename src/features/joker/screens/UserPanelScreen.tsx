@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
+import { CloseRegisterModal } from "../components/CloseRegisterModal";
 import { OpenUserRegisterModal } from "../components/OpenUserRegisterModal";
 import { closeUserRegister, getUserRegisterState, listCurrentPeriodOrdersForUser, openUserRegister } from "../joker.api";
 import { printUserRegisterCloseTicket } from "../services/joker.print";
@@ -94,13 +94,16 @@ export function UserPanelScreen() {
     }
   }
 
-  // Igual que el cierre del Administrador: imprime el resumen primero y
-  // recien despues avisa al backend, para no perder el ticket si el cierre
-  // en si falla por algun motivo.
-  async function handleConfirmClose() {
+  // shouldPrint = false: cierra sin sacar el ticket -- antes se imprimia
+  // siempre, sin poder evitarlo. Igual que el cierre del Administrador:
+  // cuando se imprime, es primero, y recien despues se avisa al backend,
+  // para no perder el ticket si el cierre en si falla por algun motivo.
+  async function handleConfirmClose(shouldPrint: boolean) {
     setIsClosingRegister(true);
     try {
-      await printUserRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking, initialCash: registerState?.initialCash ?? 0 });
+      if (shouldPrint) {
+        await printUserRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking, initialCash: registerState?.initialCash ?? 0 });
+      }
       const state = await closeUserRegister({ totalVendido, ganancia, paymentTotals, ranking });
       setRegisterState(state);
       await loadOrders();
@@ -310,13 +313,9 @@ export function UserPanelScreen() {
       ) : null}
 
       {isConfirmingClose ? (
-        <ConfirmDeleteModal
-          title="Cerrar caja"
-          message="Seguro que queres cerrar tu caja? Se va a imprimir el resumen del turno y no se va a poder seguir sumando ventas hasta que la abras de nuevo."
-          confirmLabel="Cerrar caja"
-          confirmLabelBusy="Cerrando..."
-          variant="primary"
-          isDeleting={isClosingRegister}
+        <CloseRegisterModal
+          message="No se va a poder seguir sumando ventas hasta que la abras de nuevo. Elegi si queres sacar el ticket con el resumen del turno o no."
+          isSubmitting={isClosingRegister}
           onCancel={() => setIsConfirmingClose(false)}
           onConfirm={handleConfirmClose}
         />
