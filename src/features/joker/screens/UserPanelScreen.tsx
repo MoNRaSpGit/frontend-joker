@@ -161,6 +161,10 @@ export function UserPanelScreen() {
   const visibleOrders = showAllMovements ? orders : orders.slice(0, MOVEMENTS_PREVIEW_COUNT);
   const hasHiddenMovements = orders.length > MOVEMENTS_PREVIEW_COUNT;
   const isRegisterOpen = registerState?.isOpen === true;
+  // Lo que deberia haber en el cajon fisico ahora mismo: monto inicial +
+  // lo vendido en efectivo (tarjeta/transferencia/cuenta no pasan por el
+  // cajon). Mismo calculo que "Total en caja" en el ticket de cierre.
+  const cajaActual = (registerState?.initialCash ?? 0) + paymentTotals.efectivo;
 
   if (isLoading) {
     return <p className="joker-empty-state">Cargando panel...</p>;
@@ -203,6 +207,10 @@ export function UserPanelScreen() {
             <div className="joker-stat-tile">
               <span className="joker-stat-tile__label">Monto inicial</span>
               <strong className="joker-stat-tile__value">{formatPrice(registerState?.initialCash ?? 0)}</strong>
+            </div>
+            <div className="joker-stat-tile">
+              <span className="joker-stat-tile__label">Caja actual</span>
+              <strong className="joker-stat-tile__value">{formatPrice(cajaActual)}</strong>
             </div>
             <div className="joker-stat-tile">
               <span className="joker-stat-tile__label">Vendido</span>

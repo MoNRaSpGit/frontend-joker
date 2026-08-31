@@ -356,10 +356,17 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
     }
   }
 
-  const totalVendido = orders.reduce((sum, order) => sum + order.total, 0);
+  // "Movimientos" muestra TODOS los pedidos del periodo (los propios y los
+  // que vinieron del Usuario, para poder verlos y designarles delivery/
+  // mostrador) -- pero el resumen (vendido, ganancia, tipo de pagos,
+  // ranking, cantidad de pedidos) es la caja del Administrador nomas: un
+  // pedido que nacio en el Usuario ya suma en SU caja (ver
+  // UserPanelScreen), sumarlo tambien aca lo contaria dos veces.
+  const adminOrders = orders.filter((order) => order.originRole === "administrador");
+  const totalVendido = adminOrders.reduce((sum, order) => sum + order.total, 0);
   const ganancia = totalVendido * (profitRatePercent / 100);
-  const ranking = buildRanking(orders);
-  const paymentTotals = buildPaymentTotals(orders);
+  const ranking = buildRanking(adminOrders);
+  const paymentTotals = buildPaymentTotals(adminOrders);
   const visibleOrders = showAllMovements ? orders : orders.slice(0, MOVEMENTS_PREVIEW_COUNT);
   const hasHiddenMovements = orders.length > MOVEMENTS_PREVIEW_COUNT;
 
@@ -413,7 +420,7 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
           </button>
           <div className="joker-stat-tile">
             <span className="joker-stat-tile__label">Pedidos</span>
-            <strong className="joker-stat-tile__value">{orders.length}</strong>
+            <strong className="joker-stat-tile__value">{adminOrders.length}</strong>
           </div>
         </div>
       </section>
