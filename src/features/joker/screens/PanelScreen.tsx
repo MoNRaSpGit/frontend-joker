@@ -199,9 +199,25 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
   // solo recalcula el total con lo que ya tenia (no cambia nada del
   // pedido salvo el repartidor).
   async function handleAssignCourier(order: JokerOrderRecord, courierId: number) {
+    // Si el pedido venia marcado "Mostrador", asignarle un repartidor tiene
+    // que sacarle esa marca -- si no, el chip 🏪 se sigue mostrando (esa
+    // marca manda por encima del courierId, ver el render mas abajo) y
+    // queda como si nunca se hubiera cambiado.
+    const trimmedName = order.customerName?.trim() || "";
+    const nextCustomerName = trimmedName.replace(/\s*MOSTRADOR\s*$/i, "").trim();
+
     setIsSavingCourier(true);
     try {
-      const response = await updateOrder(order.id, order.items, order.orderDate ?? undefined, courierId);
+      const response = await updateOrder(
+        order.id,
+        order.items,
+        order.orderDate ?? undefined,
+        courierId,
+        undefined,
+        undefined,
+        undefined,
+        nextCustomerName
+      );
       setOrders((current) => current.map((item) => (item.id === order.id ? response.item : item)));
       setAssigningCourierOrderId(null);
       toast.success("Delivery asignado.");
@@ -563,12 +579,7 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
                         ) : null}
 
                         <div className="joker-order-meta-section">
-                          {order.customerName?.trim().toUpperCase().includes("MOSTRADOR") ? (
-                            // Un pedido de mostrador no sale a reparto, asi que
-                            // no tiene sentido ofrecer asignarle repartidor --
-                            // solo se identifica con un chip propio.
-                            <span className="joker-delivery-chip joker-delivery-chip--counter">🏪 Mostrador</span>
-                          ) : assigningCourierOrderId === order.id ? (
+                          {assigningCourierOrderId === order.id ? (
                             <span className="joker-delivery-assign">
                               {couriers
                                 .filter((courier) => courier.status === "activo")
@@ -598,6 +609,17 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
                                 onClick={() => setAssigningCourierOrderId(null)}
                               >
                                 Cancelar
+                              </button>
+                            </span>
+                          ) : order.customerName?.trim().toUpperCase().includes("MOSTRADOR") ? (
+                            <span className="joker-delivery-chip joker-delivery-chip--counter">
+                              🏪 Mostrador
+                              <button
+                                type="button"
+                                className="joker-mini-button"
+                                onClick={() => setAssigningCourierOrderId(order.id)}
+                              >
+                                Cambiar
                               </button>
                             </span>
                           ) : order.courierId ? (
