@@ -2,11 +2,12 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { CustomizeProductModal } from "../components/CustomizeProductModal";
+import { OpenUserRegisterModal } from "../components/OpenUserRegisterModal";
 import { OrderList } from "../components/OrderList";
 import { PaymentMethodModal } from "../components/PaymentMethodModal";
 import { ProductGrid } from "../components/ProductGrid";
 import { useJokerOrder } from "../hooks/useJokerOrder";
-import { createAccountEntry, createOrder, getRegisterState, openRegister } from "../joker.api";
+import { createAccountEntry, createOrder, getRegisterState, getUserRegisterState, openRegister, openUserRegister } from "../joker.api";
 import { printOrderTicket } from "../services/joker.print";
 import { isComboComponentLine } from "../joker.types";
 import type { JokerClient, JokerOrderItem, JokerPaymentMethod, JokerProduct, JokerRole } from "../joker.types";
@@ -73,16 +74,16 @@ export function OrdersScreen({
     // confirma solo: queda pendiente hasta que el Administrador lo acepte
     // o lo rechace (ver PendingOrderModal en JokerHomePage). No pasa por
     // ticket ni cuenta corriente todavia -- eso pasa recien al aceptar.
-    // La caja si se respeta igual (si esta cerrada, no se puede mandar
-    // pedido), pero a diferencia del Administrador, Usuario no tiene
-    // permiso para abrirla -- si esta cerrada, se frena aca nomas.
+    // Cada rol respeta SU PROPIA caja (no la del otro): si el Usuario no
+    // tiene la suya abierta, se frena igual que al Administrador, y puede
+    // abrirla el mismo ahi mismo (con su monto inicial) para continuar.
     if (role === "usuario") {
       setIsPrinting(true);
       try {
-        const registerState = await getRegisterState();
+        const registerState = await getUserRegisterState();
         if (!registerState.isOpen) {
-          toast.error("Caja cerrada.");
           setIsPrinting(false);
+          setPendingSale({ paymentMethod, clientId, customerName });
           return;
         }
       } catch (stateError) {
@@ -171,6 +172,28 @@ export function OrdersScreen({
     const sale = pendingSale;
     setPendingSale(null);
     await proceedWithSale(sale.paymentMethod, sale.clientId, sale.customerName);
+  }
+
+  // Version del de arriba para el rol Usuario: su caja pide un monto
+  // inicial (no es un simple "abrir", como la del Administrador), asi que
+  // en vez del confirm generico se reusa el mismo modal que usa
+  // UserPanelScreen para abrirla.
+  async function handleConfirmOpenUserRegisterAndSale(initialCash: number) {
+    if (!pendingSale) return;
+
+    // Sin try/catch propio a proposito: OpenUserRegisterModal ya atrapa lo
+    // que tire esto y lo muestra en su propio cartel de error, sin cerrar
+    // el modal -- si lo tragamos aca, el operario ve que "no paso nada".
+    setIsOpeningRegister(true);
+    try {
+      await openUserRegister(initialCash);
+    } finally {
+      setIsOpeningRegister(false);
+    }
+
+    const sale = pendingSale;
+    setPendingSale(null);
+    await submitPendingOrder(sale.paymentMethod, sale.clientId);
   }
 
   async function proceedWithSale(paymentMethod: JokerPaymentMethod, clientId?: number, customerName?: string) {
@@ -325,7 +348,13 @@ export function OrdersScreen({
         />
       ) : null}
 
-      {pendingSale ? (
+      {pendingSale && role === "usuario" ? (
+        <OpenUserRegisterModal
+          isSubmitting={isOpeningRegister}
+          onClose={() => setPendingSale(null)}
+          onConfirm={handleConfirmOpenUserRegisterAndSale}
+        />
+      ) : pendingSale ? (
         <ConfirmDeleteModal
           title="Caja cerrada"
           message="La caja esta cerrada. Deseas abrirla y continuar con este pedido?"
