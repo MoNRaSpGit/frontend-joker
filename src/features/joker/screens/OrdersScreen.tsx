@@ -108,7 +108,7 @@ export function OrdersScreen({
         return;
       }
 
-      await submitPendingOrder(paymentMethod, clientId);
+      await submitPendingOrder(paymentMethod, clientId, customerName);
       return;
     }
 
@@ -136,23 +136,27 @@ export function OrdersScreen({
     await proceedWithSale(paymentMethod, clientId, customerName);
   }
 
-  async function submitPendingOrder(paymentMethod: JokerPaymentMethod, clientId?: number) {
+  async function submitPendingOrder(paymentMethod: JokerPaymentMethod, clientId?: number, customerName?: string) {
     setIsPrinting(true);
     try {
-      // Nombre y direccion (los dos opcionales) son los mismos campos que
-      // llena el Usuario en "Pedido" (orderCustomerName/orderAddress, ver
-      // OrderList) -- no el que arma el modal de pago para transferencia/
-      // cuenta. Un pedido de mostrador (rol Usuario, aceptado) ya cuenta
-      // como mostrador solo por su origen (ver isCounterOrder en
-      // PanelScreen), asi que no hace falta pisarle el nombre con un
-      // sufijo para que se lo reconozca.
-      const trimmedName = orderCustomerName.trim();
+      // El nombre puede venir de dos lados, igual que en proceedWithSale:
+      // del modal de Metodo de pago (customerName -- solo lo llena para
+      // "transferencia", con quien transfirio, o "cuenta", con el cliente
+      // elegido) o del campo "Nombre del cliente" del Pedido
+      // (orderCustomerName, ver OrderList). Si vino del modal, gana ese
+      // (es mas especifico); si no, se usa lo que se escribio en el
+      // Pedido. Antes se usaba SOLO el del Pedido -- un pedido "a cuenta"
+      // guardaba el clientId bien (la cuenta corriente quedaba
+      // correcta), pero el nombre quedaba vacio si el Usuario no habia
+      // tipeado nada aparte en el Pedido, aunque el cliente ya estuviera
+      // elegido en el modal.
+      const finalCustomerName = customerName ?? (orderCustomerName.trim() || undefined);
 
       await createOrder(
         order,
         orderAddress,
         paymentMethod,
-        trimmedName || undefined,
+        finalCustomerName,
         undefined,
         undefined,
         undefined,
