@@ -459,11 +459,13 @@ export function buildAccountPaymentTicketLines(
   return buildAccountCycleTicketLines(client, isFullPayment ? "Pago total de cuenta corriente" : "Pago parcial de cuenta corriente", movements);
 }
 
-// Resumen del turno de un repartidor: caja inicial, pedidos entregados
-// (con costo de envio si tienen), gastos y entregas de dinero al
-// mostrador. Se imprime desde Delivery con el turno todavia activo (antes
-// de liquidar) -- no incluye horas/tarifa ni el total a pagar, eso se
-// termina de definir recien al liquidar.
+// Resumen del turno de un repartidor (o de Mostrador, ver courier.isCounter):
+// caja inicial, pedidos (con costo de envio si tienen, y metodo de pago +
+// nombre de quien hizo el pedido), gastos y entregas de dinero al local.
+// Se imprime desde Delivery con el turno todavia activo (antes de
+// liquidar) -- no incluye horas/tarifa ni el total a pagar, eso se
+// termina de definir recien al liquidar (y no aplica a Mostrador de
+// entrada, no es una persona a la que se le paga por hora).
 export function buildCourierSummaryTicketLines(
   courier: JokerCourier,
   summary: JokerCourierCashSummary,
@@ -561,7 +563,10 @@ export function buildCourierSummaryTicketLines(
 
   lines.push(`${decorativeBorder()}\n`);
   lines.push(BOLD_ON);
-  lines.push("Entregas al mostrador\n");
+  // "Entregas al mostrador" tiene sentido para un repartidor (le
+  // entrega plata al mostrador/local) -- pero si este ticket YA es el
+  // de Mostrador, decir eso de si mismo no tiene sentido.
+  lines.push(courier.isCounter ? "Entregas al administrador\n" : "Entregas al mostrador\n");
   lines.push(BOLD_OFF);
   if (handoverMovements.length) {
     handoverMovements.forEach((movement) => {

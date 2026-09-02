@@ -149,13 +149,6 @@
   }
 }
 
-.form-inline {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
 .form-inline .joker-form-field {
   flex: 1;
   min-width: 200px;

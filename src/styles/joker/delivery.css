@@ -185,13 +185,6 @@
   flex-wrap: wrap;
 }
 
-.joker-delivery-summary__row--total {
-  padding-top: 8px;
-  border-top: 1px solid var(--joker-border);
-  font-size: 18px;
-  color: var(--joker-accent);
-}
-
 .joker-delivery-section-title {
   margin: 4px 0 0;
   font-size: 12px;
@@ -215,11 +208,6 @@
   border-top: 1px solid #c7dcf5;
   font-size: 18px;
   color: #1f4e79;
-}
-
-.joker-delivery-cash-forms {
-  display: grid;
-  gap: 10px;
 }
 
 .joker-delivery-cash-form {
@@ -302,8 +290,3 @@
   gap: 12px;
 }
 
-.joker-delivery-collapsible {
-  display: grid;
-  gap: 10px;
-  margin-top: 10px;
-}
