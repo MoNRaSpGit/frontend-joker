@@ -213,6 +213,16 @@ export function OrdersScreen({
     // El numero de pedido lo asigna el backend (arranca de 1 en cada
     // cierre de caja), asi que primero hay que guardar el pedido y recien
     // con ese numero armar e imprimir el ticket.
+    // El nombre puede venir de dos lados: del campo "Nombre del cliente"
+    // del Pedido (orderCustomerName) o del modal de Metodo de pago
+    // (customerName -- solo lo llena para "transferencia", con quien
+    // transfirio, o "cuenta", con el cliente elegido). Si vino de ahi,
+    // gana ese (es mas especifico); si no, se usa lo que se escribio en
+    // el Pedido. Antes se usaba SOLO el del modal, que para efectivo/
+    // tarjeta nunca se llena -- el nombre tipeado en el Pedido se perdia
+    // en silencio.
+    const finalCustomerName = customerName ?? (orderCustomerName.trim() || undefined);
+
     let displayNumber: number;
     let orderId: number;
     try {
@@ -221,7 +231,7 @@ export function OrdersScreen({
         order,
         orderAddress,
         paymentMethod,
-        customerName,
+        finalCustomerName,
         orderDate,
         undefined,
         Number.isFinite(parsedDeliveryCost) ? parsedDeliveryCost : undefined
