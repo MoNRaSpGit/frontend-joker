@@ -79,10 +79,10 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
     window.localStorage.setItem(PROFIT_RATE_STORAGE_KEY, String(percent));
   }
 
-  // Se refresca solo cada 15s (en silencio, sin tapar la pantalla con el
-  // spinner) para que si otro dispositivo carga un pedido o cierra/abre la
-  // caja, se vea reflejado aca sin tener que salir y volver a entrar a la
-  // pestana.
+  // Se refresca solo cada 5s (en silencio, sin tapar la pantalla con el
+  // spinner) para que si otro dispositivo carga un pedido, cierra/abre la
+  // caja, o designa un pedido como mostrador/delivery, se vea reflejado
+  // aca casi al toque, sin tener que salir y volver a entrar a la pestana.
   useEffect(() => {
     void loadOrders();
     void loadRegisterState();
@@ -90,7 +90,7 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
     const intervalId = window.setInterval(() => {
       void loadOrders(true);
       void loadRegisterState();
-    }, 15000);
+    }, 5000);
 
     return () => window.clearInterval(intervalId);
   }, []);

@@ -38,8 +38,9 @@ export function UserPanelScreen() {
   const [isConfirmingClose, setIsConfirmingClose] = useState(false);
   const [isClosingRegister, setIsClosingRegister] = useState(false);
 
-  // Igual que el Panel del Administrador: refresco silencioso cada 15s
-  // para reflejar pedidos aceptados desde otra pantalla sin recargar.
+  // Igual que el Panel del Administrador: refresco silencioso cada 5s
+  // para reflejar pedidos aceptados (y designaciones de mostrador/
+  // delivery) desde otra pantalla sin recargar.
   useEffect(() => {
     void loadOrders();
     void loadRegisterState();
@@ -47,7 +48,7 @@ export function UserPanelScreen() {
     const intervalId = window.setInterval(() => {
       void loadOrders(true);
       void loadRegisterState();
-    }, 15000);
+    }, 5000);
 
     return () => window.clearInterval(intervalId);
   }, []);
