@@ -8,16 +8,6 @@ import type { JokerOrderRecord, JokerPaymentMethod } from "../joker.types";
 export const PROFIT_RATE_STORAGE_KEY = "joker.profitRatePercent";
 export const DEFAULT_PROFIT_RATE_PERCENT = 30;
 export const PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "cuenta"];
-
-// Sigla de una letra por metodo de pago, para listas de pedidos donde no
-// entra el nombre completo (ej: "Pedido #20 · F" en vez de "Pedido #20 ·
-// Cuenta") -- F de Fiado, P de POS, T de Transferencia, E de Efectivo.
-export const PAYMENT_METHOD_LETTERS: Record<JokerPaymentMethod, string> = {
-  efectivo: "E",
-  tarjeta: "P",
-  transferencia: "T",
-  cuenta: "F"
-};
 export const MOVEMENTS_PREVIEW_COUNT = 3;
 export const MEDALS = ["🥇", "🥈", "🥉"];
 export const MEDAL_CLASSES = ["joker-qty-badge--gold", "joker-qty-badge--silver", "joker-qty-badge--bronze"];
