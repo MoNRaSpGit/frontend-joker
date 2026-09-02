@@ -3,7 +3,9 @@ import { toast } from "react-toastify";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { addCourierCashMovement, getCourierCashSummary, listCurrentPeriodOrders } from "../joker.api";
 import { printCourierSummaryTicket } from "../services/joker.print";
+import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerCourier, JokerCourierCashSummary, JokerOrderRecord } from "../joker.types";
+import { PAYMENT_METHODS, buildPaymentTotals } from "./panelHelpers";
 
 type DeliveryScreenProps = {
   couriers: JokerCourier[];
@@ -259,9 +261,28 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
     };
   }, [courier.id, courier.status]);
 
+  // Desglose por metodo de pago, igual que ya lo ve el Usuario en su
+  // propio Panel -- solo tiene sentido para Mostrador (un repartidor
+  // siempre cobra en efectivo, ya tiene su propia cajita "Cobrado").
+  const paymentTotals = courier.isCounter ? buildPaymentTotals(orders) : null;
+
   return (
     <div className="joker-delivery-settlement">
       <CourierCash courier={courier} />
+
+      {paymentTotals ? (
+        <div>
+          <p className="joker-delivery-section-title">Tipo de pagos</p>
+          <div className="joker-delivery-stat-grid">
+            {PAYMENT_METHODS.map((method) => (
+              <div key={method} className="joker-delivery-stat-card">
+                <span className="joker-delivery-stat-card__label">{JOKER_PAYMENT_METHOD_LABELS[method]}</span>
+                <strong className="joker-delivery-stat-card__value">{formatPrice(paymentTotals[method])}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <p className="joker-empty-state">Cargando pedidos...</p>
@@ -287,9 +308,13 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
               <span>
                 Pedido #{order.displayNumber} · {formatPrice(order.total)}
               </span>
-              <span className={order.deliveryCost ? "joker-delivery-cost-tag" : "joker-order-item__excluded"}>
-                {order.deliveryCost ? `Envio ${formatPrice(order.deliveryCost)}` : "Sin costo de envio"}
-              </span>
+              {courier.isCounter ? (
+                <span className="joker-order-item__excluded">{JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}</span>
+              ) : (
+                <span className={order.deliveryCost ? "joker-delivery-cost-tag" : "joker-order-item__excluded"}>
+                  {order.deliveryCost ? `Envio ${formatPrice(order.deliveryCost)}` : "Sin costo de envio"}
+                </span>
+              )}
             </li>
           ))}
         </ul>
