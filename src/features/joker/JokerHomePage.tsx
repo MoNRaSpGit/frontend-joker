@@ -440,6 +440,7 @@ export function JokerHomePage() {
             loadError={loadError}
             onReload={loadProducts}
             clients={clients}
+            couriers={couriers}
             onAccountEntryRegistered={loadAccountEntries}
             customizeMode={customizeMode}
             role={role}
@@ -456,7 +457,7 @@ export function JokerHomePage() {
               onGoToDelivery={() => goToTab("delivery")}
             />
           ) : (
-            <UserPanelScreen />
+            <UserPanelScreen couriers={couriers} />
           )
         ) : activeTab === "cuenta" ? (
           <CuentaCorrienteScreen

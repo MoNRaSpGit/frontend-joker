@@ -113,6 +113,11 @@ export type JokerCourier = {
   name: string;
   status: JokerCourierStatus;
   activeSince: string | null;
+  // "Mostrador": la tarjeta especial (unica) de las ventas de mostrador/
+  // rol Usuario en Delivery -- el Administrador la habilita/liquida igual
+  // que a un repartidor, pero sus pedidos y su plata cobrada salen de las
+  // ventas del Usuario, no de pedidos con repartidor asignado.
+  isCounter: boolean;
 };
 
 export type JokerCourierCashMovementType = "inicial" | "gasto" | "entrega";
@@ -165,15 +170,6 @@ export type JokerRegisterCloseSummary = {
   ganancia: number;
   paymentTotals: Record<JokerPaymentMethod, number>;
   ranking: Array<{ productName: string; quantity: number }>;
-};
-
-// Caja propia del Usuario, separada de la caja global del Administrador de
-// arriba -- arranca cerrada y necesita un monto inicial para abrirse.
-export type JokerUserRegisterState = {
-  isOpen: boolean;
-  initialCash: number | null;
-  openedAt: string | null;
-  lastClosedAt: string | null;
 };
 
 export type JokerClient = {

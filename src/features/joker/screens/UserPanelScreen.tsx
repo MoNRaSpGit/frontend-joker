@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import { CloseRegisterModal } from "../components/CloseRegisterModal";
-import { OpenUserRegisterModal } from "../components/OpenUserRegisterModal";
-import { closeUserRegister, getUserRegisterState, listCurrentPeriodOrdersForUser, openUserRegister } from "../joker.api";
-import { printUserRegisterCloseTicket } from "../services/joker.print";
+import { getCourierCashSummary, listCurrentPeriodOrders } from "../joker.api";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerOrderRecord, JokerUserRegisterState } from "../joker.types";
+import type { JokerCourier, JokerCourierCashSummary, JokerOrderRecord } from "../joker.types";
 import {
   MEDALS,
   MEDAL_CLASSES,
@@ -19,59 +15,60 @@ import {
   getStoredProfitRatePercent
 } from "./panelHelpers";
 
+type UserPanelScreenProps = {
+  couriers: JokerCourier[];
+};
+
 // Version del Panel para el rol Usuario: mismo resumen del turno (vendido,
 // ganancia, tipos de pago, movimientos, ranking) que el del Administrador,
 // pero puramente informativa -- sin poder asignar repartidor/mostrador,
-// editar el metodo de pago ni borrar pedidos. Ademas maneja su propia caja
-// (saas_joker_user_register_state), separada de la caja global del
-// Administrador, con un monto inicial que el Panel del Administrador no
-// tiene.
-export function UserPanelScreen() {
+// editar el metodo de pago ni borrar pedidos. La caja de "Mostrador" ya
+// no la maneja el Usuario (antes la abria/cerraba el mismo con su propio
+// monto inicial) -- ahora es una tarjeta mas en Delivery que solo el
+// Administrador habilita/liquida (ver DeliveryScreen, courier con
+// isCounter=true); esta pantalla solo lee esos numeros, no los toca.
+export function UserPanelScreen({ couriers }: UserPanelScreenProps) {
+  const mostrador = couriers.find((courier) => courier.isCounter) ?? null;
+  const isMostradorHabilitado = mostrador?.status === "activo";
+
   const [orders, setOrders] = useState<JokerOrderRecord[]>([]);
+  const [cashSummary, setCashSummary] = useState<JokerCourierCashSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [showAllMovements, setShowAllMovements] = useState(false);
   const [profitRatePercent] = useState(getStoredProfitRatePercent);
-  const [registerState, setRegisterState] = useState<JokerUserRegisterState | null>(null);
-  const [isOpeningModalOpen, setIsOpeningModalOpen] = useState(false);
-  const [isSubmittingOpen, setIsSubmittingOpen] = useState(false);
-  const [isConfirmingClose, setIsConfirmingClose] = useState(false);
-  const [isClosingRegister, setIsClosingRegister] = useState(false);
 
-  // Igual que el Panel del Administrador: refresco silencioso cada 5s
-  // para reflejar pedidos aceptados (y designaciones de mostrador/
-  // delivery) desde otra pantalla sin recargar.
+  // Refresco silencioso cada 5s (igual que el Panel del Administrador)
+  // para reflejar pedidos aceptados y designaciones de mostrador/delivery
+  // desde otra pantalla sin recargar.
   useEffect(() => {
-    void loadOrders();
-    void loadRegisterState();
+    void loadData();
 
     const intervalId = window.setInterval(() => {
-      void loadOrders(true);
-      void loadRegisterState();
+      void loadData(true);
     }, 5000);
 
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [mostrador?.id]);
 
-  async function loadRegisterState() {
-    try {
-      const state = await getUserRegisterState();
-      setRegisterState(state);
-    } catch {
-      // Si falla, el boton queda con la etiqueta por defecto; se puede
-      // reintentar tocandolo de nuevo.
+  async function loadData(silent = false) {
+    if (!mostrador) {
+      setIsLoading(false);
+      return;
     }
-  }
 
-  async function loadOrders(silent = false) {
     if (!silent) {
       setIsLoading(true);
       setLoadError(null);
     }
     try {
-      const result = await listCurrentPeriodOrdersForUser();
-      setOrders(result.items);
+      const [ordersResult, summary] = await Promise.all([
+        listCurrentPeriodOrders(mostrador.id),
+        getCourierCashSummary(mostrador.id)
+      ]);
+      setOrders(ordersResult.items);
+      setCashSummary(summary);
     } catch (fetchError) {
       if (!silent) {
         setLoadError(fetchError instanceof Error ? fetchError.message : "No se pudo cargar el panel.");
@@ -83,52 +80,12 @@ export function UserPanelScreen() {
     }
   }
 
-  async function handleOpenRegister(initialCash: number) {
-    setIsSubmittingOpen(true);
-    try {
-      const state = await openUserRegister(initialCash);
-      setRegisterState(state);
-      await loadOrders();
-      setIsOpeningModalOpen(false);
-      toast.success("Caja abierta.");
-    } finally {
-      setIsSubmittingOpen(false);
-    }
-  }
-
-  // shouldPrint = false: cierra sin sacar el ticket -- antes se imprimia
-  // siempre, sin poder evitarlo. Igual que el cierre del Administrador:
-  // cuando se imprime, es primero, y recien despues se avisa al backend,
-  // para no perder el ticket si el cierre en si falla por algun motivo.
-  async function handleConfirmClose(shouldPrint: boolean) {
-    setIsClosingRegister(true);
-    try {
-      if (shouldPrint) {
-        await printUserRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking, initialCash: registerState?.initialCash ?? 0 });
-      }
-      const state = await closeUserRegister({ totalVendido, ganancia, paymentTotals, ranking });
-      setRegisterState(state);
-      await loadOrders();
-      toast.success("Caja cerrada.");
-      setIsConfirmingClose(false);
-    } catch (closeError) {
-      toast.error(closeError instanceof Error ? closeError.message : "No se pudo cerrar la caja.");
-    } finally {
-      setIsClosingRegister(false);
-    }
-  }
-
   const totalVendido = orders.reduce((sum, order) => sum + order.total, 0);
   const ganancia = totalVendido * (profitRatePercent / 100);
   const ranking = buildRanking(orders);
   const paymentTotals = buildPaymentTotals(orders);
   const visibleOrders = showAllMovements ? orders : orders.slice(0, MOVEMENTS_PREVIEW_COUNT);
   const hasHiddenMovements = orders.length > MOVEMENTS_PREVIEW_COUNT;
-  const isRegisterOpen = registerState?.isOpen === true;
-  // Lo que deberia haber en el cajon fisico ahora mismo: monto inicial +
-  // lo vendido en efectivo (tarjeta/transferencia/cuenta no pasan por el
-  // cajon). Mismo calculo que "Total en caja" en el ticket de cierre.
-  const cajaActual = (registerState?.initialCash ?? 0) + paymentTotals.efectivo;
 
   if (isLoading) {
     return <p className="joker-empty-state">Cargando panel...</p>;
@@ -138,7 +95,7 @@ export function UserPanelScreen() {
     return (
       <div className="joker-panel">
         <p className="joker-order-item__excluded">No se pudo cargar el panel: {loadError}</p>
-        <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => loadOrders()}>
+        <button type="button" className="joker-button joker-button--ghost joker-button--auto" onClick={() => loadData()}>
           Reintentar
         </button>
       </div>
@@ -148,33 +105,24 @@ export function UserPanelScreen() {
   return (
     <>
       <section className="joker-panel">
-        <div className="joker-panel__heading joker-panel__heading--row">
-          <div>
-            <p className="joker-eyebrow">Mi caja</p>
-            <h2>Resumen del turno</h2>
-          </div>
-          <div className="joker-panel__heading-actions">
-            <button
-              type="button"
-              className={`joker-button joker-button--auto ${isRegisterOpen ? "joker-button--ghost" : "joker-button--primary"}`}
-              onClick={() => (isRegisterOpen ? setIsConfirmingClose(true) : setIsOpeningModalOpen(true))}
-            >
-              {isRegisterOpen ? "Cerrar caja" : "Abrir caja"}
-            </button>
-          </div>
+        <div className="joker-panel__heading">
+          <p className="joker-eyebrow">Mostrador</p>
+          <h2>Resumen del turno</h2>
         </div>
 
-        {!isRegisterOpen ? (
-          <p className="joker-empty-state">Tu caja esta cerrada. Abrila con el monto inicial para empezar a vender.</p>
+        {!isMostradorHabilitado ? (
+          <p className="joker-empty-state">
+            El mostrador no esta habilitado. Pedile al administrador que lo habilite desde Delivery.
+          </p>
         ) : (
           <div className="joker-stat-grid">
             <div className="joker-stat-tile">
               <span className="joker-stat-tile__label">Monto inicial</span>
-              <strong className="joker-stat-tile__value">{formatPrice(registerState?.initialCash ?? 0)}</strong>
+              <strong className="joker-stat-tile__value">{formatPrice(cashSummary?.initialCash ?? 0)}</strong>
             </div>
             <div className="joker-stat-tile">
               <span className="joker-stat-tile__label">Caja actual</span>
-              <strong className="joker-stat-tile__value">{formatPrice(cajaActual)}</strong>
+              <strong className="joker-stat-tile__value">{formatPrice(cashSummary?.cashOnHand ?? 0)}</strong>
             </div>
             <div className="joker-stat-tile">
               <span className="joker-stat-tile__label">Vendido</span>
@@ -192,11 +140,11 @@ export function UserPanelScreen() {
         )}
       </section>
 
-      {isRegisterOpen ? (
+      {isMostradorHabilitado ? (
         <>
           <section className="joker-panel">
             <div className="joker-panel__heading">
-              <p className="joker-eyebrow">Mi caja</p>
+              <p className="joker-eyebrow">Mostrador</p>
               <h2>Tipo de pagos</h2>
             </div>
 
@@ -285,7 +233,7 @@ export function UserPanelScreen() {
 
           <section className="joker-panel">
             <div className="joker-panel__heading">
-              <p className="joker-eyebrow">Mi caja</p>
+              <p className="joker-eyebrow">Mostrador</p>
               <h2>Productos mas vendidos</h2>
             </div>
 
@@ -306,23 +254,6 @@ export function UserPanelScreen() {
             )}
           </section>
         </>
-      ) : null}
-
-      {isOpeningModalOpen ? (
-        <OpenUserRegisterModal
-          isSubmitting={isSubmittingOpen}
-          onClose={() => setIsOpeningModalOpen(false)}
-          onConfirm={handleOpenRegister}
-        />
-      ) : null}
-
-      {isConfirmingClose ? (
-        <CloseRegisterModal
-          message="No se va a poder seguir sumando ventas hasta que la abras de nuevo. Elegi si queres sacar el ticket con el resumen del turno o no."
-          isSubmitting={isClosingRegister}
-          onCancel={() => setIsConfirmingClose(false)}
-          onConfirm={handleConfirmClose}
-        />
       ) : null}
     </>
   );

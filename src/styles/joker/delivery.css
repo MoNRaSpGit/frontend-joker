@@ -22,6 +22,29 @@
   box-shadow: 0 12px 30px rgba(107, 27, 35, 0.12);
 }
 
+/* "Mostrador" (la tarjeta del rol Usuario/mostrador en Delivery): un
+   dorado/ambar propio, para que se distinga de los repartidores (bordo)
+   a simple vista, sin confundirse con el azul que ya usan las cajitas de
+   caja mas abajo. */
+.joker-delivery-card--counter {
+  border-color: #c98a1f;
+  background: #fffaf0;
+}
+
+.joker-delivery-card--counter .joker-delivery-status-badge--active {
+  background: #fbe8bf;
+  color: #8a5a00;
+}
+
+.joker-delivery-card--counter.joker-delivery-card--expanded {
+  border-color: #c98a1f;
+  box-shadow: 0 12px 30px rgba(201, 138, 31, 0.18);
+}
+
+.joker-delivery-card--counter .joker-delivery-card__chevron--open {
+  color: #c98a1f;
+}
+
 .joker-delivery-card__header {
   width: 100%;
   display: flex;

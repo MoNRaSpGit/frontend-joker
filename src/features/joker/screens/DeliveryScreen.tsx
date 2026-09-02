@@ -401,7 +401,10 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
           const isEditingName = editingCourierId === courier.id;
 
           return (
-            <article key={courier.id} className={`joker-delivery-card${expanded ? " joker-delivery-card--expanded" : ""}`}>
+            <article
+              key={courier.id}
+              className={`joker-delivery-card${expanded ? " joker-delivery-card--expanded" : ""}${courier.isCounter ? " joker-delivery-card--counter" : ""}`}
+            >
               <div
                 role="button"
                 tabIndex={0}
@@ -414,7 +417,7 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
                   }
                 }}
               >
-                <span className="joker-delivery-card__icon">🛵</span>
+                <span className="joker-delivery-card__icon">{courier.isCounter ? "🏪" : "🛵"}</span>
 
                 <span className="joker-delivery-card__name-group">
                   <strong className="joker-delivery-card__name">{courier.name}</strong>
@@ -489,7 +492,7 @@ export function DeliveryScreen({ couriers, onRenameCourier, onEnableCourier, onS
 
       {courierPendingSettlement ? (
         <ConfirmDeleteModal
-          title="Liquidar repartidor"
+          title={courierPendingSettlement.isCounter ? "Liquidar Mostrador" : "Liquidar repartidor"}
           message={`Se va a imprimir el resumen del turno de ${courierPendingSettlement.name} y su caja queda archivada, arrancando de nuevo en 0 la proxima vez que lo habilites. Seguro?`}
           confirmLabel="Liquidar"
           confirmLabelBusy="Liquidando..."

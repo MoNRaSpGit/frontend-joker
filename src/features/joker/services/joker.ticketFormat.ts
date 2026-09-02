@@ -36,14 +36,6 @@ export type JokerCashRegisterSummary = {
   ranking: Array<{ productName: string; quantity: number }>;
 };
 
-// Igual que JokerCashRegisterSummary, mas el monto con el que abrio la
-// caja -- la caja del Usuario (a diferencia de la del Administrador) es
-// un cajon fisico real, asi que el ticket muestra ademas cuanto efectivo
-// deberia haber al cerrar (monto inicial + lo vendido en efectivo).
-export type JokerUserRegisterCloseSummary = JokerCashRegisterSummary & {
-  initialCash: number;
-};
-
 const STORE_NAME = "EL JOKER";
 const STORE_ADDRESS = "Elias Abdo 115";
 const STORE_PHONE = "Tel: 099 238 454";
@@ -557,82 +549,6 @@ export function buildCourierSummaryTicketLines(
   lines.push(BOLD_ON, TALL_SIZE_ON);
   lines.push(`${rightAlignedLine("Caja actual ", formatMoney(summary.cashOnHand))}\n`);
   lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-  lines.push("\n");
-
-  lines.push(ALIGN_CENTER);
-  lines.push(BOLD_ON, TALL_SIZE_ON);
-  lines.push(`${FOOTER_MESSAGE}\n`);
-  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-
-  lines.push("\n\n\n");
-  lines.push(ALIGN_LEFT);
-  lines.push(CUT_PAPER);
-
-  return lines;
-}
-
-// Ticket de cierre de caja del Usuario (mostrador): igual que el de
-// Administrador, mas el monto inicial y el total que deberia haber en el
-// cajon fisico al cerrar (monto inicial + lo vendido en efectivo -- tarjeta/
-// transferencia/cuenta no pasan por el cajon).
-export function buildUserRegisterCloseTicketLines(summary: JokerUserRegisterCloseSummary) {
-  const lines: string[] = [];
-  const totalEnCaja = summary.initialCash + (summary.paymentTotals.efectivo ?? 0);
-
-  lines.push(ESC_INIT);
-  lines.push(ALIGN_CENTER);
-  lines.push(BOLD_ON, DOUBLE_SIZE_ON);
-  lines.push(`${STORE_NAME}\n`);
-  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-  lines.push(BOLD_ON, TALL_SIZE_ON);
-  lines.push("CIERRE DE CAJA\n");
-  lines.push("MOSTRADOR\n");
-  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-  lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
-  lines.push(`${INTERNAL_USE_NOTE}\n`);
-
-  lines.push(ALIGN_LEFT);
-  lines.push(`${decorativeBorder()}\n`);
-  lines.push(BOLD_ON);
-  lines.push(`${rightAlignedLine("Monto inicial ", formatMoney(summary.initialCash))}\n`);
-  lines.push(BOLD_OFF);
-  lines.push(`${divider()}\n`);
-  lines.push(BOLD_ON);
-  lines.push("Ventas por forma de pago\n");
-  lines.push(BOLD_OFF);
-  lines.push(`${divider()}\n`);
-
-  (Object.keys(JOKER_PAYMENT_METHOD_LABELS) as JokerPaymentMethod[]).forEach((method) => {
-    lines.push(`${rightAlignedLine(`${JOKER_PAYMENT_METHOD_LABELS[method]} `, formatMoney(summary.paymentTotals[method] ?? 0))}\n`);
-  });
-
-  lines.push(`${decorativeBorder()}\n`);
-  lines.push(BOLD_ON);
-  lines.push(`${rightAlignedLine("Total vendido ", formatMoney(summary.totalVendido))}\n`);
-  lines.push(`${rightAlignedLine("Ganancia ", formatMoney(summary.ganancia))}\n`);
-  lines.push(BOLD_OFF);
-  lines.push(`${divider()}\n`);
-  lines.push(BOLD_ON, TALL_SIZE_ON);
-  lines.push(`${rightAlignedLine("Total en caja ", formatMoney(totalEnCaja))}\n`);
-  lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
-  lines.push("(inicial + efectivo vendido)\n");
-  lines.push("\n");
-
-  lines.push(`${decorativeBorder()}\n`);
-  lines.push(BOLD_ON);
-  lines.push("Top 3 productos\n");
-  lines.push(BOLD_OFF);
-  lines.push(`${divider()}\n`);
-
-  if (summary.ranking.length) {
-    summary.ranking.slice(0, 3).forEach((entry, index) => {
-      lines.push(`${index + 1}) ${entry.quantity}x ${entry.productName}\n`);
-    });
-  } else {
-    lines.push("Sin ventas registradas.\n");
-  }
-
-  lines.push(`${decorativeBorder()}\n`);
   lines.push("\n");
 
   lines.push(ALIGN_CENTER);

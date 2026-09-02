@@ -3,10 +3,9 @@ import {
   buildAccountPaymentTicketLines,
   buildAccountStatementTicketLines,
   buildCashRegisterCloseTicketLines,
-  buildCourierSummaryTicketLines,
-  buildUserRegisterCloseTicketLines
+  buildCourierSummaryTicketLines
 } from "./joker.ticketFormat";
-import type { JokerCashRegisterSummary, JokerUserRegisterCloseSummary } from "./joker.ticketFormat";
+import type { JokerCashRegisterSummary } from "./joker.ticketFormat";
 import type {
   JokerAccountEntry,
   JokerAccountPayment,
@@ -50,12 +49,6 @@ export async function printAccountPaymentTicket(
 
 export async function printCashRegisterCloseTicket(summary: JokerCashRegisterSummary) {
   const lines = buildCashRegisterCloseTicketLines(summary);
-  await printRawLinesByQz(lines);
-  return { method: "qz" as const };
-}
-
-export async function printUserRegisterCloseTicket(summary: JokerUserRegisterCloseSummary) {
-  const lines = buildUserRegisterCloseTicketLines(summary);
   await printRawLinesByQz(lines);
   return { method: "qz" as const };
 }

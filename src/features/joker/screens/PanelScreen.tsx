@@ -592,8 +592,15 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
                         <div className="joker-order-meta-section">
                           {assigningCourierOrderId === order.id ? (
                             <span className="joker-delivery-assign">
+                              {/* Mostrador (isCounter) no es un repartidor real -- si
+                                  apareciera aca, se podria "asignar" por error un
+                                  pedido de delivery de verdad a esa tarjeta, y ese
+                                  pedido quedaria sin sumar en ningun lado (ni en la
+                                  caja de Mostrador, que filtra por otro criterio, ni
+                                  en la de un repartidor real). El boton 🏪 Mostrador
+                                  de mas abajo ya cubre ese caso. */}
                               {couriers
-                                .filter((courier) => courier.status === "activo")
+                                .filter((courier) => courier.status === "activo" && !courier.isCounter)
                                 .map((courier) => (
                                   <button
                                     key={courier.id}

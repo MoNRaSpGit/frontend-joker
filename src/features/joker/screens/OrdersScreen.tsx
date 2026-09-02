@@ -2,15 +2,14 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { CustomizeProductModal } from "../components/CustomizeProductModal";
-import { OpenUserRegisterModal } from "../components/OpenUserRegisterModal";
 import { OrderList } from "../components/OrderList";
 import { PaymentMethodModal } from "../components/PaymentMethodModal";
 import { ProductGrid } from "../components/ProductGrid";
 import { useJokerOrder } from "../hooks/useJokerOrder";
-import { createAccountEntry, createOrder, getRegisterState, getUserRegisterState, openRegister, openUserRegister } from "../joker.api";
+import { createAccountEntry, createOrder, getRegisterState, openRegister } from "../joker.api";
 import { printOrderTicket } from "../services/joker.print";
 import { isComboComponentLine } from "../joker.types";
-import type { JokerClient, JokerOrderItem, JokerPaymentMethod, JokerProduct, JokerRole } from "../joker.types";
+import type { JokerClient, JokerCourier, JokerOrderItem, JokerPaymentMethod, JokerProduct, JokerRole } from "../joker.types";
 
 type OrdersScreenProps = {
   products: JokerProduct[];
@@ -18,6 +17,7 @@ type OrdersScreenProps = {
   loadError: string | null;
   onReload: () => void;
   clients: JokerClient[];
+  couriers: JokerCourier[];
   onAccountEntryRegistered: () => void;
   customizeMode: "cliente" | "dev";
   role: JokerRole;
@@ -29,6 +29,7 @@ export function OrdersScreen({
   loadError,
   onReload,
   clients,
+  couriers,
   onAccountEntryRegistered,
   customizeMode,
   role
@@ -77,11 +78,12 @@ export function OrdersScreen({
     // Dos cajas se respetan aca, en este orden:
     // 1) La caja GENERAL del Administrador -- representa si el local esta
     //    operando o no ese dia. Si esta cerrada, no se puede mandar ningun
-    //    pedido (ni del Usuario ni del propio Administrador), y el Usuario
-    //    no tiene permiso para abrirla -- se frena aca nomas, sin ofrecerle
-    //    abrirla como con la suya.
-    // 2) Su PROPIA caja -- si esta cerrada, la puede abrir el mismo ahi
-    //    mismo (con su monto inicial) para continuar.
+    //    pedido (ni del Usuario ni del propio Administrador).
+    // 2) "Mostrador" (la tarjeta del Usuario en Delivery, courier con
+    //    isCounter=true) -- si no esta habilitada, no se puede mandar
+    //    nada: a diferencia de antes, el Usuario ya no la puede abrir el
+    //    mismo (eso ahora es cosa del Administrador, con el monto
+    //    inicial), asi que solo se le avisa que espere.
     if (role === "usuario") {
       setIsPrinting(true);
       try {
@@ -92,10 +94,10 @@ export function OrdersScreen({
           return;
         }
 
-        const registerState = await getUserRegisterState();
-        if (!registerState.isOpen) {
+        const mostrador = couriers.find((courier) => courier.isCounter);
+        if (mostrador?.status !== "activo") {
+          toast.error("El mostrador no esta habilitado. Pedile al administrador que lo habilite desde Delivery.");
           setIsPrinting(false);
-          setPendingSale({ paymentMethod, clientId, customerName });
           return;
         }
       } catch (stateError) {
@@ -183,28 +185,6 @@ export function OrdersScreen({
     const sale = pendingSale;
     setPendingSale(null);
     await proceedWithSale(sale.paymentMethod, sale.clientId, sale.customerName);
-  }
-
-  // Version del de arriba para el rol Usuario: su caja pide un monto
-  // inicial (no es un simple "abrir", como la del Administrador), asi que
-  // en vez del confirm generico se reusa el mismo modal que usa
-  // UserPanelScreen para abrirla.
-  async function handleConfirmOpenUserRegisterAndSale(initialCash: number) {
-    if (!pendingSale) return;
-
-    // Sin try/catch propio a proposito: OpenUserRegisterModal ya atrapa lo
-    // que tire esto y lo muestra en su propio cartel de error, sin cerrar
-    // el modal -- si lo tragamos aca, el operario ve que "no paso nada".
-    setIsOpeningRegister(true);
-    try {
-      await openUserRegister(initialCash);
-    } finally {
-      setIsOpeningRegister(false);
-    }
-
-    const sale = pendingSale;
-    setPendingSale(null);
-    await submitPendingOrder(sale.paymentMethod, sale.clientId);
   }
 
   async function proceedWithSale(paymentMethod: JokerPaymentMethod, clientId?: number, customerName?: string) {
@@ -369,13 +349,7 @@ export function OrdersScreen({
         />
       ) : null}
 
-      {pendingSale && role === "usuario" ? (
-        <OpenUserRegisterModal
-          isSubmitting={isOpeningRegister}
-          onClose={() => setPendingSale(null)}
-          onConfirm={handleConfirmOpenUserRegisterAndSale}
-        />
-      ) : pendingSale ? (
+      {pendingSale ? (
         <ConfirmDeleteModal
           title="Caja cerrada"
           message="La caja esta cerrada. Deseas abrirla y continuar con este pedido?"

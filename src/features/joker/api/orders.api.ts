@@ -82,17 +82,13 @@ export async function updateOrder(
 // Panel para que el resumen arranque de nuevo despues de cada cierre, y
 // Delivery (con courierId) para que la asignacion de pedidos por
 // repartidor tambien arranque de nuevo con cada cierre.
+// Con courierId de la tarjeta "Mostrador" (courier.isCounter, ver
+// DeliveryScreen/UserPanelScreen), trae los pedidos de mostrador/rol
+// Usuario del turno actual en vez de los de un repartidor real -- la
+// distincion la hace el backend (ver JokerOrdersService#listCurrentPeriodOrders).
 export async function listCurrentPeriodOrders(courierId?: number): Promise<OrderListResponse> {
   const params = courierId ? `?courierId=${courierId}` : "";
   const response = await fetch(`${API_BASE_URL}/joker/orders/current-period${params}`, { cache: "no-store" });
-  return readJson<OrderListResponse>(response);
-}
-
-// Igual que arriba, pero para el Panel del Usuario: pedidos del turno de
-// SU caja (desde que la abrio), solo los que el origino (origin_role =
-// 'usuario') -- ver JokerOrdersService#listCurrentPeriodOrdersForUser.
-export async function listCurrentPeriodOrdersForUser(): Promise<OrderListResponse> {
-  const response = await fetch(`${API_BASE_URL}/joker/user-register/orders/current-period`, { cache: "no-store" });
   return readJson<OrderListResponse>(response);
 }
 
