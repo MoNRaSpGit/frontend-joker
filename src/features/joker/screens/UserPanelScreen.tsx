@@ -39,15 +39,15 @@ export function UserPanelScreen({ couriers }: UserPanelScreenProps) {
   const [showAllMovements, setShowAllMovements] = useState(false);
   const [profitRatePercent] = useState(getStoredProfitRatePercent);
 
-  // Refresco silencioso cada 5s (igual que el Panel del Administrador)
+  // Refresco silencioso cada 1s (igual que el Panel del Administrador)
   // para reflejar pedidos aceptados y designaciones de mostrador/delivery
-  // desde otra pantalla sin recargar.
+  // desde otra pantalla practicamente al toque, sin recargar.
   useEffect(() => {
     void loadData();
 
     const intervalId = window.setInterval(() => {
       void loadData(true);
-    }, 5000);
+    }, 1000);
 
     return () => window.clearInterval(intervalId);
   }, [mostrador?.id]);

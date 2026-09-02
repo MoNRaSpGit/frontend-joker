@@ -80,10 +80,13 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
     window.localStorage.setItem(PROFIT_RATE_STORAGE_KEY, String(percent));
   }
 
-  // Se refresca solo cada 5s (en silencio, sin tapar la pantalla con el
+  // Se refresca solo cada 1s (en silencio, sin tapar la pantalla con el
   // spinner) para que si otro dispositivo carga un pedido, cierra/abre la
   // caja, o designa un pedido como mostrador/delivery, se vea reflejado
-  // aca casi al toque, sin tener que salir y volver a entrar a la pestana.
+  // aca practicamente al toque, sin tener que salir y volver a entrar a
+  // la pestana. La propia pantalla ya se actualiza al instante con sus
+  // propias acciones (ver setOrders despues de cada accion mas abajo);
+  // este intervalo es solo para lo que cambia desde OTRO dispositivo.
   useEffect(() => {
     void loadOrders();
     void loadRegisterState();
@@ -91,7 +94,7 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
     const intervalId = window.setInterval(() => {
       void loadOrders(true);
       void loadRegisterState();
-    }, 5000);
+    }, 1000);
 
     return () => window.clearInterval(intervalId);
   }, []);

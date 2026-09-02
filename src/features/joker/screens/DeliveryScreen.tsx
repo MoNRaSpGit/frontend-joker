@@ -34,21 +34,33 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
   // cajita misma, sin un boton "Cargar" aparte.
   const [activeForm, setActiveForm] = useState<CashMovementType | null>(null);
 
+  // Refresco silencioso cada 1s (igual que el Panel del Administrador y
+  // el del Usuario) para que un movimiento cargado desde otra pantalla
+  // (o una venta nueva de mostrador) se vea reflejado aca practicamente
+  // al toque, sin tener que cerrar y volver a abrir la tarjeta.
   useEffect(() => {
     let cancelled = false;
-    setIsLoading(true);
-    getCourierCashSummary(courier.id)
-      .then((result) => {
-        if (!cancelled) setSummary(result);
-      })
-      .catch((error) => {
-        if (!cancelled) toast.error(error instanceof Error ? error.message : "No se pudo cargar la caja.");
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+
+    function loadSummary(silent = false) {
+      if (!silent) setIsLoading(true);
+      return getCourierCashSummary(courier.id)
+        .then((result) => {
+          if (!cancelled) setSummary(result);
+        })
+        .catch((error) => {
+          if (!cancelled && !silent) toast.error(error instanceof Error ? error.message : "No se pudo cargar la caja.");
+        })
+        .finally(() => {
+          if (!cancelled && !silent) setIsLoading(false);
+        });
+    }
+
+    void loadSummary();
+    const intervalId = window.setInterval(() => void loadSummary(true), 1000);
+
     return () => {
       cancelled = true;
+      window.clearInterval(intervalId);
     };
   }, [courier.id, courier.status]);
 
@@ -238,26 +250,38 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showOrders, setShowOrders] = useState(false);
 
+  // Mismo refresco silencioso cada 1s que el resto de los paneles -- ver
+  // CourierCash mas arriba.
   useEffect(() => {
     let cancelled = false;
-    setIsLoading(true);
-    setLoadError(null);
-    listCurrentPeriodOrders(courier.id)
-      .then((result) => {
-        if (!cancelled) setOrders(result.items);
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          const message = error instanceof Error ? error.message : "No se pudieron cargar los pedidos.";
-          setLoadError(message);
-          toast.error(message);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+
+    function loadOrders(silent = false) {
+      if (!silent) {
+        setIsLoading(true);
+        setLoadError(null);
+      }
+      return listCurrentPeriodOrders(courier.id)
+        .then((result) => {
+          if (!cancelled) setOrders(result.items);
+        })
+        .catch((error) => {
+          if (!cancelled && !silent) {
+            const message = error instanceof Error ? error.message : "No se pudieron cargar los pedidos.";
+            setLoadError(message);
+            toast.error(message);
+          }
+        })
+        .finally(() => {
+          if (!cancelled && !silent) setIsLoading(false);
+        });
+    }
+
+    void loadOrders();
+    const intervalId = window.setInterval(() => void loadOrders(true), 1000);
+
     return () => {
       cancelled = true;
+      window.clearInterval(intervalId);
     };
   }, [courier.id, courier.status]);
 
