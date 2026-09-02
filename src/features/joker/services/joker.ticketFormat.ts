@@ -513,9 +513,10 @@ export function buildCourierSummaryTicketLines(
       // sufijo " MOSTRADOR" (marca interna, no es un nombre real, ver
       // PanelScreen#handleAssignCounter).
       const displayName = order.customerName?.trim().replace(/\s*MOSTRADOR\s*$/i, "").trim() || "";
-      const label = courier.isCounter
-        ? `Pedido #${order.displayNumber} (${JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}${displayName ? `, ${displayName}` : ""}) `
-        : `Pedido #${order.displayNumber}${displayName ? ` (${displayName})` : ""} `;
+      // El metodo de pago sale SIEMPRE, sea Mostrador o repartidor real
+      // -- antes solo salia para Mostrador, y en Delivery el ticket no
+      // decia si el pedido era efectivo, POS, transferencia o cuenta.
+      const label = `Pedido #${order.displayNumber} (${JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}${displayName ? `, ${displayName}` : ""}) `;
       lines.push(`${rightAlignedLine(label, formatMoney(order.total))}\n`);
       if (order.deliveryCost) {
         lines.push(`${rightAlignedLine("  Envio ", formatMoney(order.deliveryCost))}\n`);
