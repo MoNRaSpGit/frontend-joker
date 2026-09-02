@@ -11,3 +11,4 @@ export * from "./api/stock.api";
 export * from "./api/register.api";
 export * from "./api/panel.api";
 export * from "./api/auth.api";
+export * from "./api/chat.api";

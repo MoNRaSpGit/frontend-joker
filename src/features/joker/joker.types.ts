@@ -6,6 +6,16 @@
 // roles diferenciados.
 export type JokerRole = "administrador" | "usuario";
 
+// Chat interno basico entre los dos roles: un solo canal compartido (no
+// hay cuentas individuales, el login es por rol), sin destinatario ni
+// sala -- los dos roles ven la misma lista completa de mensajes.
+export type JokerChatMessage = {
+  id: number;
+  senderRole: JokerRole;
+  message: string;
+  createdAt: string;
+};
+
 // Slot de eleccion dentro de un combo (ej: "Hamburguesa" o "Refresco"): el
 // operario elige uno de optionProductIds al cargar el combo, y ese producto
 // (con su receta propia) se descuenta del stock ademas del combo en si.
