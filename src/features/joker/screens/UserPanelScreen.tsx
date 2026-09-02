@@ -15,6 +15,7 @@ import {
   buildRanking,
   formatDateTime,
   formatPrice,
+  getDisplayCustomerName,
   getStoredProfitRatePercent
 } from "./panelHelpers";
 
@@ -253,12 +254,14 @@ export function UserPanelScreen() {
                               <span className="joker-order-meta-chip">{formatDateTime(order.createdAt, order.orderDate)}</span>
                               <span className="joker-order-meta-chip">{JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}</span>
                             </div>
-                            {order.customerName?.trim() || order.address?.trim() ? (
-                              <div className="joker-order-meta-customer">
-                                {order.customerName?.trim() ? <strong>{order.customerName}</strong> : null}
-                                {order.address?.trim() ? <span>{order.address}</span> : null}
-                              </div>
-                            ) : null}
+                            <div className="joker-order-meta-customer">
+                              <span>
+                                <strong>Nombre:</strong> {getDisplayCustomerName(order) || "-"}
+                              </span>
+                              <span>
+                                <strong>Direccion:</strong> {order.address?.trim() || "-"}
+                              </span>
+                            </div>
                           </div>
                         </li>
                         {order.items.map((item, index) => (

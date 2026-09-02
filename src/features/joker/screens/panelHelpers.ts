@@ -24,6 +24,15 @@ export function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
 }
 
+// Nombre para mostrar en Movimientos, sacandole el sufijo " MOSTRADOR"
+// (que es una marca interna, no el nombre real que escribio nadie -- ver
+// PanelScreen#handleAssignCounter). Si no queda nada (el pedido nunca
+// tuvo nombre, o solo tenia la marca), devuelve "" para que el que llama
+// pueda mostrar el guion por defecto.
+export function getDisplayCustomerName(order: JokerOrderRecord) {
+  return (order.customerName?.trim() ?? "").replace(/\s*MOSTRADOR\s*$/i, "").trim();
+}
+
 // Si el pedido tiene una fecha editada a mano (orderDate), esa es la que se
 // muestra; la hora siempre sale de created_at (no se edita).
 export function formatDateTime(isoDate: string, orderDate?: string | null) {

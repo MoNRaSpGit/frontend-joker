@@ -77,17 +77,15 @@ export function OrderList({
           />
         </label>
 
-        {isCounterOrder ? null : (
-          <label className="joker-form-field">
-            <span>Direccion del pedido (si es delivery)</span>
-            <input
-              type="text"
-              value={orderAddress}
-              onChange={(event) => onAddressChange(event.target.value)}
-              placeholder="Ej: Av. 18 de Julio 1234"
-            />
-          </label>
-        )}
+        <label className="joker-form-field">
+          <span>{isCounterOrder ? "Direccion (opcional)" : "Direccion del pedido (si es delivery)"}</span>
+          <input
+            type="text"
+            value={orderAddress}
+            onChange={(event) => onAddressChange(event.target.value)}
+            placeholder="Ej: Av. 18 de Julio 1234"
+          />
+        </label>
       </div>
 
       {isCounterOrder ? null : (

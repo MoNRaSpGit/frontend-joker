@@ -137,19 +137,18 @@ export function OrdersScreen({
   async function submitPendingOrder(paymentMethod: JokerPaymentMethod, clientId?: number) {
     setIsPrinting(true);
     try {
-      // El campo "Nombre del cliente" del mostrador (orderCustomerName) es
-      // el que llena el Usuario -- no el que arma el modal de pago para
-      // transferencia/cuenta. Antes se le agregaba "MOSTRADOR" automatico
-      // al nombre, pero eso dejaba el pedido marcado como mostrador para
-      // siempre (sin poder asignarle despues un repartidor) aunque en
-      // realidad fuera para delivery -- ahora queda "Sin designar" como
-      // cualquier otro pedido, y el Administrador decide (delivery o
-      // mostrador) desde el Panel, sin importar de donde vino el pedido.
+      // Nombre y direccion (los dos opcionales) son los mismos campos que
+      // llena el Usuario en "Pedido" (orderCustomerName/orderAddress, ver
+      // OrderList) -- no el que arma el modal de pago para transferencia/
+      // cuenta. Un pedido de mostrador (rol Usuario, aceptado) ya cuenta
+      // como mostrador solo por su origen (ver isCounterOrder en
+      // PanelScreen), asi que no hace falta pisarle el nombre con un
+      // sufijo para que se lo reconozca.
       const trimmedName = orderCustomerName.trim();
 
       await createOrder(
         order,
-        "",
+        orderAddress,
         paymentMethod,
         trimmedName || undefined,
         undefined,

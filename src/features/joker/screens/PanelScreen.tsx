@@ -20,6 +20,7 @@ import {
   buildRanking,
   formatDateTime,
   formatPrice,
+  getDisplayCustomerName,
   getStoredProfitRatePercent
 } from "./panelHelpers";
 
@@ -579,13 +580,14 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
                           )}
                         </div>
 
-                        {!order.customerName?.trim().toUpperCase().includes("MOSTRADOR") &&
-                        (order.customerName?.trim() || order.address?.trim()) ? (
-                          <div className="joker-order-meta-customer">
-                            {order.customerName?.trim() ? <strong>{order.customerName}</strong> : null}
-                            {order.address?.trim() ? <span>{order.address}</span> : null}
-                          </div>
-                        ) : null}
+                        <div className="joker-order-meta-customer">
+                          <span>
+                            <strong>Nombre:</strong> {getDisplayCustomerName(order) || "-"}
+                          </span>
+                          <span>
+                            <strong>Direccion:</strong> {order.address?.trim() || "-"}
+                          </span>
+                        </div>
 
                         <div className="joker-order-meta-section">
                           {assigningCourierOrderId === order.id ? (
