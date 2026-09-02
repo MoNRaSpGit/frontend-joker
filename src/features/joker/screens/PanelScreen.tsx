@@ -351,10 +351,18 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
   // "Movimientos" muestra TODOS los pedidos del periodo (los propios y los
   // que vinieron del Usuario, para poder verlos y designarles delivery/
   // mostrador) -- pero el resumen (vendido, ganancia, tipo de pagos,
-  // ranking, cantidad de pedidos) es la caja del Administrador nomas: un
-  // pedido que nacio en el Usuario ya suma en SU caja (ver
-  // UserPanelScreen), sumarlo tambien aca lo contaria dos veces.
-  const adminOrders = orders.filter((order) => order.originRole === "administrador");
+  // ranking, cantidad de pedidos) es la caja del Administrador nomas.
+  //
+  // Ojo: NO es lo mismo que originRole === "administrador". Un pedido
+  // "de mostrador" (isCounterOrder) ya suma en la caja del Usuario (ver
+  // UserPanelScreen + listCurrentPeriodOrdersForUser en el backend),
+  // sumarlo tambien aca lo contaria dos veces -- pero si ese mismo pedido
+  // despues se reasigna a un repartidor (deja de ser mostrador, sin
+  // importar de donde nacio originalmente), pasa a ser pura y
+  // exclusivamente del Administrador y tiene que empezar a sumar aca. Por
+  // eso el filtro correcto es "lo opuesto de mostrador ahora mismo", no
+  // "de donde nacio".
+  const adminOrders = orders.filter((order) => !isCounterOrder(order));
   const totalVendido = adminOrders.reduce((sum, order) => sum + order.total, 0);
   const ganancia = totalVendido * (profitRatePercent / 100);
   const ranking = buildRanking(adminOrders);
