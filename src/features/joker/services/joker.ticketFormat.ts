@@ -506,9 +506,16 @@ export function buildCourierSummaryTicketLines(
   lines.push(BOLD_OFF);
   if (orders.length) {
     orders.forEach((order) => {
+      // El nombre (si hay) se muestra siempre -- en pantalla ya se ve
+      // (Panel/Delivery), pero en el ticket impreso no salia, y es
+      // justo lo que hace falta para saber DE QUIEN es un pedido a
+      // cuenta/fiado sin tener que volver a la pantalla. Se le saca el
+      // sufijo " MOSTRADOR" (marca interna, no es un nombre real, ver
+      // PanelScreen#handleAssignCounter).
+      const displayName = order.customerName?.trim().replace(/\s*MOSTRADOR\s*$/i, "").trim() || "";
       const label = courier.isCounter
-        ? `Pedido #${order.displayNumber} (${JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}) `
-        : `Pedido #${order.displayNumber} `;
+        ? `Pedido #${order.displayNumber} (${JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}${displayName ? `, ${displayName}` : ""}) `
+        : `Pedido #${order.displayNumber}${displayName ? ` (${displayName})` : ""} `;
       lines.push(`${rightAlignedLine(label, formatMoney(order.total))}\n`);
       if (order.deliveryCost) {
         lines.push(`${rightAlignedLine("  Envio ", formatMoney(order.deliveryCost))}\n`);
