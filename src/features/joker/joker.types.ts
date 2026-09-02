@@ -170,6 +170,10 @@ export type JokerRegisterCloseSummary = {
   ganancia: number;
   paymentTotals: Record<JokerPaymentMethod, number>;
   ranking: Array<{ productName: string; quantity: number }>;
+  // Cuanto de totalVendido vino de mostrador/rol Usuario -- solo lo manda
+  // el cierre de la caja general (ver PanelScreen), para que quede
+  // archivado el desglose por origen junto con el resto del cierre.
+  mostradorTotal?: number;
 };
 
 export type JokerClient = {

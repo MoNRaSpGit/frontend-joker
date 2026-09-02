@@ -34,6 +34,12 @@ export type JokerCashRegisterSummary = {
   totalVendido: number;
   ganancia: number;
   ranking: Array<{ productName: string; quantity: number }>;
+  // Cuanto de totalVendido vino de mostrador/rol Usuario -- opcional
+  // porque solo el cierre de la caja general (PanelScreen) lo manda; el
+  // resto de las cajas (repartidor, Mostrador) no lo necesitan. Si viene,
+  // el ticket desglosa "Administrador" (totalVendido - esto) y
+  // "Mostrador" ademas del total, ver buildCashRegisterCloseTicketLines.
+  mostradorTotal?: number;
 };
 
 const STORE_NAME = "EL JOKER";
@@ -625,6 +631,14 @@ export function buildCashRegisterCloseTicketLines(summary: JokerCashRegisterSumm
   });
 
   lines.push(`${decorativeBorder()}\n`);
+  if (summary.mostradorTotal !== undefined) {
+    lines.push(BOLD_ON);
+    lines.push("Vendido por origen\n");
+    lines.push(BOLD_OFF);
+    lines.push(`${rightAlignedLine("Administrador ", formatMoney(summary.totalVendido - summary.mostradorTotal))}\n`);
+    lines.push(`${rightAlignedLine("Mostrador ", formatMoney(summary.mostradorTotal))}\n`);
+    lines.push(`${divider()}\n`);
+  }
   lines.push(BOLD_ON);
   lines.push(`${rightAlignedLine("Total vendido ", formatMoney(summary.totalVendido))}\n`);
   lines.push(`${rightAlignedLine("Ganancia ", formatMoney(summary.ganancia))}\n`);

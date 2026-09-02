@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { getCourierCashSummary, listCurrentPeriodOrders } from "../joker.api";
+import { toast } from "react-toastify";
+import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
+import { getCourierCashSummary, listCurrentPeriodOrders, updateOrder } from "../joker.api";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerCourier, JokerCourierCashSummary, JokerOrderRecord } from "../joker.types";
 import {
@@ -21,12 +23,16 @@ type UserPanelScreenProps = {
 
 // Version del Panel para el rol Usuario: mismo resumen del turno (vendido,
 // ganancia, tipos de pago, movimientos, ranking) que el del Administrador,
-// pero puramente informativa -- sin poder asignar repartidor/mostrador,
-// editar el metodo de pago ni borrar pedidos. La caja de "Mostrador" ya
-// no la maneja el Usuario (antes la abria/cerraba el mismo con su propio
-// monto inicial) -- ahora es una tarjeta mas en Delivery que solo el
-// Administrador habilita/liquida (ver DeliveryScreen, courier con
-// isCounter=true); esta pantalla solo lee esos numeros, no los toca.
+// e igual que ahi puede eliminar un pedido propio (ej: el cliente se
+// arrepintio) -- misma cascada de siempre (stock devuelto, cuenta
+// corriente/caja recalculadas solas al recalcular el total en $0, ver
+// handleConfirmDeleteOrder). Lo unico que no puede es asignar repartidor/
+// mostrador ni editar el metodo de pago, eso sigue siendo del
+// Administrador. La caja de "Mostrador" ya no la maneja el Usuario (antes
+// la abria/cerraba el mismo con su propio monto inicial) -- ahora es una
+// tarjeta mas en Delivery que solo el Administrador habilita/liquida (ver
+// DeliveryScreen, courier con isCounter=true); esta pantalla solo lee
+// esos numeros, no los toca.
 export function UserPanelScreen({ couriers }: UserPanelScreenProps) {
   const mostrador = couriers.find((courier) => courier.isCounter) ?? null;
   const isMostradorHabilitado = mostrador?.status === "activo";
@@ -38,6 +44,8 @@ export function UserPanelScreen({ couriers }: UserPanelScreenProps) {
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [showAllMovements, setShowAllMovements] = useState(false);
   const [profitRatePercent] = useState(getStoredProfitRatePercent);
+  const [pendingDeleteOrder, setPendingDeleteOrder] = useState<JokerOrderRecord | null>(null);
+  const [isDeletingOrder, setIsDeletingOrder] = useState(false);
 
   // Refresco silencioso cada 1s (igual que el Panel del Administrador)
   // para reflejar pedidos aceptados y designaciones de mostrador/delivery
@@ -77,6 +85,28 @@ export function UserPanelScreen({ couriers }: UserPanelScreenProps) {
       if (!silent) {
         setIsLoading(false);
       }
+    }
+  }
+
+  // Mismo mecanismo que "Eliminar pedido" del Panel del Administrador
+  // (ver PanelScreen#handleConfirmDeleteOrder): vaciar los items deja el
+  // pedido en $0 sin borrar la fila -- el backend ya se encarga solo de
+  // devolver el stock y de resincronizar la cuenta corriente si el pedido
+  // era "a cuenta" (ver JokerOrdersService#updateOrder), y como el total
+  // queda en $0, tambien se descuenta solo de la caja de Mostrador (ver
+  // getCourierCashSummary) la proxima vez que se recalcule.
+  async function handleConfirmDeleteOrder() {
+    if (!pendingDeleteOrder) return;
+    setIsDeletingOrder(true);
+    try {
+      await updateOrder(pendingDeleteOrder.id, [], pendingDeleteOrder.orderDate ?? undefined);
+      toast.success("Pedido eliminado.");
+      setPendingDeleteOrder(null);
+      await loadData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo eliminar el pedido.");
+    } finally {
+      setIsDeletingOrder(false);
     }
   }
 
@@ -175,7 +205,7 @@ export function UserPanelScreen({ couriers }: UserPanelScreenProps) {
                     <div
                       role="button"
                       tabIndex={0}
-                      className="joker-order-item joker-order-item--flat joker-order-item--clickable"
+                      className={`joker-order-item joker-order-item--flat joker-order-item--clickable joker-order-item--with-delete${!order.items.length ? " joker-order-item--cancelled" : ""}`}
                       onClick={() => setExpandedOrderId((current) => (current === order.id ? null : order.id))}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
@@ -185,12 +215,29 @@ export function UserPanelScreen({ couriers }: UserPanelScreenProps) {
                       }}
                     >
                       <div className="joker-order-item__title-group">
-                        <strong>Pedido #{order.displayNumber}</strong>
+                        <strong>
+                          Pedido #{order.displayNumber}
+                          {!order.items.length ? <span className="joker-cancelled-badge">Eliminado</span> : null}
+                        </strong>
                         <span className="joker-order-item__excluded">
                           {order.items.length} producto{order.items.length === 1 ? "" : "s"}
                           {order.customerName?.trim() ? ` · ${order.customerName.trim()}` : ""}
                         </span>
                       </div>
+                      {order.items.length ? (
+                        <button
+                          type="button"
+                          className="joker-order-item__delete-mid"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setPendingDeleteOrder(order);
+                          }}
+                        >
+                          Eliminar pedido
+                        </button>
+                      ) : (
+                        <span />
+                      )}
                       <strong className="joker-amount-plus">+{formatPrice(order.total)}</strong>
                     </div>
 
@@ -254,6 +301,18 @@ export function UserPanelScreen({ couriers }: UserPanelScreenProps) {
             )}
           </section>
         </>
+      ) : null}
+
+      {pendingDeleteOrder ? (
+        <ConfirmDeleteModal
+          title="Eliminar pedido"
+          message={`Seguro que queres eliminar el pedido #${pendingDeleteOrder.displayNumber}? El stock descontado se devuelve.`}
+          confirmLabel="Eliminar pedido"
+          confirmLabelBusy="Eliminando..."
+          isDeleting={isDeletingOrder}
+          onCancel={() => setPendingDeleteOrder(null)}
+          onConfirm={() => void handleConfirmDeleteOrder()}
+        />
       ) : null}
     </>
   );

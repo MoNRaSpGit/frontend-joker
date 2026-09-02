@@ -129,9 +129,9 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
     setIsClosingRegister(true);
     try {
       if (shouldPrint) {
-        await printCashRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking });
+        await printCashRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking, mostradorTotal });
       }
-      const state = await closeRegister({ totalVendido, ganancia, paymentTotals, ranking });
+      const state = await closeRegister({ totalVendido, ganancia, paymentTotals, ranking, mostradorTotal });
       setRegisterState(state);
       await loadOrders();
       toast.success("Caja cerrada.");
@@ -354,23 +354,19 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
 
   // "Movimientos" muestra TODOS los pedidos del periodo (los propios y los
   // que vinieron del Usuario, para poder verlos y designarles delivery/
-  // mostrador) -- pero el resumen (vendido, ganancia, tipo de pagos,
-  // ranking, cantidad de pedidos) es la caja del Administrador nomas.
-  //
-  // Ojo: NO es lo mismo que originRole === "administrador". Un pedido
-  // "de mostrador" (isCounterOrder) ya suma en la caja del Usuario (ver
-  // UserPanelScreen + listCurrentPeriodOrdersForUser en el backend),
-  // sumarlo tambien aca lo contaria dos veces -- pero si ese mismo pedido
-  // despues se reasigna a un repartidor (deja de ser mostrador, sin
-  // importar de donde nacio originalmente), pasa a ser pura y
-  // exclusivamente del Administrador y tiene que empezar a sumar aca. Por
-  // eso el filtro correcto es "lo opuesto de mostrador ahora mismo", no
-  // "de donde nacio".
-  const adminOrders = orders.filter((order) => !isCounterOrder(order));
-  const totalVendido = adminOrders.reduce((sum, order) => sum + order.total, 0);
+  // mostrador) -- y desde que la caja madre (general) pasa a incluir
+  // tambien las ventas de mostrador (a pedido del cliente: "por mas que
+  // venda el usuario, la caja madre se mueva tambien"), el resumen
+  // (vendido, ganancia, tipo de pagos, ranking, cantidad de pedidos)
+  // ahora es sobre TODOS los pedidos del periodo, sin excluir mostrador.
+  // mostradorTotal se calcula aparte solo para poder desglosarlo en el
+  // ticket de cierre ("Administrador $X / Mostrador $Y"), no para restarlo
+  // de nada -- ver handleConfirmCloseRegister.
+  const totalVendido = orders.reduce((sum, order) => sum + order.total, 0);
+  const mostradorTotal = orders.filter((order) => isCounterOrder(order)).reduce((sum, order) => sum + order.total, 0);
   const ganancia = totalVendido * (profitRatePercent / 100);
-  const ranking = buildRanking(adminOrders);
-  const paymentTotals = buildPaymentTotals(adminOrders);
+  const ranking = buildRanking(orders);
+  const paymentTotals = buildPaymentTotals(orders);
   const visibleOrders = showAllMovements ? orders : orders.slice(0, MOVEMENTS_PREVIEW_COUNT);
   const hasHiddenMovements = orders.length > MOVEMENTS_PREVIEW_COUNT;
 
@@ -426,7 +422,7 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
           </button>
           <div className="joker-stat-tile">
             <span className="joker-stat-tile__label">Pedidos</span>
-            <strong className="joker-stat-tile__value">{adminOrders.length}</strong>
+            <strong className="joker-stat-tile__value">{orders.length}</strong>
           </div>
         </div>
       </section>
