@@ -479,7 +479,7 @@ export function buildCourierSummaryTicketLines(
   lines.push(`${STORE_NAME}\n`);
   lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
   lines.push(BOLD_ON, TALL_SIZE_ON);
-  lines.push("RESUMEN DE REPARTIDOR\n");
+  lines.push(courier.isCounter ? "RESUMEN DE MOSTRADOR\n" : "RESUMEN DE REPARTIDOR\n");
   lines.push(DOUBLE_SIZE_OFF, BOLD_OFF);
   lines.push(`${new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })}\n`);
   lines.push(`${INTERNAL_USE_NOTE}\n`);
@@ -502,17 +502,38 @@ export function buildCourierSummaryTicketLines(
   lines.push(`${divider()}\n`);
 
   lines.push(BOLD_ON);
-  lines.push(`Pedidos entregados (${orders.length})\n`);
+  lines.push(courier.isCounter ? `Pedidos (${orders.length})\n` : `Pedidos entregados (${orders.length})\n`);
   lines.push(BOLD_OFF);
   if (orders.length) {
     orders.forEach((order) => {
-      lines.push(`${rightAlignedLine(`Pedido #${order.displayNumber} `, formatMoney(order.total))}\n`);
+      const label = courier.isCounter
+        ? `Pedido #${order.displayNumber} (${JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}) `
+        : `Pedido #${order.displayNumber} `;
+      lines.push(`${rightAlignedLine(label, formatMoney(order.total))}\n`);
       if (order.deliveryCost) {
         lines.push(`${rightAlignedLine("  Envio ", formatMoney(order.deliveryCost))}\n`);
       }
     });
   } else {
-    lines.push("Sin pedidos entregados todavia.\n");
+    lines.push(courier.isCounter ? "Sin pedidos todavia.\n" : "Sin pedidos entregados todavia.\n");
+  }
+
+  // Desglose por tipo de pago: solo tiene sentido para Mostrador, que
+  // mezcla efectivo/POS/transferencia/cuenta -- un repartidor real
+  // siempre cobra en efectivo, ya tiene su propia "Cobrado" arriba.
+  if (courier.isCounter) {
+    const paymentTotals: Record<JokerPaymentMethod, number> = { efectivo: 0, tarjeta: 0, transferencia: 0, cuenta: 0 };
+    orders.forEach((order) => {
+      paymentTotals[order.paymentMethod] += order.total;
+    });
+
+    lines.push(`${decorativeBorder()}\n`);
+    lines.push(BOLD_ON);
+    lines.push("Tipo de pagos\n");
+    lines.push(BOLD_OFF);
+    (Object.keys(JOKER_PAYMENT_METHOD_LABELS) as JokerPaymentMethod[]).forEach((method) => {
+      lines.push(`${rightAlignedLine(`${JOKER_PAYMENT_METHOD_LABELS[method]} `, formatMoney(paymentTotals[method]))}\n`);
+    });
   }
 
   lines.push(`${decorativeBorder()}\n`);
