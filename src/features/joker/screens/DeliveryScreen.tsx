@@ -5,7 +5,7 @@ import { addCourierCashMovement, getCourierCashSummary, listCurrentPeriodOrders 
 import { printCourierSummaryTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerCourier, JokerCourierCashSummary, JokerOrderRecord } from "../joker.types";
-import { PAYMENT_METHODS, buildPaymentTotals } from "./panelHelpers";
+import { PAYMENT_METHODS, PAYMENT_METHOD_LETTERS, buildPaymentTotals } from "./panelHelpers";
 
 type DeliveryScreenProps = {
   couriers: JokerCourier[];
@@ -330,11 +330,9 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
           {orders.map((order) => (
             <li key={order.id} className="joker-order-item joker-order-item--flat">
               <span>
-                Pedido #{order.displayNumber} · {formatPrice(order.total)}
+                Pedido #{order.displayNumber} · {PAYMENT_METHOD_LETTERS[order.paymentMethod]} · {formatPrice(order.total)}
               </span>
-              {courier.isCounter ? (
-                <span className="joker-order-item__excluded">{JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}</span>
-              ) : (
+              {courier.isCounter ? null : (
                 <span className={order.deliveryCost ? "joker-delivery-cost-tag" : "joker-order-item__excluded"}>
                   {order.deliveryCost ? `Envio ${formatPrice(order.deliveryCost)}` : "Sin costo de envio"}
                 </span>
