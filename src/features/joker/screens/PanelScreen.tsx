@@ -29,6 +29,20 @@ import {
 // cuenta corriente sin elegir a quien no tiene sentido.
 const EDITABLE_PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "cuenta"];
 
+// Un pedido es "de mostrador" (chip 🏪, y lo que hace que aparezca tambien
+// en el Panel del rol Usuario) por dos caminos, sin importar quien lo haya
+// cargado -- ver JokerOrdersService#listCurrentPeriodOrdersForUser en el
+// backend, que usa exactamente el mismo criterio:
+// 1) Nacio del lado Usuario (origin_role = 'usuario') y ya fue aceptado.
+// 2) Lo cargo el Administrador y lo marco "Mostrador" a mano (nombre con
+//    "MOSTRADOR", ver handleAssignCounter).
+// En los dos casos, si tiene un repartidor asignado deja de contar como
+// mostrador -- por eso el chequeo de courierId manda por encima de todo.
+function isCounterOrder(order: JokerOrderRecord) {
+  if (order.courierId) return false;
+  return order.originRole === "usuario" || Boolean(order.customerName?.trim().toUpperCase().includes("MOSTRADOR"));
+}
+
 type PanelScreenProps = {
   products: JokerProduct[];
   couriers: JokerCourier[];
@@ -166,10 +180,11 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
   // solo recalcula el total con lo que ya tenia (no cambia nada del
   // pedido salvo el repartidor).
   async function handleAssignCourier(order: JokerOrderRecord, courierId: number) {
-    // Si el pedido venia marcado "Mostrador", asignarle un repartidor tiene
-    // que sacarle esa marca -- si no, el chip 🏪 se sigue mostrando (esa
-    // marca manda por encima del courierId, ver el render mas abajo) y
-    // queda como si nunca se hubiera cambiado.
+    // Si el pedido venia marcado "Mostrador" (nombre con el sufijo), le
+    // sacamos esa marca -- ya no hace falta para que deje de contar como
+    // mostrador (courierId manda por encima de todo, ver isCounterOrder),
+    // pero si la dejamos puesta el nombre queda con un "MOSTRADOR" colgado
+    // que no tiene sentido en un pedido con delivery asignado.
     const trimmedName = order.customerName?.trim() || "";
     const nextCustomerName = trimmedName.replace(/\s*MOSTRADOR\s*$/i, "").trim();
 
@@ -200,15 +215,24 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
   // que ya usan los pedidos de mostrador del rol Usuario (nombre marcado
   // "... MOSTRADOR", ver OrdersScreen#submitPendingOrder): asi el ticket, el
   // chip 🏪 y el resto de la app lo reconocen igual sin tener que agregar un
-  // campo nuevo. No se toca el courierId.
+  // campo nuevo. Si el pedido ya tenia un repartidor asignado (se esta
+  // pasando de delivery a mostrador), hay que sacarselo -- si no, el chip
+  // 🛵 sigue ganando (ver isCounterOrder) y queda como si no hubiera
+  // cambiado nada.
   async function handleAssignCounter(order: JokerOrderRecord) {
     const trimmedName = order.customerName?.trim() || "";
-    if (trimmedName.toUpperCase().includes("MOSTRADOR")) {
+    if (isCounterOrder(order)) {
       setAssigningCourierOrderId(null);
       return;
     }
 
-    const nextCustomerName = trimmedName ? `${trimmedName} MOSTRADOR` : "MOSTRADOR";
+    // Si ya es "mostrador" por venir del rol Usuario, no hace falta
+    // pisarle el nombre con el sufijo -- ya cuenta igual (ver
+    // isCounterOrder). El sufijo solo hace falta para que un pedido del
+    // Administrador quede marcado.
+    const nextCustomerName =
+      order.originRole === "usuario" ? order.customerName ?? undefined : trimmedName.toUpperCase().includes("MOSTRADOR") ? trimmedName : trimmedName ? `${trimmedName} MOSTRADOR` : "MOSTRADOR";
+
     setIsSavingCourier(true);
     try {
       const response = await updateOrder(
@@ -219,7 +243,8 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
         undefined,
         undefined,
         undefined,
-        nextCustomerName
+        nextCustomerName,
+        true
       );
       setOrders((current) => current.map((item) => (item.id === order.id ? response.item : item)));
       setAssigningCourierOrderId(null);
@@ -470,7 +495,7 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
                         <span className="joker-delivery-chip joker-delivery-chip--assigned joker-delivery-chip--mini">
                           🛵 {couriers.find((courier) => courier.id === order.courierId)?.name ?? "Repartidor"}
                         </span>
-                      ) : order.customerName?.trim().toUpperCase().includes("MOSTRADOR") ? (
+                      ) : isCounterOrder(order) ? (
                         <span className="joker-delivery-chip joker-delivery-chip--counter joker-delivery-chip--mini">
                           🏪 Mostrador
                         </span>
@@ -587,7 +612,7 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
                                 Cancelar
                               </button>
                             </span>
-                          ) : order.customerName?.trim().toUpperCase().includes("MOSTRADOR") ? (
+                          ) : isCounterOrder(order) ? (
                             <span className="joker-delivery-chip joker-delivery-chip--counter">
                               🏪 Mostrador
                               <button

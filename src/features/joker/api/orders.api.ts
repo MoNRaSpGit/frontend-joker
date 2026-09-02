@@ -64,12 +64,16 @@ export async function updateOrder(
   deliveryCost?: number,
   paymentMethod?: "efectivo" | "tarjeta" | "transferencia" | "cuenta",
   clientId?: number,
-  customerName?: string
+  customerName?: string,
+  // Saca el repartidor asignado en vez de dejarlo como estaba (que es lo
+  // que hace no mandar courierId) -- lo usa PanelScreen#handleAssignCounter
+  // para pasar a "Mostrador" un pedido que ya tenia delivery asignado.
+  clearCourier?: boolean
 ): Promise<OrderResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders/${orderId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items, orderDate, courierId, deliveryCost, paymentMethod, clientId, customerName })
+    body: JSON.stringify({ items, orderDate, courierId, deliveryCost, paymentMethod, clientId, customerName, clearCourier })
   });
   return readJson<OrderResponse>(response);
 }
