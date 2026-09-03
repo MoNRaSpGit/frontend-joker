@@ -51,13 +51,24 @@
 
 .joker-mes-total-box {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   padding: 18px;
   border-radius: var(--joker-radius-md);
   background: linear-gradient(135deg, #1a1a1a 0%, #3a0d10 100%);
   color: #fff;
+}
+
+.joker-mes-total-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.joker-mes-total-fila + .joker-mes-total-fila {
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .joker-mes-total-label {
@@ -68,9 +79,26 @@
   color: rgba(255, 255, 255, 0.65);
 }
 
+.joker-mes-total-label--ganancia {
+  color: #b9f0c4;
+}
+
 .joker-mes-total-valor {
   font-size: 1.5rem;
   font-weight: 900;
+}
+
+/* Verde clarito para diferenciar la ganancia (estimada segun el % de
+   Panel) del total vendido -- dos tonos segun el fondo: mas claro sobre
+   la caja oscura de arriba, mas oscuro (mejor contraste) sobre fondo
+   blanco en la tabla de dias. */
+.joker-mes-total-valor.joker-mes-ganancia {
+  color: #7ee0a0;
+}
+
+.joker-mes-tabla .joker-mes-ganancia {
+  color: #2f9e57;
+  font-weight: 700;
 }
 
 .joker-mes-semana {
@@ -114,9 +142,21 @@
   width: 14px;
 }
 
+.joker-mes-semana-totales {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
 .joker-mes-semana-total {
   font-weight: 800;
   color: var(--joker-text);
+}
+
+.joker-mes-semana-ganancia {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #2f9e57;
 }
 
 .joker-mes-tabla {

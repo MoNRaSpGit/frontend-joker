@@ -4,6 +4,7 @@ import { EditarCierreDiaModal } from "../components/EditarCierreDiaModal";
 import { GraficoVentasMensuales } from "../components/GraficoVentasMensuales";
 import { editarCierreDia, getHistorialMeses, getResumenMes } from "../joker.api";
 import type { JokerMonthDay, JokerMonthHistoryItem, JokerMonthSummary } from "../joker.types";
+import { getStoredProfitRatePercent } from "./panelHelpers";
 
 const NOMBRES_MES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -18,11 +19,19 @@ function capitalizar(texto: string) {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
+function formatGanancia(total: number, profitRatePercent: number) {
+  return formatPrice(total * (profitRatePercent / 100));
+}
+
 const hoy = new Date();
 
 export function MesScreen() {
   const [anio, setAnio] = useState(hoy.getFullYear());
   const [mes, setMes] = useState(hoy.getMonth() + 1);
+  // Mismo % configurado en Panel (ProfitRateModal) -- la ganancia acá es
+  // una estimacion (total * %), no un calculo real por costo de producto,
+  // igual que en Panel.
+  const [profitRatePercent] = useState(getStoredProfitRatePercent);
   const [resumen, setResumen] = useState<JokerMonthSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -128,8 +137,16 @@ export function MesScreen() {
       ) : resumen ? (
         <>
           <div className="joker-mes-total-box">
-            <span className="joker-mes-total-label">Total del mes</span>
-            <span className="joker-mes-total-valor">{formatPrice(resumen.total)}</span>
+            <div className="joker-mes-total-fila">
+              <span className="joker-mes-total-label">Total del mes</span>
+              <span className="joker-mes-total-valor">{formatPrice(resumen.total)}</span>
+            </div>
+            <div className="joker-mes-total-fila">
+              <span className="joker-mes-total-label joker-mes-total-label--ganancia">Ganancia ({profitRatePercent}%)</span>
+              <span className="joker-mes-total-valor joker-mes-ganancia">
+                {formatGanancia(resumen.total, profitRatePercent)}
+              </span>
+            </div>
           </div>
 
           {resumen.semanas.map((semana) => {
@@ -144,7 +161,12 @@ export function MesScreen() {
                 >
                   <span className="joker-mes-semana-flecha">{abierta ? "▾" : "▸"}</span>
                   <h6>Semana {semana.numero}</h6>
-                  <span className="joker-mes-semana-total">{formatPrice(semana.total)}</span>
+                  <span className="joker-mes-semana-totales">
+                    <span className="joker-mes-semana-total">{formatPrice(semana.total)}</span>
+                    <span className="joker-mes-semana-ganancia">
+                      +{formatGanancia(semana.total, profitRatePercent)}
+                    </span>
+                  </span>
                 </button>
 
                 {abierta ? (
@@ -154,6 +176,7 @@ export function MesScreen() {
                         <th>Dia</th>
                         <th>Fecha</th>
                         <th className="joker-mes-tabla__num">Total</th>
+                        <th className="joker-mes-tabla__num">Ganancia</th>
                         <th></th>
                       </tr>
                     </thead>
@@ -163,6 +186,9 @@ export function MesScreen() {
                           <td>{capitalizar(dia.diaSemana)}</td>
                           <td>{dia.fecha.split("-").reverse().join("/")}</td>
                           <td className="joker-mes-tabla__num">{formatPrice(dia.total)}</td>
+                          <td className="joker-mes-tabla__num joker-mes-ganancia">
+                            {dia.total > 0 ? formatGanancia(dia.total, profitRatePercent) : "-"}
+                          </td>
                           <td className="joker-mes-fila-editar">
                             {dia.cerrado ? (
                               <button type="button" className="joker-mini-button" onClick={() => setDiaEditando(dia)}>
