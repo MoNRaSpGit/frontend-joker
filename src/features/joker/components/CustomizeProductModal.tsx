@@ -171,7 +171,14 @@ export function CustomizeProductModal({
       const excludedText = excludedForSlot?.size
         ? ` (${Array.from(excludedForSlot).map((ingredient) => `Sin ${ingredient}`).join(", ")})`
         : "";
-      comboChoiceLabels.push(`${slot.label}: ${optionProduct.name}${excludedText}`);
+      // Si el nombre del producto ya arranca con el nombre del slot (ej.
+      // slot "Hamburguesa" + producto "Hamburguesa Americana"), no repetir
+      // "Hamburguesa: Hamburguesa Americana" -- va solo el nombre. Para
+      // slots donde no se repite (ej. "Bebida" + "Coca-Cola") se mantiene
+      // el prefijo para que se entienda que es la bebida del combo.
+      const nameStartsWithSlot = optionProduct.name.trim().toLowerCase().startsWith(slot.label.trim().toLowerCase());
+      const choiceLabel = nameStartsWithSlot ? optionProduct.name : `${slot.label}: ${optionProduct.name}`;
+      comboChoiceLabels.push(`${choiceLabel}${excludedText}`);
     }
 
     if (isDev) {

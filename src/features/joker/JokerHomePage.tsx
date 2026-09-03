@@ -324,14 +324,23 @@ export function JokerHomePage() {
     if (ticketCopies === 0) {
       toast.success(`Pedido #${accepted.displayNumber} aceptado (sin ticket).`);
     } else {
-      const printableItems: JokerOrderItem[] = accepted.items.map((item, index) => ({
-        lineId: `pending-${accepted.id}-${index}`,
-        productId: item.productId,
-        productName: item.productName,
-        unitPrice: item.unitPrice,
-        quantity: item.quantity,
-        detail: item.detail ?? ""
-      }));
+      // Las lineas hijas de un combo (a $0) vienen guardadas en el pedido
+      // solo para que el backend descuente el stock de lo que realmente se
+      // eligio -- no van en el ticket impreso (la linea del combo ya trae
+      // el detalle completo: "Hamburguesa: 4Q · Bebida: Coca-Cola"). Los
+      // items que vuelven del backend no tienen parentLineId, asi que se
+      // reconocen por el detalle que les pone buildComponentLines. Mismo
+      // criterio que OrdersScreen#printableOrder para el flujo normal.
+      const printableItems: JokerOrderItem[] = accepted.items
+        .filter((item) => !(item.detail ?? "").startsWith("Incluido en "))
+        .map((item, index) => ({
+          lineId: `pending-${accepted.id}-${index}`,
+          productId: item.productId,
+          productName: item.productName,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
+          detail: item.detail ?? ""
+        }));
 
       try {
         await printOrderTicket(
