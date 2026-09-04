@@ -11,7 +11,7 @@ import { usePaymentMethodEditor } from "../hooks/usePaymentMethodEditor";
 import { closeRegister, getRegisterState, listCurrentPeriodOrders, openRegister, updateOrder } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerClient, JokerCourier, JokerOrderRecord, JokerProduct, JokerRegisterState } from "../joker.types";
+import type { JokerClient, JokerCourier, JokerOrderRecord, JokerPaymentMethod, JokerProduct, JokerRegisterState } from "../joker.types";
 import {
   MEDALS,
   MEDAL_CLASSES,
