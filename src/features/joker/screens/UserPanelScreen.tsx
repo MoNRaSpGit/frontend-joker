@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
+import { PaymentMethodChip } from "../components/PaymentMethodChip";
+import { SelectClientModal } from "../components/SelectClientModal";
+import { usePaymentMethodEditor } from "../hooks/usePaymentMethodEditor";
 import { getCourierCashSummary, listCurrentPeriodOrders, updateOrder } from "../joker.api";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerCourier, JokerCourierCashSummary, JokerOrderRecord } from "../joker.types";
+import type { JokerClient, JokerCourier, JokerCourierCashSummary, JokerOrderRecord } from "../joker.types";
 import {
   MEDALS,
   MEDAL_CLASSES,
@@ -19,6 +22,8 @@ import {
 
 type UserPanelScreenProps = {
   couriers: JokerCourier[];
+  clients: JokerClient[];
+  onAccountEntryRegistered: () => void;
 };
 
 // Version del Panel para el rol Usuario: mismo resumen del turno (vendido,
@@ -26,14 +31,15 @@ type UserPanelScreenProps = {
 // e igual que ahi puede eliminar un pedido propio (ej: el cliente se
 // arrepintio) -- misma cascada de siempre (stock devuelto, cuenta
 // corriente/caja recalculadas solas al recalcular el total en $0, ver
-// handleConfirmDeleteOrder). Lo unico que no puede es asignar repartidor/
-// mostrador ni editar el metodo de pago, eso sigue siendo del
-// Administrador. La caja de "Mostrador" ya no la maneja el Usuario (antes
-// la abria/cerraba el mismo con su propio monto inicial) -- ahora es una
-// tarjeta mas en Delivery que solo el Administrador habilita/liquida (ver
-// DeliveryScreen, courier con isCounter=true); esta pantalla solo lee
-// esos numeros, no los toca.
-export function UserPanelScreen({ couriers }: UserPanelScreenProps) {
+// handleConfirmDeleteOrder). Tambien puede corregir el metodo de pago de
+// un pedido ya cargado, igual que el Administrador (usePaymentMethodEditor,
+// compartido entre las dos pantallas). Lo unico que sigue sin poder es
+// asignar repartidor/mostrador. La caja de "Mostrador" ya no la maneja el
+// Usuario (antes la abria/cerraba el mismo con su propio monto inicial) --
+// ahora es una tarjeta mas en Delivery que solo el Administrador habilita/
+// liquida (ver DeliveryScreen, courier con isCounter=true); esta pantalla
+// solo lee esos numeros, no los toca.
+export function UserPanelScreen({ couriers, clients, onAccountEntryRegistered }: UserPanelScreenProps) {
   const mostrador = couriers.find((courier) => courier.isCounter) ?? null;
   const isMostradorHabilitado = mostrador?.status === "activo";
 
@@ -46,6 +52,15 @@ export function UserPanelScreen({ couriers }: UserPanelScreenProps) {
   const [profitRatePercent] = useState(getStoredProfitRatePercent);
   const [pendingDeleteOrder, setPendingDeleteOrder] = useState<JokerOrderRecord | null>(null);
   const [isDeletingOrder, setIsDeletingOrder] = useState(false);
+  const {
+    editingPaymentOrderId,
+    setEditingPaymentOrderId,
+    isSavingPayment,
+    cuentaPickerOrder,
+    setCuentaPickerOrder,
+    changePaymentMethod,
+    confirmCuenta
+  } = usePaymentMethodEditor(setOrders, onAccountEntryRegistered);
 
   // Refresco silencioso cada 1s (igual que el Panel del Administrador)
   // para reflejar pedidos aceptados y designaciones de mostrador/delivery
@@ -247,7 +262,20 @@ export function UserPanelScreen({ couriers }: UserPanelScreenProps) {
                           <div className="joker-order-meta-row">
                             <div className="joker-order-meta-section">
                               <span className="joker-order-meta-chip">{formatDateTime(order.createdAt, order.orderDate)}</span>
-                              <span className="joker-order-meta-chip">{JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}</span>
+                              <PaymentMethodChip
+                                order={order}
+                                isEditing={editingPaymentOrderId === order.id}
+                                isSaving={isSavingPayment}
+                                onStartEdit={() => setEditingPaymentOrderId(order.id)}
+                                onSelectMethod={(method) => {
+                                  if (method === "cuenta") {
+                                    setCuentaPickerOrder(order);
+                                    return;
+                                  }
+                                  void changePaymentMethod(order, method);
+                                }}
+                                onCancel={() => setEditingPaymentOrderId(null)}
+                              />
                             </div>
                             <div className="joker-order-meta-customer">
                               <span>
@@ -312,6 +340,17 @@ export function UserPanelScreen({ couriers }: UserPanelScreenProps) {
           isDeleting={isDeletingOrder}
           onCancel={() => setPendingDeleteOrder(null)}
           onConfirm={() => void handleConfirmDeleteOrder()}
+        />
+      ) : null}
+
+      {cuentaPickerOrder ? (
+        <SelectClientModal
+          title="Pasar a cuenta corriente"
+          hint={`Pedido #${cuentaPickerOrder.displayNumber} · ${formatPrice(cuentaPickerOrder.total)}`}
+          clients={clients}
+          isSubmitting={isSavingPayment}
+          onClose={() => setCuentaPickerOrder(null)}
+          onConfirm={(clientId) => void confirmCuenta(clientId)}
         />
       ) : null}
     </>

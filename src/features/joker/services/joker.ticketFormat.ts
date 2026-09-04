@@ -17,6 +17,7 @@ import {
   rightAlignedLine
 } from "./joker.escpos";
 import { abbreviateForKitchen, wrapForKitchenPrinting } from "./joker.kitchenAbbreviations";
+import { getStoreDateLabel } from "../joker.storeDate";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type {
   JokerAccountEntry,
@@ -342,10 +343,11 @@ function buildAccountCycleMovements(entries: JokerAccountEntry[], openPayments: 
   const compras: JokerAccountCycleMovement[] = entries.map((entry) => ({
     type: "compra",
     // Si la compra tiene fecha atrasada (orderDate), esa es la que cuenta
-    // para el comprobante -- createdAt (cuando se cargo) solo se usa como
-    // respaldo para compras sin fecha propia puesta a mano. Mismo criterio
-    // que ya se aplico al ticket individual del pedido (buildSingleTicketLines).
-    date: entry.orderDate ?? entry.createdAt,
+    // para el comprobante. Si no, se usa el dia comercial (arranca a las
+    // 5am) de cuando se creo, no el dia de calendario crudo -- mismo
+    // criterio que ya se aplica en pantalla (CuentaCorrienteScreen), para
+    // que se puedan comparar una con otra sin que difieran.
+    date: entry.orderDate ?? getStoreDateLabel(entry.createdAt),
     amount: entry.total,
     items: entry.items,
     balanceAfter: 0

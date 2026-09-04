@@ -1,3 +1,4 @@
+import { getStoreDateLabel } from "../joker.storeDate";
 import type { JokerOrderRecord, JokerPaymentMethod } from "../joker.types";
 
 // Compartido entre PanelScreen (Administrador) y UserPanelScreen (Usuario)
@@ -34,11 +35,14 @@ export function getDisplayCustomerName(order: JokerOrderRecord) {
 }
 
 // Si el pedido tiene una fecha editada a mano (orderDate), esa es la que se
-// muestra; la hora siempre sale de created_at (no se edita).
+// muestra. Si no, se usa el DIA COMERCIAL de cuando se creo (arranca a las
+// 5am, no a medianoche) -- no el dia de calendario crudo, que hacia que un
+// pedido cargado a la 1am mostrara "el dia siguiente" (ver joker.storeDate.ts).
+// La hora siempre sale de created_at tal cual (no se edita).
 export function formatDateTime(isoDate: string, orderDate?: string | null) {
   const date = new Date(isoDate);
-  const dateSource = orderDate ? new Date(`${orderDate}T00:00:00`) : date;
-  const dateLabel = dateSource.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" });
+  const dateLabelSource = orderDate ?? getStoreDateLabel(isoDate);
+  const dateLabel = new Date(`${dateLabelSource}T00:00:00`).toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" });
   const timeLabel = date.toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
   return `${dateLabel} ${timeLabel}`;
 }

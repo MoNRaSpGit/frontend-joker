@@ -4,12 +4,14 @@ import { CloseRegisterModal } from "../components/CloseRegisterModal";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { EditOrderModal } from "../components/EditOrderModal";
 import { PaymentBreakdownModal } from "../components/PaymentBreakdownModal";
+import { PaymentMethodChip } from "../components/PaymentMethodChip";
 import { ProfitRateModal } from "../components/ProfitRateModal";
 import { SelectClientModal } from "../components/SelectClientModal";
+import { usePaymentMethodEditor } from "../hooks/usePaymentMethodEditor";
 import { closeRegister, getRegisterState, listCurrentPeriodOrders, openRegister, updateOrder } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerClient, JokerCourier, JokerOrderRecord, JokerPaymentMethod, JokerProduct, JokerRegisterState } from "../joker.types";
+import type { JokerClient, JokerCourier, JokerOrderRecord, JokerProduct, JokerRegisterState } from "../joker.types";
 import {
   MEDALS,
   MEDAL_CLASSES,
@@ -23,12 +25,6 @@ import {
   getDisplayCustomerName,
   getStoredProfitRatePercent
 } from "./panelHelpers";
-
-// Las 3 primeras se corrigen con un click directo. "Cuenta" tambien se
-// puede elegir aca, pero abre el modal de elegir cliente en vez de
-// guardar directo (ver handleSelectCuenta/handleConfirmCuenta) -- pasar a
-// cuenta corriente sin elegir a quien no tiene sentido.
-const EDITABLE_PAYMENT_METHODS: JokerPaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "cuenta"];
 
 // Un pedido es "de mostrador" (chip 🏪, y lo que hace que aparezca tambien
 // en el Panel del rol Usuario) por dos caminos, sin importar quien lo haya
@@ -69,9 +65,15 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
   const [assigningCourierOrderId, setAssigningCourierOrderId] = useState<number | null>(null);
   const [isSavingCourier, setIsSavingCourier] = useState(false);
   const [blockedCloseCourierNames, setBlockedCloseCourierNames] = useState<string[] | null>(null);
-  const [editingPaymentOrderId, setEditingPaymentOrderId] = useState<number | null>(null);
-  const [isSavingPayment, setIsSavingPayment] = useState(false);
-  const [cuentaPickerOrder, setCuentaPickerOrder] = useState<JokerOrderRecord | null>(null);
+  const {
+    editingPaymentOrderId,
+    setEditingPaymentOrderId,
+    isSavingPayment,
+    cuentaPickerOrder,
+    setCuentaPickerOrder,
+    changePaymentMethod,
+    confirmCuenta
+  } = usePaymentMethodEditor(setOrders, onAccountEntryRegistered);
   const [pendingDeleteOrder, setPendingDeleteOrder] = useState<JokerOrderRecord | null>(null);
   const [isDeletingOrder, setIsDeletingOrder] = useState(false);
 
@@ -262,55 +264,8 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
     }
   }
 
-  // Corrige el metodo de pago de un pedido ya cargado con un click sobre
-  // el globito (ej: se caragó "efectivo" pero era "transferencia"). Si el
-  // pedido era "a cuenta", el backend borra el movimiento de cuenta
-  // corriente asociado -- por eso se refresca esa pantalla igual que al
-  // editar el pedido completo.
-  async function handleChangePaymentMethod(order: JokerOrderRecord, paymentMethod: "efectivo" | "tarjeta" | "transferencia") {
-    setIsSavingPayment(true);
-    try {
-      const response = await updateOrder(order.id, order.items, order.orderDate ?? undefined, undefined, undefined, paymentMethod);
-      setOrders((current) => current.map((item) => (item.id === order.id ? response.item : item)));
-      setEditingPaymentOrderId(null);
-      toast.success("Metodo de pago actualizado.");
-      if (order.paymentMethod === "cuenta") {
-        onAccountEntryRegistered();
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo actualizar el metodo de pago.");
-    } finally {
-      setIsSavingPayment(false);
-    }
-  }
-
-  // Pasar un pedido a "cuenta" es mas delicado (crea un movimiento de
-  // cuenta corriente de verdad), asi que en vez de guardar directo como
-  // los otros metodos, primero abre el modal a elegir el cliente.
-  async function handleConfirmCuenta(clientId: number) {
-    if (!cuentaPickerOrder) return;
-    setIsSavingPayment(true);
-    try {
-      const response = await updateOrder(
-        cuentaPickerOrder.id,
-        cuentaPickerOrder.items,
-        cuentaPickerOrder.orderDate ?? undefined,
-        undefined,
-        undefined,
-        "cuenta",
-        clientId
-      );
-      setOrders((current) => current.map((item) => (item.id === cuentaPickerOrder.id ? response.item : item)));
-      setEditingPaymentOrderId(null);
-      setCuentaPickerOrder(null);
-      toast.success("Metodo de pago actualizado.");
-      onAccountEntryRegistered();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo pasar el pedido a cuenta corriente.");
-    } finally {
-      setIsSavingPayment(false);
-    }
-  }
+  // Corregir metodo de pago (changePaymentMethod/confirmCuenta) vive en
+  // usePaymentMethodEditor, compartido con UserPanelScreen.
 
   // Elimina el pedido directo desde el panel (sin pasar por Editar pedido
   // sacando linea por linea): mismo mecanismo que "cancelar" con el
@@ -540,45 +495,20 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
                         <div className="joker-order-meta-section">
                           <span className="joker-order-meta-chip">{formatDateTime(order.createdAt, order.orderDate)}</span>
 
-                          {editingPaymentOrderId === order.id ? (
-                            <span className="joker-delivery-assign">
-                              {EDITABLE_PAYMENT_METHODS.map((method) => (
-                                <button
-                                  key={method}
-                                  type="button"
-                                  className={`joker-category-chip${method === order.paymentMethod ? " is-active" : ""}`}
-                                  disabled={isSavingPayment}
-                                  onClick={() => {
-                                    if (method === "cuenta") {
-                                      setCuentaPickerOrder(order);
-                                      return;
-                                    }
-                                    void handleChangePaymentMethod(order, method);
-                                  }}
-                                >
-                                  {JOKER_PAYMENT_METHOD_LABELS[method]}
-                                </button>
-                              ))}
-                              <button
-                                type="button"
-                                className="joker-mini-button"
-                                disabled={isSavingPayment}
-                                onClick={() => setEditingPaymentOrderId(null)}
-                              >
-                                Cancelar
-                              </button>
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              className="joker-order-meta-chip joker-order-meta-chip--clickable"
-                              disabled={order.paymentMethod === "cuenta"}
-                              title={order.paymentMethod === "cuenta" ? "Un pedido a cuenta no se corrige aca" : "Corregir metodo de pago"}
-                              onClick={() => setEditingPaymentOrderId(order.id)}
-                            >
-                              {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}
-                            </button>
-                          )}
+                          <PaymentMethodChip
+                            order={order}
+                            isEditing={editingPaymentOrderId === order.id}
+                            isSaving={isSavingPayment}
+                            onStartEdit={() => setEditingPaymentOrderId(order.id)}
+                            onSelectMethod={(method) => {
+                              if (method === "cuenta") {
+                                setCuentaPickerOrder(order);
+                                return;
+                              }
+                              void changePaymentMethod(order, method);
+                            }}
+                            onCancel={() => setEditingPaymentOrderId(null)}
+                          />
                         </div>
 
                         <div className="joker-order-meta-customer">
@@ -800,7 +730,7 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
           clients={clients}
           isSubmitting={isSavingPayment}
           onClose={() => setCuentaPickerOrder(null)}
-          onConfirm={(clientId) => void handleConfirmCuenta(clientId)}
+          onConfirm={(clientId) => void confirmCuenta(clientId)}
         />
       ) : null}
     </>

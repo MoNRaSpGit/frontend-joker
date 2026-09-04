@@ -4,6 +4,7 @@ import { AccountPaymentModal } from "../components/AccountPaymentModal";
 import { AddClientModal } from "../components/AddClientModal";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { getAccountPayments, getAccountSettlements } from "../joker.api";
+import { getStoreDateLabel } from "../joker.storeDate";
 import { printAccountPaymentTicket, printAccountStatementTicket } from "../services/joker.print";
 import type { JokerAccountEntry, JokerAccountPayment, JokerAccountSettlement, JokerClient } from "../joker.types";
 
@@ -24,11 +25,13 @@ function formatPrice(amount: number) {
 }
 
 // Si el pedido que genero este movimiento tiene una fecha editada a mano
-// (orderDate), esa es la que se muestra; la hora siempre sale de created_at.
+// (orderDate), esa es la que se muestra. Si no, se usa el dia comercial
+// (arranca a las 5am) de cuando se creo, no el dia de calendario crudo --
+// ver joker.storeDate.ts. La hora siempre sale de created_at tal cual.
 function formatDateTime(isoDate: string, orderDate?: string | null) {
   const date = new Date(isoDate);
-  const dateSource = orderDate ? new Date(`${orderDate}T00:00:00`) : date;
-  const dateLabel = dateSource.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" });
+  const dateLabelSource = orderDate ?? getStoreDateLabel(isoDate);
+  const dateLabel = new Date(`${dateLabelSource}T00:00:00`).toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" });
   const timeLabel = date.toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
   return `${dateLabel} ${timeLabel}`;
 }
@@ -134,8 +137,16 @@ export function CuentaCorrienteScreen({
 
   const filteredClients = clients.filter((client) => client.name.toLowerCase().includes(searchQuery.trim().toLowerCase()));
   const selectedClient = clients.find((client) => client.id === selectedClientId) ?? null;
+  // Mas vieja primero, igual orden que el comprobante impreso (ver
+  // buildAccountCycleMovements) -- asi se pueden comparar pantalla y
+  // ticket de un vistazo. Usa la fecha atrasada (orderDate) cuando existe,
+  // no createdAt (cuando se cargo), mismo criterio que ya se aplico ahi.
   const selectedClientEntries = selectedClient
-    ? accountEntries.filter((entry) => entry.clientId === selectedClient.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    ? accountEntries
+        .filter((entry) => entry.clientId === selectedClient.id)
+        .sort((a, b) =>
+          (a.orderDate ?? getStoreDateLabel(a.createdAt)).localeCompare(b.orderDate ?? getStoreDateLabel(b.createdAt))
+        )
     : [];
   const selectedClientDebt = selectedClient ? debtFor(selectedClient.id) : 0;
   // Pagos abiertos del cliente seleccionado (ciclo actual) -- para armar
