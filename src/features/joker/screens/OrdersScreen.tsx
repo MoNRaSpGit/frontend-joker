@@ -161,7 +161,8 @@ export function OrdersScreen({
         undefined,
         undefined,
         clientId,
-        true
+        true,
+        orderNote
       );
       toast.success("Pedido enviado. Queda esperando que el administrador lo acepte.");
       clearOrder();
@@ -218,7 +219,10 @@ export function OrdersScreen({
         finalCustomerName,
         orderDate,
         undefined,
-        Number.isFinite(parsedDeliveryCost) ? parsedDeliveryCost : undefined
+        Number.isFinite(parsedDeliveryCost) ? parsedDeliveryCost : undefined,
+        undefined,
+        undefined,
+        orderNote
       );
       // Este flujo nunca crea un pedido "pending" (eso lo maneja
       // PendingOrderForm para el rol Usuario), asi que siempre viene con

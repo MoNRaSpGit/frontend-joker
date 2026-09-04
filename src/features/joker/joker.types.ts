@@ -100,6 +100,7 @@ export type JokerOrderRecord = {
   originRole: JokerOrderOriginRole;
   total: number;
   address: string;
+  note: string | null;
   paymentMethod: JokerPaymentMethod;
   customerName: string | null;
   clientId: number | null;

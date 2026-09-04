@@ -18,13 +18,15 @@ export async function createOrder(
   courierId?: number,
   deliveryCost?: number,
   clientId?: number,
-  pending?: boolean
+  pending?: boolean,
+  note?: string
 ): Promise<OrderResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       address,
+      note: note?.trim() || undefined,
       paymentMethod,
       customerName,
       clientId,

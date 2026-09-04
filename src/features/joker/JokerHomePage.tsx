@@ -352,7 +352,7 @@ export function JokerHomePage() {
           accepted.customerName ?? "",
           accepted.deliveryCost ? String(accepted.deliveryCost) : "",
           accepted.displayNumber,
-          ""
+          accepted.note ?? ""
         );
         toast.success(`Pedido #${accepted.displayNumber} aceptado e impreso.`);
       } catch (printError) {
