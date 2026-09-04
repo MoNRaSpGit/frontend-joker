@@ -63,12 +63,13 @@ export function buildOrderTicketLines(
   customerName: string,
   deliveryCost: string,
   ticketNumber: number,
-  note: string
+  note: string,
+  orderDate?: string
 ) {
   const lines: string[] = [];
 
   lines.push(
-    ...buildSingleTicketLines(order, orderAddress, paymentMethod, customerName, deliveryCost, ticketNumber, note)
+    ...buildSingleTicketLines(order, orderAddress, paymentMethod, customerName, deliveryCost, ticketNumber, note, orderDate)
   );
 
   if (copies === 1) {
@@ -76,8 +77,8 @@ export function buildOrderTicketLines(
   }
 
   if (copies === 3) {
-    lines.push(...buildCompactTicketLines(order, orderAddress, customerName, "COMANDA", ticketNumber, note));
-    lines.push(...buildCompactTicketLines(order, orderAddress, customerName, "ARCHIVO", ticketNumber, note));
+    lines.push(...buildCompactTicketLines(order, orderAddress, customerName, "COMANDA", ticketNumber, note, orderDate));
+    lines.push(...buildCompactTicketLines(order, orderAddress, customerName, "ARCHIVO", ticketNumber, note, orderDate));
   }
 
   return lines;
@@ -89,7 +90,19 @@ export function buildOrderTicketLines(
 // va aca: se muestra junto con Cliente/Direccion en pushCustomerSection,
 // para dejar el encabezado mas limpio. La hora solo se imprime en el
 // Archivo (includeTime) -- en Joker y Comanda solo interesa la fecha.
-function pushHeader(lines: string[], heading: string, includeStoreDetails: boolean, includeTime: boolean) {
+// orderDate: la fecha "logica" que se le puso al pedido a mano (cuenta
+// corriente atrasada, ej. se cargo hoy un fiado de hace 3 dias) -- viene
+// sin hora (solo YYYY-MM-DD), asi que si esta presente el ticket muestra
+// SIEMPRE esa fecha sola, nunca la hora de ahora (no hay hora real que
+// mostrar). Sin orderDate, el pedido es de hoy de verdad y sigue
+// mostrando fecha/hora actual como siempre.
+function pushHeader(
+  lines: string[],
+  heading: string,
+  includeStoreDetails: boolean,
+  includeTime: boolean,
+  orderDate?: string
+) {
   lines.push(ALIGN_CENTER);
   lines.push(BOLD_ON, DOUBLE_SIZE_ON);
   lines.push(`${heading}\n`);
@@ -98,10 +111,11 @@ function pushHeader(lines: string[], heading: string, includeStoreDetails: boole
     lines.push(`${STORE_ADDRESS}\n`);
     lines.push(`${STORE_PHONE}\n`);
   }
-  const now = new Date();
-  const dateLabel = includeTime
-    ? now.toLocaleString("es-UY", { timeZone: "America/Montevideo" })
-    : now.toLocaleDateString("es-UY", { timeZone: "America/Montevideo" });
+  const dateLabel = orderDate
+    ? new Date(`${orderDate}T00:00:00`).toLocaleDateString("es-UY", { timeZone: "America/Montevideo" })
+    : includeTime
+      ? new Date().toLocaleString("es-UY", { timeZone: "America/Montevideo" })
+      : new Date().toLocaleDateString("es-UY", { timeZone: "America/Montevideo" });
   lines.push(`${dateLabel}\n`);
   lines.push(`${INTERNAL_USE_NOTE}\n`);
 }
@@ -167,12 +181,13 @@ function buildSingleTicketLines(
   customerName: string,
   deliveryCost: string,
   ticketNumber: number,
-  note: string
+  note: string,
+  orderDate?: string
 ) {
   const lines: string[] = [];
 
   lines.push(ESC_INIT);
-  pushHeader(lines, STORE_NAME, true, false);
+  pushHeader(lines, STORE_NAME, true, false, orderDate);
   lines.push(`Pedido #${ticketNumber}\n`);
   pushCustomerSection(lines, orderAddress, customerName, paymentMethod, note);
 
@@ -248,7 +263,8 @@ function buildCompactTicketLines(
   customerName: string,
   heading: string,
   ticketNumber: number,
-  note: string
+  note: string,
+  orderDate?: string
 ) {
   const lines: string[] = [];
   // Ni comanda ni archivo van con numero de linea -- solo el "*" y la
@@ -262,7 +278,7 @@ function buildCompactTicketLines(
   const noteSize = isKitchenCopy ? TRIPLE_SIZE_ON : TALL_SIZE_ON;
 
   lines.push(ESC_INIT);
-  pushHeader(lines, heading, false, heading === "ARCHIVO");
+  pushHeader(lines, heading, false, heading === "ARCHIVO", orderDate);
   lines.push(`Pedido #${ticketNumber}\n`);
   pushCustomerSection(lines, orderAddress, customerName, undefined, note, noteSize);
 

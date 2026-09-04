@@ -25,9 +25,10 @@ export async function printOrderTicket(
   customerName: string,
   deliveryCost: string,
   ticketNumber: number,
-  note: string
+  note: string,
+  orderDate?: string
 ) {
-  await printOrderTicketByQz(order, orderAddress, copies, paymentMethod, customerName, deliveryCost, ticketNumber, note);
+  await printOrderTicketByQz(order, orderAddress, copies, paymentMethod, customerName, deliveryCost, ticketNumber, note, orderDate);
   return { method: "qz" as const };
 }
 

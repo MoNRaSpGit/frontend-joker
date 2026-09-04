@@ -105,7 +105,8 @@ export async function printOrderTicketByQz(
   customerName: string,
   deliveryCost: string,
   ticketNumber: number,
-  note: string
+  note: string,
+  orderDate?: string
 ) {
   const data = buildOrderTicketLines(
     order,
@@ -115,7 +116,8 @@ export async function printOrderTicketByQz(
     customerName,
     deliveryCost,
     ticketNumber,
-    note
+    note,
+    orderDate
   );
   return printRawLinesByQz(data);
 }

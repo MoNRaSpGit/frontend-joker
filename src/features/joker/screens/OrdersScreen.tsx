@@ -264,7 +264,8 @@ export function OrdersScreen({
           orderCustomerName,
           orderDeliveryCost,
           displayNumber,
-          orderNote
+          orderNote,
+          orderDate
         );
         toast.success("Pedido impreso.");
         clearOrder();
