@@ -1,27 +1,36 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { DateTextInput } from "../components/DateTextInput";
-import { listOrdersByDate } from "../joker.api";
+import { EditOrderModal } from "../components/EditOrderModal";
+import { listOrdersByDate, updateOrder } from "../joker.api";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerClient, JokerCourier, JokerOrderRecord } from "../joker.types";
+import type { JokerClient, JokerCourier, JokerOrderRecord, JokerProduct, JokerRole } from "../joker.types";
 import { formatDateTime, formatPrice } from "./panelHelpers";
 
 type SalesHistoryScreenProps = {
   couriers: JokerCourier[];
   clients: JokerClient[];
+  products: JokerProduct[];
+  role: JokerRole;
 };
 
 // Historial de ventas: el operario (Admin o Usuario, los dos ven lo mismo)
 // escribe una fecha a mano y ve TODOS los pedidos confirmados de ese dia
 // comercial (5am a 5am, tanto los que salieron de la caja del Administrador
-// como los del Usuario), con el mismo detalle que Panel > Movimientos --
-// pero es solo una foto de lo que paso: no se puede editar ni borrar nada
-// desde aca.
-export function SalesHistoryScreen({ couriers, clients }: SalesHistoryScreenProps) {
+// como los del Usuario), con el mismo detalle que Panel > Movimientos.
+// El cliente pidio poder editar tambien desde aca (antes era solo una foto,
+// de lectura) -- se reusa el mismo EditOrderModal/updateOrder que ya usaba
+// Panel, con avisos extra (ver isHistorical y el aviso de cuenta corriente
+// en el modal) porque un pedido de aca es casi siempre de un dia con la
+// caja ya cerrada.
+export function SalesHistoryScreen({ couriers, clients, products, role }: SalesHistoryScreenProps) {
   const [selectedDate, setSelectedDate] = useState("");
   const [orders, setOrders] = useState<JokerOrderRecord[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const [editingOrder, setEditingOrder] = useState<JokerOrderRecord | null>(null);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
 
   async function handleDateChange(iso: string) {
     setSelectedDate(iso);
@@ -43,6 +52,28 @@ export function SalesHistoryScreen({ couriers, clients }: SalesHistoryScreenProp
       setLoadError(fetchError instanceof Error ? fetchError.message : "No se pudo cargar el historial.");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleSaveOrderEdit(items: JokerOrderRecord["items"], orderDate: string) {
+    if (!editingOrder) return;
+
+    setIsSavingOrder(true);
+    try {
+      await updateOrder(editingOrder.id, items, orderDate, undefined, undefined, undefined, undefined, undefined, undefined, role);
+      toast.success(items.length ? "Pedido actualizado." : "Pedido cancelado.");
+      setEditingOrder(null);
+      // Si cambio de fecha (orderDate), puede que ya no corresponda al dia
+      // que se esta mirando -- volver a pedir la lista de ese dia es lo
+      // mas simple para que la pantalla quede consistente en todos los
+      // casos, en vez de tratar de actualizar el item a mano.
+      if (selectedDate) {
+        await handleDateChange(selectedDate);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo guardar el pedido.");
+    } finally {
+      setIsSavingOrder(false);
     }
   }
 
@@ -146,6 +177,15 @@ export function SalesHistoryScreen({ couriers, clients }: SalesHistoryScreenProp
                           </div>
                         </li>
                       ))}
+                      <li>
+                        <button
+                          type="button"
+                          className="joker-button joker-button--ghost joker-button--auto"
+                          onClick={() => setEditingOrder(order)}
+                        >
+                          Editar pedido
+                        </button>
+                      </li>
                     </ul>
                   ) : null}
                 </li>
@@ -159,6 +199,18 @@ export function SalesHistoryScreen({ couriers, clients }: SalesHistoryScreenProp
 
       {!isLoading && !loadError && !orders ? (
         <p className="joker-empty-state">Escribi una fecha para ver los pedidos de ese dia.</p>
+      ) : null}
+
+      {editingOrder ? (
+        <EditOrderModal
+          order={editingOrder}
+          products={products}
+          clients={clients}
+          isSaving={isSavingOrder}
+          isHistorical
+          onClose={() => setEditingOrder(null)}
+          onSave={handleSaveOrderEdit}
+        />
       ) : null}
     </section>
   );

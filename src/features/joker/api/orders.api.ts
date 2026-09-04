@@ -1,5 +1,5 @@
 import { API_BASE_URL, readJson } from "./shared";
-import type { JokerOrderItem, JokerOrderRecord, JokerPaymentMethod } from "../joker.types";
+import type { JokerOrderItem, JokerOrderRecord, JokerPaymentMethod, JokerRole } from "../joker.types";
 
 type OrderListResponse = {
   items: JokerOrderRecord[];
@@ -70,12 +70,27 @@ export async function updateOrder(
   // Saca el repartidor asignado en vez de dejarlo como estaba (que es lo
   // que hace no mandar courierId) -- lo usa PanelScreen#handleAssignCounter
   // para pasar a "Mostrador" un pedido que ya tenia delivery asignado.
-  clearCourier?: boolean
+  clearCourier?: boolean,
+  // Rol que hace esta edicion -- se guarda como "quien fue" (ver
+  // JokerOrdersService#updateOrder). Solo lo mandan las pantallas que
+  // editan items de verdad (Panel/Historial > Editar pedido), no cada
+  // llamado a updateOrder (asignar repartidor, etc.).
+  editedByRole?: JokerRole
 ): Promise<OrderResponse> {
   const response = await fetch(`${API_BASE_URL}/joker/orders/${orderId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items, orderDate, courierId, deliveryCost, paymentMethod, clientId, customerName, clearCourier })
+    body: JSON.stringify({
+      items,
+      orderDate,
+      courierId,
+      deliveryCost,
+      paymentMethod,
+      clientId,
+      customerName,
+      clearCourier,
+      editedByRole
+    })
   });
   return readJson<OrderResponse>(response);
 }

@@ -494,7 +494,7 @@ export function JokerHomePage() {
         ) : activeTab === "mes" ? (
           <MesScreen />
         ) : activeTab === "historial" ? (
-          <SalesHistoryScreen couriers={couriers} clients={clients} />
+          <SalesHistoryScreen couriers={couriers} clients={clients} products={products} role={role} />
         ) : null}
       </main>
 

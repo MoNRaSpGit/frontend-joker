@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerOrderRecord, JokerProduct } from "../joker.types";
+import type { JokerClient, JokerOrderRecord, JokerProduct } from "../joker.types";
 
 type EditableLine = {
   productId: number;
@@ -13,9 +13,14 @@ type EditableLine = {
 type EditOrderModalProps = {
   order: JokerOrderRecord;
   products: JokerProduct[];
+  clients: JokerClient[];
   isSaving: boolean;
   onClose: () => void;
   onSave: (items: EditableLine[], orderDate: string) => Promise<void>;
+  // true cuando se abre desde Historial de ventas: ese pedido es de un dia
+  // que ya paso (y probablemente con la caja ya cerrada), a diferencia de
+  // Panel > Movimientos, que solo edita pedidos del turno en curso.
+  isHistorical?: boolean;
 };
 
 const SEARCH_RESULTS_LIMIT = 8;
@@ -31,13 +36,21 @@ function formatDateTime(isoDate: string) {
   return `${dateLabel} ${timeLabel}`;
 }
 
-export function EditOrderModal({ order, products, isSaving, onClose, onSave }: EditOrderModalProps) {
+export function EditOrderModal({ order, products, clients, isSaving, onClose, onSave, isHistorical }: EditOrderModalProps) {
   const [lines, setLines] = useState<EditableLine[]>(() => order.items.map((item) => ({ ...item })));
   const [productSearch, setProductSearch] = useState("");
   const [orderDate, setOrderDate] = useState(() => order.orderDate ?? order.createdAt.slice(0, 10));
 
   const total = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
   const originalTotal = order.total;
+
+  // Nombre real del cliente a cuenta corriente (si corresponde), no el
+  // customerName suelto del pedido -- mismo criterio que ya usa
+  // SalesHistoryScreen para mostrarlo en el detalle.
+  const linkedClientName =
+    order.paymentMethod === "cuenta" && order.clientId
+      ? clients.find((client) => client.id === order.clientId)?.name ?? "el cliente"
+      : null;
 
   const searchResults = useMemo(() => {
     const query = productSearch.trim().toLowerCase();
@@ -91,6 +104,20 @@ export function EditOrderModal({ order, products, isSaving, onClose, onSave }: E
               Cerrar
             </button>
           </div>
+
+          {isHistorical ? (
+            <p className="joker-edit-order__warning">
+              Este pedido es de un día que ya pasó (probablemente con la caja cerrada). Editarlo cambia el total
+              vendido de ese día, en silencio.
+            </p>
+          ) : null}
+
+          {linkedClientName ? (
+            <p className="joker-edit-order__warning">
+              Este pedido es a cuenta corriente de <strong>{linkedClientName}</strong>. Si cambiás la cantidad o
+              sacás/agregás productos, la deuda de {linkedClientName} se ajusta sola al nuevo total.
+            </p>
+          ) : null}
 
           <label className="joker-form-field">
             <span>Fecha del pedido</span>

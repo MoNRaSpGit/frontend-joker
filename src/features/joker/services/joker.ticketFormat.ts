@@ -341,7 +341,11 @@ type JokerAccountCycleMovement =
 function buildAccountCycleMovements(entries: JokerAccountEntry[], openPayments: JokerAccountPayment[]): JokerAccountCycleMovement[] {
   const compras: JokerAccountCycleMovement[] = entries.map((entry) => ({
     type: "compra",
-    date: entry.createdAt,
+    // Si la compra tiene fecha atrasada (orderDate), esa es la que cuenta
+    // para el comprobante -- createdAt (cuando se cargo) solo se usa como
+    // respaldo para compras sin fecha propia puesta a mano. Mismo criterio
+    // que ya se aplico al ticket individual del pedido (buildSingleTicketLines).
+    date: entry.orderDate ?? entry.createdAt,
     amount: entry.total,
     items: entry.items,
     balanceAfter: 0
@@ -396,10 +400,19 @@ function buildAccountCycleTicketLines(client: JokerClient, title: string, moveme
 
   if (movements.length) {
     movements.forEach((movement, index) => {
-      const dateLabel = new Date(movement.date).toLocaleDateString("es-UY", {
+      // movement.date puede ser una fecha sola (YYYY-MM-DD, de orderDate)
+      // o un timestamp completo (de createdAt/un pago). Una fecha sola sin
+      // hora, si se parsea tal cual, JS la toma como medianoche UTC -- en
+      // Montevideo (UTC-3) eso corre la fecha un dia para atras. Agregarle
+      // la hora explicita evita ese salto (mismo criterio que ya usa
+      // pushHeader para el ticket individual del pedido).
+      const dateLabel = new Date(
+        /^\d{4}-\d{2}-\d{2}$/.test(movement.date) ? `${movement.date}T00:00:00` : movement.date
+      ).toLocaleDateString("es-UY", {
         day: "2-digit",
         month: "2-digit",
-        year: "numeric"
+        year: "numeric",
+        timeZone: "America/Montevideo"
       });
 
       // Toda compra se destaca con un titulo grande para que resalte

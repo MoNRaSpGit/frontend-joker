@@ -163,7 +163,9 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
 
     setIsSavingOrder(true);
     try {
-      await updateOrder(editingOrder.id, items, orderDate);
+      // PanelScreen solo se renderiza para role === "administrador" (ver
+      // JokerHomePage), asi que quien edita desde aca siempre es Admin.
+      await updateOrder(editingOrder.id, items, orderDate, undefined, undefined, undefined, undefined, undefined, undefined, "administrador");
       toast.success(items.length ? "Pedido actualizado." : "Pedido cancelado.");
       setEditingOrder(null);
       await loadOrders();
@@ -729,6 +731,7 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
         <EditOrderModal
           order={editingOrder}
           products={products}
+          clients={clients}
           isSaving={isSavingOrder}
           onClose={() => setEditingOrder(null)}
           onSave={handleSaveOrderEdit}
