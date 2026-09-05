@@ -41,6 +41,9 @@ export type JokerCashRegisterSummary = {
   // el ticket desglosa "Administrador" (totalVendido - esto) y
   // "Mostrador" ademas del total, ver buildCashRegisterCloseTicketLines.
   mostradorTotal?: number;
+  // Gastos del Administrador del turno (mozzarella, bombones, etc.) --
+  // reemplaza al "Top 3 productos" en el ticket, que no se usaba.
+  adminExpenses?: Array<{ description: string; amount: number }>;
 };
 
 const STORE_NAME = "EL JOKER";
@@ -678,16 +681,22 @@ export function buildCashRegisterCloseTicketLines(summary: JokerCashRegisterSumm
 
   lines.push(`${decorativeBorder()}\n`);
   lines.push(BOLD_ON);
-  lines.push("Top 3 productos\n");
+  lines.push("Gastos del administrador\n");
   lines.push(BOLD_OFF);
   lines.push(`${divider()}\n`);
 
-  if (summary.ranking.length) {
-    summary.ranking.slice(0, 3).forEach((entry, index) => {
-      lines.push(`${index + 1}) ${entry.quantity}x ${entry.productName}\n`);
+  const adminExpenses = summary.adminExpenses ?? [];
+  if (adminExpenses.length) {
+    adminExpenses.forEach((expense) => {
+      lines.push(`${rightAlignedLine(`${expense.description} `, formatMoney(expense.amount))}\n`);
     });
+    const adminExpensesTotal = adminExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    lines.push(`${divider()}\n`);
+    lines.push(BOLD_ON);
+    lines.push(`${rightAlignedLine("Total gastos ", formatMoney(adminExpensesTotal))}\n`);
+    lines.push(BOLD_OFF);
   } else {
-    lines.push("Sin ventas registradas.\n");
+    lines.push("Sin gastos registrados.\n");
   }
 
   lines.push(`${decorativeBorder()}\n`);

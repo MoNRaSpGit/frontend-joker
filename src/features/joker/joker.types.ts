@@ -173,6 +173,17 @@ export type JokerCourierSettlement = {
   settledAt: string;
 };
 
+// Gasto del Administrador durante el turno (mozzarella, bombones, etc.) --
+// reemplaza al ranking de productos en el Panel de control y en el ticket
+// de cierre de caja, que no se usaba. Se resetea con cada cierre (se
+// filtra por created_at > last_closed_at, igual que los pedidos).
+export type JokerAdminExpense = {
+  id: number;
+  description: string;
+  amount: number;
+  createdAt: string;
+};
+
 export type JokerRegisterState = {
   isOpen: boolean;
   lastClosedAt: string | null;
@@ -187,6 +198,8 @@ export type JokerRegisterCloseSummary = {
   // el cierre de la caja general (ver PanelScreen), para que quede
   // archivado el desglose por origen junto con el resto del cierre.
   mostradorTotal?: number;
+  adminExpenses?: Array<{ description: string; amount: number }>;
+  adminExpensesTotal?: number;
 };
 
 export type JokerClient = {

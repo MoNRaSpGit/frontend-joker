@@ -8,13 +8,28 @@ import { PaymentMethodChip } from "../components/PaymentMethodChip";
 import { ProfitRateModal } from "../components/ProfitRateModal";
 import { SelectClientModal } from "../components/SelectClientModal";
 import { usePaymentMethodEditor } from "../hooks/usePaymentMethodEditor";
-import { closeRegister, getRegisterState, listCurrentPeriodOrders, openRegister, updateOrder } from "../joker.api";
+import {
+  addAdminExpense,
+  closeRegister,
+  deleteAdminExpense,
+  getRegisterState,
+  listAdminExpenses,
+  listCurrentPeriodOrders,
+  openRegister,
+  updateOrder
+} from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerClient, JokerCourier, JokerOrderRecord, JokerPaymentMethod, JokerProduct, JokerRegisterState } from "../joker.types";
+import type {
+  JokerAdminExpense,
+  JokerClient,
+  JokerCourier,
+  JokerOrderRecord,
+  JokerPaymentMethod,
+  JokerProduct,
+  JokerRegisterState
+} from "../joker.types";
 import {
-  MEDALS,
-  MEDAL_CLASSES,
   MOVEMENTS_PREVIEW_COUNT,
   PAYMENT_METHODS,
   PROFIT_RATE_STORAGE_KEY,
@@ -76,6 +91,11 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
   } = usePaymentMethodEditor(setOrders, onAccountEntryRegistered);
   const [pendingDeleteOrder, setPendingDeleteOrder] = useState<JokerOrderRecord | null>(null);
   const [isDeletingOrder, setIsDeletingOrder] = useState(false);
+  const [adminExpenses, setAdminExpenses] = useState<JokerAdminExpense[]>([]);
+  const [expenseDescriptionInput, setExpenseDescriptionInput] = useState("");
+  const [expenseAmountInput, setExpenseAmountInput] = useState("");
+  const [isSavingExpense, setIsSavingExpense] = useState(false);
+  const [deletingExpenseId, setDeletingExpenseId] = useState<number | null>(null);
 
   function handleSaveProfitRate(percent: number) {
     setProfitRatePercent(percent);
@@ -92,14 +112,57 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
   useEffect(() => {
     void loadOrders();
     void loadRegisterState();
+    void loadAdminExpenses();
 
     const intervalId = window.setInterval(() => {
       void loadOrders(true);
       void loadRegisterState();
+      void loadAdminExpenses();
     }, 1000);
 
     return () => window.clearInterval(intervalId);
   }, []);
+
+  async function loadAdminExpenses() {
+    try {
+      const result = await listAdminExpenses();
+      setAdminExpenses(result.items);
+    } catch {
+      // Igual que loadRegisterState -- un problema de red pasajero no tapa
+      // el resto del panel con un cartel de error; el operario puede
+      // reintentar recargando la pantalla.
+    }
+  }
+
+  async function handleAddExpense() {
+    const description = expenseDescriptionInput.trim();
+    const amount = Number(expenseAmountInput);
+    if (!description || !amount || amount <= 0) return;
+
+    setIsSavingExpense(true);
+    try {
+      await addAdminExpense(description, amount);
+      setExpenseDescriptionInput("");
+      setExpenseAmountInput("");
+      await loadAdminExpenses();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo agregar el gasto.");
+    } finally {
+      setIsSavingExpense(false);
+    }
+  }
+
+  async function handleDeleteExpense(expenseId: number) {
+    setDeletingExpenseId(expenseId);
+    try {
+      await deleteAdminExpense(expenseId);
+      await loadAdminExpenses();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo eliminar el gasto.");
+    } finally {
+      setDeletingExpenseId(null);
+    }
+  }
 
   async function loadRegisterState() {
     try {
@@ -128,12 +191,29 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
   // pedidos, pero sin sacar el ticket de resumen -- antes se imprimia
   // siempre, sin poder evitarlo.
   async function handleConfirmCloseRegister(shouldPrint: boolean) {
+    const adminExpensesForClose = adminExpenses.map((expense) => ({ description: expense.description, amount: expense.amount }));
+
     setIsClosingRegister(true);
     try {
       if (shouldPrint) {
-        await printCashRegisterCloseTicket({ paymentTotals, totalVendido, ganancia, ranking, mostradorTotal });
+        await printCashRegisterCloseTicket({
+          paymentTotals,
+          totalVendido,
+          ganancia,
+          ranking,
+          mostradorTotal,
+          adminExpenses: adminExpensesForClose
+        });
       }
-      const state = await closeRegister({ totalVendido, ganancia, paymentTotals, ranking, mostradorTotal });
+      const state = await closeRegister({
+        totalVendido,
+        ganancia,
+        paymentTotals,
+        ranking,
+        mostradorTotal,
+        adminExpenses: adminExpensesForClose,
+        adminExpensesTotal
+      });
       setRegisterState(state);
       await loadOrders();
       toast.success("Caja cerrada.");
@@ -324,6 +404,7 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
   const ganancia = totalVendido * (profitRatePercent / 100);
   const ranking = buildRanking(orders);
   const paymentTotals = buildPaymentTotals(orders);
+  const adminExpensesTotal = adminExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   const visibleOrders = showAllMovements ? orders : orders.slice(0, MOVEMENTS_PREVIEW_COUNT);
   const hasHiddenMovements = orders.length > MOVEMENTS_PREVIEW_COUNT;
 
@@ -630,26 +711,68 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
 
       <section className="joker-panel">
         <div className="joker-panel__heading">
-          <p className="joker-eyebrow">Ranking</p>
-          <h2>Productos mas vendidos</h2>
+          <p className="joker-eyebrow">Hoy</p>
+          <h2>Gastos del administrador</h2>
         </div>
 
-        {ranking.length ? (
-          <ul className="joker-order-list">
-            {ranking.map((entry, index) => (
-              <li key={entry.productName} className="joker-order-item">
-                <div className="joker-order-item__info">
-                  <span className={`joker-qty-badge ${MEDAL_CLASSES[index] ?? ""}`}>
-                    {MEDALS[index] ?? `#${index + 1}`}
-                  </span>
-                  <strong>{entry.productName}</strong>
-                </div>
-                <span className="joker-qty-badge">{entry.quantity}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="joker-delivery-cash-form">
+          <label className="joker-form-field">
+            <span>Descripcion</span>
+            <input
+              type="text"
+              value={expenseDescriptionInput}
+              onChange={(event) => setExpenseDescriptionInput(event.target.value)}
+              placeholder="Ej: Mozzarella"
+            />
+          </label>
+          <label className="joker-form-field">
+            <span>Monto</span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={expenseAmountInput}
+              onChange={(event) => setExpenseAmountInput(event.target.value)}
+              placeholder="Ej: 500"
+            />
+          </label>
+          <button
+            type="button"
+            className="joker-button joker-button--dark joker-button--auto"
+            disabled={isSavingExpense || !expenseDescriptionInput.trim() || !expenseAmountInput}
+            onClick={() => void handleAddExpense()}
+          >
+            {isSavingExpense ? "Agregando..." : "Agregar gasto"}
+          </button>
+        </div>
+
+        {adminExpenses.length ? (
+          <>
+            <ul className="joker-order-list">
+              {adminExpenses.map((expense) => (
+                <li key={expense.id} className="joker-order-item joker-order-item--flat joker-order-item--with-delete">
+                  <span>{expense.description}</span>
+                  <button
+                    type="button"
+                    className="joker-order-item__delete-mid"
+                    disabled={deletingExpenseId === expense.id}
+                    onClick={() => void handleDeleteExpense(expense.id)}
+                  >
+                    Eliminar
+                  </button>
+                  <span className="joker-order-item__excluded">{formatPrice(expense.amount)}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="joker-stat-grid">
+              <div className="joker-stat-tile">
+                <span className="joker-stat-tile__label">Total gastos</span>
+                <strong className="joker-stat-tile__value">{formatPrice(adminExpensesTotal)}</strong>
+              </div>
+            </div>
+          </>
         ) : (
-          <p className="joker-empty-state">Todavia no hay pedidos impresos hoy.</p>
+          <p className="joker-empty-state">Todavia no cargaste gastos en este turno.</p>
         )}
       </section>
 
