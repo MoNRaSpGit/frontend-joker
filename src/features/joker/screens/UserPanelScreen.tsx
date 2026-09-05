@@ -129,6 +129,11 @@ export function UserPanelScreen({ couriers, clients, onAccountEntryRegistered }:
   const ganancia = totalVendido * (profitRatePercent / 100);
   const ranking = buildRanking(orders);
   const paymentTotals = buildPaymentTotals(orders);
+  // Plata que el Usuario le fue entregando al local durante el turno (ver
+  // "Registrar entrega" en Delivery, del lado del Administrador) -- antes
+  // solo quedaba anotado ahi, el Usuario no tenia forma de ver cuanto ya
+  // habia entregado.
+  const handoverMovements = (cashSummary?.movements ?? []).filter((movement) => movement.type === "entrega");
   const visibleOrders = showAllMovements ? orders : orders.slice(0, MOVEMENTS_PREVIEW_COUNT);
   const hasHiddenMovements = orders.length > MOVEMENTS_PREVIEW_COUNT;
 
@@ -180,6 +185,10 @@ export function UserPanelScreen({ couriers, clients, onAccountEntryRegistered }:
             <div className="joker-stat-tile">
               <span className="joker-stat-tile__label">Pedidos</span>
               <strong className="joker-stat-tile__value">{orders.length}</strong>
+            </div>
+            <div className="joker-stat-tile">
+              <span className="joker-stat-tile__label">Plata entregada</span>
+              <strong className="joker-stat-tile__value">{formatPrice(cashSummary?.handoversTotal ?? 0)}</strong>
             </div>
           </div>
         )}
@@ -303,6 +312,26 @@ export function UserPanelScreen({ couriers, clients, onAccountEntryRegistered }:
               </ul>
             ) : (
               <p className="joker-empty-state">Todavia no hiciste ventas en este turno.</p>
+            )}
+          </section>
+
+          <section className="joker-panel">
+            <div className="joker-panel__heading">
+              <p className="joker-eyebrow">Mostrador</p>
+              <h2>Plata entregada</h2>
+            </div>
+
+            {handoverMovements.length ? (
+              <ul className="joker-order-list">
+                {handoverMovements.map((movement) => (
+                  <li key={movement.id} className="joker-order-item joker-order-item--flat">
+                    <span>📦 {formatDateTime(movement.createdAt)}</span>
+                    <span className="joker-order-item__excluded">{formatPrice(movement.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="joker-empty-state">Todavia no entregaste plata en este turno.</p>
             )}
           </section>
 
