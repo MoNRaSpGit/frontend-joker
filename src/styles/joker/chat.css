@@ -118,6 +118,70 @@
   text-align: right;
 }
 
+.joker-chat-bubble__deleted {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* Editar/eliminar (solo en los mensajes propios, como WhatsApp) --
+   discretos por defecto, mas visibles al pasar el mouse sobre la burbuja. */
+.joker-chat-bubble__actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 2px;
+  opacity: 0.35;
+}
+
+.joker-chat-bubble:hover .joker-chat-bubble__actions {
+  opacity: 1;
+}
+
+.joker-chat-bubble__actions button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.joker-chat-bubble__edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.joker-chat-bubble__edit input {
+  border: 1px solid var(--joker-border);
+  border-radius: var(--joker-radius-sm);
+  padding: 6px 8px;
+  font-size: 14px;
+  color: #1a1a1a;
+}
+
+.joker-chat-bubble__edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.joker-chat-bubble__edit-actions button {
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+  border-radius: var(--joker-radius-sm);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.joker-chat-bubble__edit-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .joker-chat-panel__form {
   display: flex;
   gap: 8px;

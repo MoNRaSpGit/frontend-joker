@@ -14,6 +14,8 @@ export type JokerChatMessage = {
   senderRole: JokerRole;
   message: string;
   createdAt: string;
+  editedAt: string | null;
+  deletedAt: string | null;
 };
 
 // Slot de eleccion dentro de un combo (ej: "Hamburguesa" o "Refresco"): el

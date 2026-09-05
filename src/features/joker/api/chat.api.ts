@@ -22,3 +22,17 @@ export async function sendChatMessage(senderRole: JokerRole, message: string): P
   });
   return readJson<ChatMessageResponse>(response);
 }
+
+export async function editChatMessage(messageId: number, message: string): Promise<ChatMessageResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/chat/messages/${messageId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message })
+  });
+  return readJson<ChatMessageResponse>(response);
+}
+
+export async function deleteChatMessage(messageId: number): Promise<ChatMessageResponse> {
+  const response = await fetch(`${API_BASE_URL}/joker/chat/messages/${messageId}`, { method: "DELETE" });
+  return readJson<ChatMessageResponse>(response);
+}

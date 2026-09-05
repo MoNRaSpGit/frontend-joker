@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { listChatMessages, sendChatMessage } from "../joker.api";
+import { deleteChatMessage, editChatMessage, listChatMessages, sendChatMessage } from "../joker.api";
 import type { JokerChatMessage, JokerRole } from "../joker.types";
+import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 
 type ChatWidgetProps = {
   role: JokerRole;
@@ -43,6 +44,11 @@ export function ChatWidget({ role }: ChatWidgetProps) {
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [lastSeenId, setLastSeenId] = useState(() => readLastSeenId(role));
+  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const isOpenRef = useRef(isOpen);
   isOpenRef.current = isOpen;
@@ -111,6 +117,48 @@ export function ChatWidget({ role }: ChatWidgetProps) {
     }
   }
 
+  function handleStartEdit(message: JokerChatMessage) {
+    setEditingMessageId(message.id);
+    setEditDraft(message.message);
+  }
+
+  function handleCancelEdit() {
+    setEditingMessageId(null);
+    setEditDraft("");
+  }
+
+  async function handleSaveEdit(messageId: number) {
+    const trimmed = editDraft.trim();
+    if (!trimmed) return;
+
+    setIsSavingEdit(true);
+    try {
+      const result = await editChatMessage(messageId, trimmed);
+      setMessages((current) => current.map((m) => (m.id === messageId ? result.item : m)));
+      setEditingMessageId(null);
+      setEditDraft("");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo editar el mensaje.");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  }
+
+  async function handleConfirmDelete() {
+    if (!pendingDeleteId) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await deleteChatMessage(pendingDeleteId);
+      setMessages((current) => current.map((m) => (m.id === pendingDeleteId ? result.item : m)));
+      setPendingDeleteId(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo eliminar el mensaje.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   const unreadCount = messages.filter((m) => m.id > lastSeenId && m.senderRole !== role).length;
 
   return (
@@ -128,12 +176,56 @@ export function ChatWidget({ role }: ChatWidgetProps) {
             {messages.length === 0 ? (
               <p className="joker-empty-state">Todavia no hay mensajes.</p>
             ) : (
-              messages.map((m) => (
-                <div key={m.id} className={`joker-chat-bubble ${m.senderRole === role ? "joker-chat-bubble--own" : "joker-chat-bubble--other"}`}>
-                  <p>{m.message}</p>
-                  <span className="joker-chat-bubble__time">{formatTime(m.createdAt)}</span>
-                </div>
-              ))
+              messages.map((m) => {
+                const isOwn = m.senderRole === role;
+                const isDeleted = Boolean(m.deletedAt);
+                const isEditingThis = editingMessageId === m.id;
+
+                return (
+                  <div key={m.id} className={`joker-chat-bubble ${isOwn ? "joker-chat-bubble--own" : "joker-chat-bubble--other"}`}>
+                    {isEditingThis ? (
+                      <div className="joker-chat-bubble__edit">
+                        <input
+                          type="text"
+                          value={editDraft}
+                          onChange={(event) => setEditDraft(event.target.value)}
+                          maxLength={1000}
+                          disabled={isSavingEdit}
+                          autoFocus
+                        />
+                        <div className="joker-chat-bubble__edit-actions">
+                          <button type="button" onClick={handleCancelEdit} disabled={isSavingEdit}>
+                            Cancelar
+                          </button>
+                          <button type="button" onClick={() => void handleSaveEdit(m.id)} disabled={isSavingEdit || !editDraft.trim()}>
+                            Guardar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className={isDeleted ? "joker-chat-bubble__deleted" : undefined}>
+                        {isDeleted ? "Mensaje eliminado" : m.message}
+                      </p>
+                    )}
+
+                    <span className="joker-chat-bubble__time">
+                      {!isDeleted && m.editedAt ? "editado · " : ""}
+                      {formatTime(m.createdAt)}
+                    </span>
+
+                    {isOwn && !isDeleted && !isEditingThis ? (
+                      <div className="joker-chat-bubble__actions">
+                        <button type="button" onClick={() => handleStartEdit(m)} aria-label="Editar mensaje">
+                          ✏️
+                        </button>
+                        <button type="button" onClick={() => setPendingDeleteId(m.id)} aria-label="Eliminar mensaje">
+                          🗑️
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })
             )}
           </div>
 
@@ -157,6 +249,18 @@ export function ChatWidget({ role }: ChatWidgetProps) {
           {unreadCount > 0 ? <span className="joker-chat-fab__badge">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
         </button>
       )}
+
+      {pendingDeleteId ? (
+        <ConfirmDeleteModal
+          title="Eliminar mensaje"
+          message="Seguro que queres eliminar este mensaje? Del otro lado va a ver 'Mensaje eliminado'."
+          confirmLabel="Eliminar"
+          confirmLabelBusy="Eliminando..."
+          isDeleting={isDeleting}
+          onCancel={() => setPendingDeleteId(null)}
+          onConfirm={() => void handleConfirmDelete()}
+        />
+      ) : null}
     </div>
   );
 }
