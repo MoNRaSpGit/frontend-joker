@@ -214,7 +214,7 @@ export function SalesHistoryScreen({ couriers, clients, products, role }: SalesH
                         {order.items.length && order.displayNumber !== null ? (
                           <button
                             type="button"
-                            className="joker-button joker-button--ghost joker-button--auto"
+                            className="joker-button joker-button--primary joker-button--auto"
                             onClick={() => setReprintOrder(order)}
                           >
                             Reimprimir
