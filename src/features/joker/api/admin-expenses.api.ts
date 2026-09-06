@@ -9,8 +9,12 @@ type AdminExpenseResponse = {
   item: JokerAdminExpense;
 };
 
-export async function listAdminExpenses(): Promise<AdminExpenseListResponse> {
-  const response = await fetch(`${API_BASE_URL}/joker/admin-expenses`, { cache: "no-store" });
+// Sin fecha: gastos del turno actual (desde el ultimo cierre), lo usa el
+// Panel en vivo. Con fecha: gastos de ESE dia comercial, lo usa Historial
+// de ventas -- ver ListJokerAdminExpensesDto en el backend.
+export async function listAdminExpenses(date?: string): Promise<AdminExpenseListResponse> {
+  const url = date ? `${API_BASE_URL}/joker/admin-expenses?date=${date}` : `${API_BASE_URL}/joker/admin-expenses`;
+  const response = await fetch(url, { cache: "no-store" });
   return readJson<AdminExpenseListResponse>(response);
 }
 

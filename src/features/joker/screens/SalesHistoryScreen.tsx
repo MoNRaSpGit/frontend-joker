@@ -2,9 +2,9 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { DateTextInput } from "../components/DateTextInput";
 import { EditOrderModal } from "../components/EditOrderModal";
-import { listOrdersByDate, updateOrder } from "../joker.api";
+import { listAdminExpenses, listOrdersByDate, updateOrder } from "../joker.api";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
-import type { JokerClient, JokerCourier, JokerOrderRecord, JokerProduct, JokerRole } from "../joker.types";
+import type { JokerAdminExpense, JokerClient, JokerCourier, JokerOrderRecord, JokerProduct, JokerRole } from "../joker.types";
 import { formatDateTime, formatPrice } from "./panelHelpers";
 
 type SalesHistoryScreenProps = {
@@ -26,6 +26,7 @@ type SalesHistoryScreenProps = {
 export function SalesHistoryScreen({ couriers, clients, products, role }: SalesHistoryScreenProps) {
   const [selectedDate, setSelectedDate] = useState("");
   const [orders, setOrders] = useState<JokerOrderRecord[] | null>(null);
+  const [adminExpenses, setAdminExpenses] = useState<JokerAdminExpense[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
@@ -38,6 +39,7 @@ export function SalesHistoryScreen({ couriers, clients, products, role }: SalesH
 
     if (!iso) {
       setOrders(null);
+      setAdminExpenses(null);
       setLoadError(null);
       return;
     }
@@ -45,10 +47,12 @@ export function SalesHistoryScreen({ couriers, clients, products, role }: SalesH
     setIsLoading(true);
     setLoadError(null);
     try {
-      const result = await listOrdersByDate(iso);
-      setOrders(result.items);
+      const [ordersResult, expensesResult] = await Promise.all([listOrdersByDate(iso), listAdminExpenses(iso)]);
+      setOrders(ordersResult.items);
+      setAdminExpenses(expensesResult.items);
     } catch (fetchError) {
       setOrders(null);
+      setAdminExpenses(null);
       setLoadError(fetchError instanceof Error ? fetchError.message : "No se pudo cargar el historial.");
     } finally {
       setIsLoading(false);
@@ -78,6 +82,7 @@ export function SalesHistoryScreen({ couriers, clients, products, role }: SalesH
   }
 
   const totalVendido = orders?.reduce((sum, order) => sum + order.total, 0) ?? 0;
+  const adminExpensesTotal = adminExpenses?.reduce((sum, expense) => sum + expense.amount, 0) ?? 0;
   const dateLabel = selectedDate
     ? new Date(`${selectedDate}T00:00:00`).toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit", year: "numeric" })
     : "";
@@ -109,7 +114,25 @@ export function SalesHistoryScreen({ couriers, clients, products, role }: SalesH
               <span className="joker-stat-tile__label">Pedidos</span>
               <strong className="joker-stat-tile__value">{orders.length}</strong>
             </div>
+            <div className="joker-stat-tile">
+              <span className="joker-stat-tile__label">Gastos del administrador</span>
+              <strong className="joker-stat-tile__value">{formatPrice(adminExpensesTotal)}</strong>
+            </div>
           </div>
+
+          {adminExpenses?.length ? (
+            <>
+              <p className="joker-delivery-section-title">Gastos del administrador el {dateLabel}</p>
+              <ul className="joker-order-list">
+                {adminExpenses.map((expense) => (
+                  <li key={expense.id} className="joker-order-item joker-order-item--flat">
+                    <span>{expense.description}</span>
+                    <span className="joker-order-item__excluded">{formatPrice(expense.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
 
           {orders.length ? (
             <ul className="joker-order-list">
