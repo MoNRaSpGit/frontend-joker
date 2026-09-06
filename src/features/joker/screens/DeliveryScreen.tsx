@@ -5,7 +5,7 @@ import { addCourierCashMovement, getCourierCashSummary, listCurrentPeriodOrders 
 import { printCourierSummaryTicket } from "../services/joker.print";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerCourier, JokerCourierCashSummary, JokerOrderRecord } from "../joker.types";
-import { PAYMENT_METHODS, buildPaymentTotals } from "./panelHelpers";
+import { PAYMENT_METHODS, buildPaymentTotals, getDisplayCustomerName } from "./panelHelpers";
 
 type DeliveryScreenProps = {
   couriers: JokerCourier[];
@@ -327,10 +327,13 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
 
       {showOrders && orders.length ? (
         <ul className="joker-order-list">
-          {orders.map((order) => (
+          {orders.map((order) => {
+            const customerName = getDisplayCustomerName(order);
+            return (
             <li key={order.id} className="joker-order-item joker-order-item--flat">
               <span>
                 Pedido #{order.displayNumber} · {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]} · {formatPrice(order.total)}
+                {customerName ? ` · ${customerName}` : ""}
               </span>
               {courier.isCounter ? null : (
                 <span className={order.deliveryCost ? "joker-delivery-cost-tag" : "joker-order-item__excluded"}>
@@ -338,7 +341,8 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
                 </span>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       ) : null}
     </div>
