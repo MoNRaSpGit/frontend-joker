@@ -2,6 +2,8 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { DateTextInput } from "../components/DateTextInput";
 import { EditOrderModal } from "../components/EditOrderModal";
+import { ReprintTicketModal } from "../components/ReprintTicketModal";
+import { useReprintOrder } from "../hooks/useReprintOrder";
 import { listAdminExpenses, listOrdersByDate, updateOrder } from "../joker.api";
 import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerAdminExpense, JokerClient, JokerCourier, JokerOrderRecord, JokerProduct, JokerRole } from "../joker.types";
@@ -32,6 +34,7 @@ export function SalesHistoryScreen({ couriers, clients, products, role }: SalesH
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [editingOrder, setEditingOrder] = useState<JokerOrderRecord | null>(null);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const { reprintOrder, setReprintOrder, isReprinting, confirmReprint } = useReprintOrder();
 
   async function handleDateChange(iso: string) {
     setSelectedDate(iso);
@@ -208,6 +211,15 @@ export function SalesHistoryScreen({ couriers, clients, products, role }: SalesH
                         >
                           Editar pedido
                         </button>
+                        {order.items.length && order.displayNumber !== null ? (
+                          <button
+                            type="button"
+                            className="joker-button joker-button--ghost joker-button--auto"
+                            onClick={() => setReprintOrder(order)}
+                          >
+                            Reimprimir
+                          </button>
+                        ) : null}
                       </li>
                     </ul>
                   ) : null}
@@ -233,6 +245,15 @@ export function SalesHistoryScreen({ couriers, clients, products, role }: SalesH
           isHistorical
           onClose={() => setEditingOrder(null)}
           onSave={handleSaveOrderEdit}
+        />
+      ) : null}
+
+      {reprintOrder && reprintOrder.displayNumber !== null ? (
+        <ReprintTicketModal
+          orderNumber={reprintOrder.displayNumber}
+          isPrinting={isReprinting}
+          onSelect={(copies) => void confirmReprint(copies)}
+          onClose={() => setReprintOrder(null)}
         />
       ) : null}
     </section>

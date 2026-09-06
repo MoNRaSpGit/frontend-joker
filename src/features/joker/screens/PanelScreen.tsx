@@ -6,8 +6,10 @@ import { EditOrderModal } from "../components/EditOrderModal";
 import { PaymentBreakdownModal } from "../components/PaymentBreakdownModal";
 import { PaymentMethodChip } from "../components/PaymentMethodChip";
 import { ProfitRateModal } from "../components/ProfitRateModal";
+import { ReprintTicketModal } from "../components/ReprintTicketModal";
 import { SelectClientModal } from "../components/SelectClientModal";
 import { usePaymentMethodEditor } from "../hooks/usePaymentMethodEditor";
+import { useReprintOrder } from "../hooks/useReprintOrder";
 import {
   addAdminExpense,
   closeRegister,
@@ -89,6 +91,7 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
     changePaymentMethod,
     confirmCuenta
   } = usePaymentMethodEditor(setOrders, onAccountEntryRegistered);
+  const { reprintOrder, setReprintOrder, isReprinting, confirmReprint } = useReprintOrder();
   const [pendingDeleteOrder, setPendingDeleteOrder] = useState<JokerOrderRecord | null>(null);
   const [isDeletingOrder, setIsDeletingOrder] = useState(false);
   const [adminExpenses, setAdminExpenses] = useState<JokerAdminExpense[]>([]);
@@ -698,6 +701,15 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
                       >
                         Editar pedido
                       </button>
+                      {order.items.length && order.displayNumber !== null ? (
+                        <button
+                          type="button"
+                          className="joker-button joker-button--ghost joker-button--auto"
+                          onClick={() => setReprintOrder(order)}
+                        >
+                          Reimprimir
+                        </button>
+                      ) : null}
                     </li>
                   </ul>
                 ) : null}
@@ -854,6 +866,15 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
           isSubmitting={isSavingPayment}
           onClose={() => setCuentaPickerOrder(null)}
           onConfirm={(clientId) => void confirmCuenta(clientId)}
+        />
+      ) : null}
+
+      {reprintOrder && reprintOrder.displayNumber !== null ? (
+        <ReprintTicketModal
+          orderNumber={reprintOrder.displayNumber}
+          isPrinting={isReprinting}
+          onSelect={(copies) => void confirmReprint(copies)}
+          onClose={() => setReprintOrder(null)}
         />
       ) : null}
     </>
