@@ -2,10 +2,12 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { DateTextInput } from "../components/DateTextInput";
 import { EditOrderModal } from "../components/EditOrderModal";
+import { PaymentMethodChip } from "../components/PaymentMethodChip";
 import { ReprintTicketModal } from "../components/ReprintTicketModal";
+import { SelectClientModal } from "../components/SelectClientModal";
+import { usePaymentMethodEditor } from "../hooks/usePaymentMethodEditor";
 import { useReprintOrder } from "../hooks/useReprintOrder";
 import { listAdminExpenses, listOrdersByDate, updateOrder } from "../joker.api";
-import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerAdminExpense, JokerClient, JokerCourier, JokerOrderRecord, JokerProduct, JokerRole } from "../joker.types";
 import { formatDateTime, formatPrice } from "./panelHelpers";
 
@@ -14,6 +16,7 @@ type SalesHistoryScreenProps = {
   clients: JokerClient[];
   products: JokerProduct[];
   role: JokerRole;
+  onAccountEntryRegistered: () => void;
 };
 
 // Historial de ventas: el operario (Admin o Usuario, los dos ven lo mismo)
@@ -25,7 +28,7 @@ type SalesHistoryScreenProps = {
 // Panel, con avisos extra (ver isHistorical y el aviso de cuenta corriente
 // en el modal) porque un pedido de aca es casi siempre de un dia con la
 // caja ya cerrada.
-export function SalesHistoryScreen({ couriers, clients, products, role }: SalesHistoryScreenProps) {
+export function SalesHistoryScreen({ couriers, clients, products, role, onAccountEntryRegistered }: SalesHistoryScreenProps) {
   const [selectedDate, setSelectedDate] = useState("");
   const [orders, setOrders] = useState<JokerOrderRecord[] | null>(null);
   const [adminExpenses, setAdminExpenses] = useState<JokerAdminExpense[] | null>(null);
@@ -35,6 +38,23 @@ export function SalesHistoryScreen({ couriers, clients, products, role }: SalesH
   const [editingOrder, setEditingOrder] = useState<JokerOrderRecord | null>(null);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const { reprintOrder, setReprintOrder, isReprinting, confirmReprint } = useReprintOrder();
+  // usePaymentMethodEditor pide un setter de JokerOrderRecord[] (no
+  // nullable) -- aca la lista puede ser null (todavia no se eligio
+  // fecha), asi que se envuelve para no tocar nada si no hay pedidos
+  // cargados todavia.
+  const {
+    editingPaymentOrderId,
+    setEditingPaymentOrderId,
+    isSavingPayment,
+    cuentaPickerOrder,
+    setCuentaPickerOrder,
+    changePaymentMethod,
+    confirmCuenta
+  } = usePaymentMethodEditor(
+    (update) =>
+      setOrders((current) => (current ? (typeof update === "function" ? update(current) : update) : current)),
+    onAccountEntryRegistered
+  );
 
   async function handleDateChange(iso: string) {
     setSelectedDate(iso);
@@ -178,7 +198,20 @@ export function SalesHistoryScreen({ couriers, clients, products, role }: SalesH
                         <div className="joker-order-meta-row">
                           <div className="joker-order-meta-section">
                             <span className="joker-order-meta-chip">{formatDateTime(order.createdAt, order.orderDate)}</span>
-                            <span className="joker-order-meta-chip">{JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]}</span>
+                            <PaymentMethodChip
+                              order={order}
+                              isEditing={editingPaymentOrderId === order.id}
+                              isSaving={isSavingPayment}
+                              onStartEdit={() => setEditingPaymentOrderId(order.id)}
+                              onSelectMethod={(method) => {
+                                if (method === "cuenta") {
+                                  setCuentaPickerOrder(order);
+                                  return;
+                                }
+                                void changePaymentMethod(order, method);
+                              }}
+                              onCancel={() => setEditingPaymentOrderId(null)}
+                            />
                           </div>
 
                           {order.paymentMethod === "cuenta" && order.clientId ? (
@@ -254,6 +287,17 @@ export function SalesHistoryScreen({ couriers, clients, products, role }: SalesH
           isPrinting={isReprinting}
           onSelect={(copies) => void confirmReprint(copies)}
           onClose={() => setReprintOrder(null)}
+        />
+      ) : null}
+
+      {cuentaPickerOrder ? (
+        <SelectClientModal
+          title="Pasar a cuenta corriente"
+          hint={`Pedido #${cuentaPickerOrder.displayNumber} · ${formatPrice(cuentaPickerOrder.total)}`}
+          clients={clients}
+          isSubmitting={isSavingPayment}
+          onClose={() => setCuentaPickerOrder(null)}
+          onConfirm={(clientId) => void confirmCuenta(clientId)}
         />
       ) : null}
     </section>
