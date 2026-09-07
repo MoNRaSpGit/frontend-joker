@@ -334,8 +334,8 @@ function CourierSettlement({ courier }: { courier: JokerCourier }) {
             <li key={order.id} className="joker-order-item joker-order-item--flat">
               <span>
                 Pedido #{order.displayNumber} · {JOKER_PAYMENT_METHOD_LABELS[order.paymentMethod]} · {formatPrice(order.total)}
-                {customerName ? ` · ${customerName}` : ""}
-                {address ? ` · ${address}` : ""}
+                {customerName ? ` · 👤 ${customerName}` : ""}
+                {address ? ` · 📍 ${address}` : ""}
               </span>
               {courier.isCounter ? null : (
                 <span className={order.deliveryCost ? "joker-delivery-cost-tag" : "joker-order-item__excluded"}>
