@@ -540,6 +540,18 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
                       {!order.items.length ? <span className="joker-cancelled-badge">Eliminado</span> : null}
                     </strong>
                     {order.items.length ? (
+                      // Nombre o direccion, lo que tenga -- nombre gana si
+                      // hay los dos. Asi se ve de un vistazo quien es el
+                      // pedido sin tener que abrirlo, ademas del chip de
+                      // delivery/mostrador que ya estaba.
+                      (() => {
+                        const displayName = getDisplayCustomerName(order);
+                        const displayAddress = order.address?.trim();
+                        const label = displayName || displayAddress;
+                        return label ? <span className="joker-order-item__excluded">{label}</span> : null;
+                      })()
+                    ) : null}
+                    {order.items.length ? (
                       order.courierId ? (
                         <span className="joker-delivery-chip joker-delivery-chip--assigned joker-delivery-chip--mini">
                           🛵 {couriers.find((courier) => courier.id === order.courierId)?.name ?? "Repartidor"}
