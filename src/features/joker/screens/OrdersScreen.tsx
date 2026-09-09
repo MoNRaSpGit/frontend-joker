@@ -220,7 +220,7 @@ export function OrdersScreen({
         orderDate,
         undefined,
         Number.isFinite(parsedDeliveryCost) ? parsedDeliveryCost : undefined,
-        undefined,
+        clientId,
         undefined,
         orderNote
       );
@@ -239,6 +239,36 @@ export function OrdersScreen({
       toast.error(saveError instanceof Error ? `No se pudo guardar el pedido: ${saveError.message}` : "No se pudo guardar el pedido.");
       setIsPrinting(false);
       return;
+    }
+
+    // El cargo a la cuenta corriente se intenta apenas el pedido queda
+    // guardado, ANTES de imprimir -- no despues. Si se dejaba para el
+    // final, un error de impresion (papel, impresora desconectada, etc.)
+    // cortaba la funcion con un `return` y el pedido quedaba guardado
+    // (con nombre de cliente y todo) pero SIN cargarse nunca en la cuenta
+    // corriente, sin ningun aviso claro de que eso habia pasado (paso lo
+    // que le paso al pedido de Sampy).
+    if (paymentMethod === "cuenta" && clientId) {
+      try {
+        // Mismo filtro que printableOrder mas abajo: los componentes de
+        // combo ($0, ya incluidos en la linea del combo) no van como
+        // renglon propio en la cuenta corriente -- si no, el estado de
+        // cuenta / ticket de cobro sale con el combo desglosado de mas.
+        const accountItems = order.filter((item) => !isComboComponentLine(item));
+        await createAccountEntry(
+          clientId,
+          accountItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
+          accountItems.map((item) => ({ productName: item.productName, quantity: item.quantity, unitPrice: item.unitPrice })),
+          orderId
+        );
+        onAccountEntryRegistered();
+      } catch (accountError) {
+        toast.error(
+          accountError instanceof Error
+            ? `El pedido #${displayNumber} se guardo pero NO se cargo en la cuenta corriente: ${accountError.message}`
+            : `El pedido #${displayNumber} se guardo pero NO se cargo en la cuenta corriente.`
+        );
+      }
     }
 
     // "0 tick": el pedido queda guardado como cualquier otro (descuenta
@@ -281,29 +311,6 @@ export function OrdersScreen({
     }
     setIsPrinting(false);
     setIsPaymentModalOpen(false);
-
-    if (paymentMethod === "cuenta" && clientId) {
-      try {
-        // Mismo filtro que printableOrder: los componentes de combo ($0,
-        // ya incluidos en la linea del combo) no van como renglon propio
-        // en la cuenta corriente -- si no, el estado de cuenta / ticket de
-        // cobro sale con el combo desglosado de mas.
-        const accountItems = order.filter((item) => !isComboComponentLine(item));
-        await createAccountEntry(
-          clientId,
-          accountItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
-          accountItems.map((item) => ({ productName: item.productName, quantity: item.quantity, unitPrice: item.unitPrice })),
-          orderId
-        );
-        onAccountEntryRegistered();
-      } catch (accountError) {
-        toast.error(
-          accountError instanceof Error
-            ? `El pedido se imprimio pero no se guardo en la cuenta corriente: ${accountError.message}`
-            : "El pedido se imprimio pero no se guardo en la cuenta corriente."
-        );
-      }
-    }
   }
 
   // Producto real del catalogo para el item en edicion (si todavia existe):
