@@ -284,10 +284,15 @@ export function OrdersScreen({
 
     if (paymentMethod === "cuenta" && clientId) {
       try {
+        // Mismo filtro que printableOrder: los componentes de combo ($0,
+        // ya incluidos en la linea del combo) no van como renglon propio
+        // en la cuenta corriente -- si no, el estado de cuenta / ticket de
+        // cobro sale con el combo desglosado de mas.
+        const accountItems = order.filter((item) => !isComboComponentLine(item));
         await createAccountEntry(
           clientId,
-          order.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
-          order.map((item) => ({ productName: item.productName, quantity: item.quantity, unitPrice: item.unitPrice })),
+          accountItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
+          accountItems.map((item) => ({ productName: item.productName, quantity: item.quantity, unitPrice: item.unitPrice })),
           orderId
         );
         onAccountEntryRegistered();

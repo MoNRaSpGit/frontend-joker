@@ -5,7 +5,7 @@ import { PaymentMethodChip } from "../components/PaymentMethodChip";
 import { SelectClientModal } from "../components/SelectClientModal";
 import { usePaymentMethodEditor } from "../hooks/usePaymentMethodEditor";
 import { getCourierCashSummary, listCurrentPeriodOrders, updateOrder } from "../joker.api";
-import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
+import { isPersistedComboComponentLine, JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type { JokerClient, JokerCourier, JokerCourierCashSummary, JokerOrderRecord } from "../joker.types";
 import {
   MEDALS,
@@ -296,7 +296,9 @@ export function UserPanelScreen({ couriers, clients, onAccountEntryRegistered }:
                             </div>
                           </div>
                         </li>
-                        {order.items.map((item, index) => (
+                        {order.items
+                          .filter((item) => !isPersistedComboComponentLine(item))
+                          .map((item, index) => (
                           <li key={`${order.id}-${index}`}>
                             <span className="joker-qty-badge">{item.quantity}</span>
                             <div>

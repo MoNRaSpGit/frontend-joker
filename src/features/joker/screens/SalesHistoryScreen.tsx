@@ -8,6 +8,7 @@ import { SelectClientModal } from "../components/SelectClientModal";
 import { usePaymentMethodEditor } from "../hooks/usePaymentMethodEditor";
 import { useReprintOrder } from "../hooks/useReprintOrder";
 import { listAdminExpenses, listOrdersByDate, updateOrder } from "../joker.api";
+import { isPersistedComboComponentLine } from "../joker.types";
 import type { JokerAdminExpense, JokerClient, JokerCourier, JokerOrderRecord, JokerProduct, JokerRole } from "../joker.types";
 import { formatDateTime, formatPrice } from "./panelHelpers";
 
@@ -227,7 +228,9 @@ export function SalesHistoryScreen({ couriers, clients, products, role, onAccoun
                           ) : null}
                         </div>
                       </li>
-                      {order.items.map((item, index) => (
+                      {order.items
+                        .filter((item) => !isPersistedComboComponentLine(item))
+                        .map((item, index) => (
                         <li key={`${order.id}-${index}`}>
                           <span className="joker-qty-badge">{item.quantity}</span>
                           <div>

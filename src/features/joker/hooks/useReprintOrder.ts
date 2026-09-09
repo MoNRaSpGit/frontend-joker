@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { printOrderTicket } from "../services/joker.print";
+import { isPersistedComboComponentLine } from "../joker.types";
 import type { JokerOrderItem, JokerOrderRecord } from "../joker.types";
 
 // Reimprimir un pedido ya confirmado, tal cual esta guardado AHORA -- si se
@@ -29,17 +30,24 @@ export function useReprintOrder() {
 
     setIsReprinting(true);
     try {
-      // JokerOrderRecord.items no trae lineId (eso solo existe mientras se
-      // arma el pedido en el Scanner/OrdersScreen, no se persiste) -- se
-      // genera uno por indice, total da lo mismo para imprimir.
-      const printableItems: JokerOrderItem[] = reprintOrder.items.map((item, index) => ({
-        lineId: String(index),
-        productId: item.productId,
-        productName: item.productName,
-        unitPrice: item.unitPrice,
-        quantity: item.quantity,
-        detail: item.detail ?? ""
-      }));
+      // Se saca lo "Incluido en <combo>" (la hamburguesa/bebida elegida
+      // dentro de un combo, guardada a $0 solo para que el backend
+      // descuente el stock correcto) -- si no, la reimpresion muestra el
+      // combo desglosado de mas, cosa que el ticket original (impreso al
+      // toque de cargarlo) no hace. JokerOrderRecord.items tampoco trae
+      // lineId (eso solo existe mientras se arma el pedido en el Scanner/
+      // OrdersScreen, no se persiste) -- se genera uno por indice, total
+      // da lo mismo para imprimir.
+      const printableItems: JokerOrderItem[] = reprintOrder.items
+        .filter((item) => !isPersistedComboComponentLine(item))
+        .map((item, index) => ({
+          lineId: String(index),
+          productId: item.productId,
+          productName: item.productName,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
+          detail: item.detail ?? ""
+        }));
 
       await printOrderTicket(
         printableItems,

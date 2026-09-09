@@ -74,6 +74,22 @@ export function isComboComponentOf(item: JokerOrderItem, parentLineId: string): 
   return item.parentLineId === parentLineId;
 }
 
+// Una vez que el pedido ya se guardo y se vuelve a pedir al backend
+// (Panel, Historial, Reimprimir), parentLineId no sobrevive -- el DTO de
+// guardado solo manda productId/name/price/qty/detail, no lineId ni
+// parentLineId (ver create-joker-order.dto.ts). Por eso, para un
+// JokerOrderRecord ya persistido, la unica forma de reconocer "esto es un
+// componente de combo, no una linea propia" es el texto fijo que
+// buildComponentLines le pone siempre en detail -- no es tan prolijo como
+// parentLineId, pero es el unico dato que sobrevive el viaje de ida y
+// vuelta. Sin este filtro, cualquier combo (no solo uno en particular)
+// aparece desglosado de mas en Panel/Historial/Reimprimir, aunque el
+// ticket recien impreso al cargarlo (que si tiene parentLineId, en
+// memoria) salga bien.
+export function isPersistedComboComponentLine(item: { detail?: string | null }): boolean {
+  return Boolean(item.detail?.startsWith("Incluido en "));
+}
+
 // Producto de prueba (precio $0) para probar la impresora. Se filtra del
 // panel (movimientos, ganancia, ranking, etc.) para que no ensucie los
 // resultados reales de venta.

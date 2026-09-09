@@ -21,7 +21,7 @@ import {
   updateOrder
 } from "../joker.api";
 import { printCashRegisterCloseTicket } from "../services/joker.print";
-import { JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
+import { isPersistedComboComponentLine, JOKER_PAYMENT_METHOD_LABELS } from "../joker.types";
 import type {
   JokerAdminExpense,
   JokerClient,
@@ -691,7 +691,9 @@ export function PanelScreen({ products, couriers, clients, onAccountEntryRegiste
                       </div>
                     </li>
                     {order.items.length ? (
-                      order.items.map((item, index) => (
+                      order.items
+                        .filter((item) => !isPersistedComboComponentLine(item))
+                        .map((item, index) => (
                         <li key={`${order.id}-${index}`}>
                           <span className="joker-qty-badge">{item.quantity}</span>
                           <div>
