@@ -5,6 +5,7 @@ import { AddClientModal } from "../components/AddClientModal";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { getAccountPayments, getAccountSettlements } from "../joker.api";
 import { getStoreDateLabel } from "../joker.storeDate";
+import { exportAccountStatementPdf } from "../services/joker.exportPdf";
 import { printAccountPaymentTicket, printAccountStatementTicket } from "../services/joker.print";
 import type { JokerAccountEntry, JokerAccountPayment, JokerAccountSettlement, JokerClient } from "../joker.types";
 
@@ -66,6 +67,7 @@ export function CuentaCorrienteScreen({
   const [isPayingAccount, setIsPayingAccount] = useState(false);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [showSettlements, setShowSettlements] = useState(false);
   const [settlements, setSettlements] = useState<JokerAccountSettlement[]>([]);
   const [isLoadingSettlements, setIsLoadingSettlements] = useState(false);
@@ -195,6 +197,24 @@ export function CuentaCorrienteScreen({
     }
   }
 
+  // Boton "PDF" -- pedido explicito: "que me deje un archivito PDF con la
+  // cuenta del cliente, el clasico que hacemos siempre". Mismo historial
+  // (compras + pagos del ciclo actual) y saldo que ya usa "Imprimir", solo
+  // que en vez de mandarlo a la impresora termica genera un PDF y lo
+  // descarga.
+  async function handleExportPdf() {
+    if (!selectedClient) return;
+
+    setIsExportingPdf(true);
+    try {
+      await exportAccountStatementPdf(selectedClient, selectedClientEntries, selectedClientOpenPayments);
+    } catch (exportError) {
+      toast.error(exportError instanceof Error ? `No se pudo generar el PDF: ${exportError.message}` : "No se pudo generar el PDF.");
+    } finally {
+      setIsExportingPdf(false);
+    }
+  }
+
   // Pago (parcial o total, segun el monto que se ingrese en el modal): se
   // registra primero, y el comprobante muestra el mismo historial de
   // compras+pagos del ciclo, hasta este pago inclusive -- si el monto
@@ -316,6 +336,14 @@ export function CuentaCorrienteScreen({
                 disabled={isPrinting}
               >
                 Imprimir
+              </button>
+              <button
+                type="button"
+                className="joker-button joker-button--ghost"
+                onClick={handleExportPdf}
+                disabled={isExportingPdf}
+              >
+                {isExportingPdf ? "Generando..." : "PDF"}
               </button>
               <button
                 type="button"

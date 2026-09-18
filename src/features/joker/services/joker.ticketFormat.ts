@@ -46,11 +46,11 @@ export type JokerCashRegisterSummary = {
   adminExpenses?: Array<{ description: string; amount: number }>;
 };
 
-const STORE_NAME = "EL JOKER";
-const STORE_ADDRESS = "Elias Abdo 115";
-const STORE_PHONE = "Tel: 099 238 454";
+export const STORE_NAME = "EL JOKER";
+export const STORE_ADDRESS = "Elias Abdo 115";
+export const STORE_PHONE = "Tel: 099 238 454";
 const INTERNAL_USE_NOTE = "Uso interno";
-const FOOTER_MESSAGE = "Muito obrigado!!";
+export const FOOTER_MESSAGE = "Muito obrigado!!";
 
 // copies: cuantas veces se repite el ticket completo en el mismo trabajo
 // (cada copia ya trae su propio corte de papel al final). Con 3 copias
@@ -333,7 +333,7 @@ function buildCompactTicketLines(
 // balanceAfter es el saldo que quedaba justo despues de ese movimiento --
 // asi el ticket cuenta la historia completa de por que el saldo es el que
 // es, en vez de mostrar solo el numero final.
-type JokerAccountCycleMovement =
+export type JokerAccountCycleMovement =
   | { type: "compra"; date: string; amount: number; items: JokerAccountEntry["items"]; balanceAfter: number }
   | { type: "pago"; date: string; amount: number; coveredEntries: JokerAccountPayment["coveredEntries"]; balanceAfter: number };
 
@@ -342,7 +342,7 @@ type JokerAccountCycleMovement =
 // corriente despues de cada uno. No hace falta filtrar por "ciclo": las
 // boletas abiertas y los pagos abiertos SON el ciclo actual (un pago total
 // archiva las boletas y cierra los pagos, asi que ya no aparecen aca).
-function buildAccountCycleMovements(entries: JokerAccountEntry[], openPayments: JokerAccountPayment[]): JokerAccountCycleMovement[] {
+export function buildAccountCycleMovements(entries: JokerAccountEntry[], openPayments: JokerAccountPayment[]): JokerAccountCycleMovement[] {
   const compras: JokerAccountCycleMovement[] = entries.map((entry) => ({
     type: "compra",
     // Si la compra tiene fecha atrasada (orderDate), esa es la que cuenta
