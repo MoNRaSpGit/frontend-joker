@@ -16,6 +16,8 @@ type OrderListProps = {
   isPrinting: boolean;
   ticketCopies: 0 | 1 | 3;
   onTicketCopiesChange: (copies: 0 | 1 | 3) => void;
+  exportPdf: boolean;
+  onExportPdfChange: (exportPdf: boolean) => void;
   onEditItem: (item: JokerOrderItem) => void;
   onRemoveItem: (lineId: string) => void;
   onPrint: () => void;
@@ -41,6 +43,8 @@ export function OrderList({
   isPrinting,
   ticketCopies,
   onTicketCopiesChange,
+  exportPdf,
+  onExportPdfChange,
   onEditItem,
   onRemoveItem,
   onPrint,
@@ -184,6 +188,19 @@ export function OrderList({
           >
             0 tick
           </button>
+          {/* Independiente de la cantidad de tickets fisicos -- pedido
+              explicito (18/09/2026): "seria 3 tick y pdf o 3 tick y no
+              pdf", se puede combinar con cualquiera de las tres
+              opciones de arriba, incluso con "0 tick". */}
+          <button
+            type="button"
+            className={`joker-category-chip${exportPdf ? " is-active" : ""}`}
+            onClick={() => onExportPdfChange(!exportPdf)}
+            style={{ marginLeft: 8 }}
+            title="Ademas de lo elegido arriba, descarga un PDF del pedido"
+          >
+            PDF
+          </button>
         </div>
       )}
 
@@ -199,9 +216,7 @@ export function OrderList({
             : "Guardando..."
           : isCounterOrder
             ? "Enviar pedido"
-            : ticketCopies === 0
-              ? "Guardar pedido (sin ticket)"
-              : "Imprimir pedido"}
+            : (ticketCopies === 0 ? "Guardar pedido (sin ticket)" : "Imprimir pedido") + (exportPdf ? " + PDF" : "")}
       </button>
     </section>
   );

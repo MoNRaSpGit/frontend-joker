@@ -7,6 +7,7 @@ import { PaymentMethodModal } from "../components/PaymentMethodModal";
 import { ProductGrid } from "../components/ProductGrid";
 import { useJokerOrder } from "../hooks/useJokerOrder";
 import { createAccountEntry, createOrder, getRegisterState, openRegister } from "../joker.api";
+import { exportOrderPdf } from "../services/joker.exportPdf";
 import { printOrderTicket } from "../services/joker.print";
 import { isComboComponentLine } from "../joker.types";
 import type { JokerClient, JokerCourier, JokerOrderItem, JokerPaymentMethod, JokerProduct, JokerRole } from "../joker.types";
@@ -38,6 +39,7 @@ export function OrdersScreen({
   const [editingItem, setEditingItem] = useState<JokerOrderItem | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const [ticketCopies, setTicketCopies] = useState<0 | 1 | 3>(3);
+  const [exportPdf, setExportPdf] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [pendingSale, setPendingSale] = useState<{
     paymentMethod: JokerPaymentMethod;
@@ -271,20 +273,20 @@ export function OrdersScreen({
       }
     }
 
+    // Las lineas hijas de un combo (a $0) son para que el backend descuente
+    // el stock de lo que realmente se eligio -- no aportan nada al ticket
+    // impreso ni al PDF, porque la linea del combo ya muestra el detalle
+    // completo ("Hamburguesa: 4Q · Bebida: Coca-Cola"). Sin este filtro
+    // salian duplicadas: una vez como parte del detalle del combo, y otra
+    // vez como renglon propio a $0.
+    const printableOrder = order.filter((item) => !isComboComponentLine(item));
+
     // "0 tick": el pedido queda guardado como cualquier otro (descuenta
     // stock, entra al panel), pero no se manda nada a la impresora. Es para
     // ventas internas que no necesitan comprobante.
     if (ticketCopies === 0) {
       toast.success("Pedido guardado (sin ticket).");
-      clearOrder();
     } else {
-      // Las lineas hijas de un combo (a $0) son para que el backend
-      // descuente el stock de lo que realmente se eligio -- no aportan
-      // nada al ticket impreso, porque la linea del combo ya muestra el
-      // detalle completo ("Hamburguesa: 4Q · Bebida: Coca-Cola"). Sin este
-      // filtro salian duplicadas: una vez como parte del detalle del
-      // combo, y otra vez como renglon propio a $0.
-      const printableOrder = order.filter((item) => !isComboComponentLine(item));
       try {
         await printOrderTicket(
           printableOrder,
@@ -298,7 +300,6 @@ export function OrdersScreen({
           orderDate
         );
         toast.success("Pedido impreso.");
-        clearOrder();
       } catch (printError) {
         toast.error(
           printError instanceof Error
@@ -309,6 +310,24 @@ export function OrdersScreen({
         return;
       }
     }
+
+    // PDF, independiente de la cantidad de tickets fisicos elegida arriba
+    // -- pedido explicito: "seria 3 tick y pdf o 3 tick y no pdf". Un error
+    // acá no debe tapar que el pedido ya se guardo bien (mismo criterio que
+    // el aviso de cuenta corriente mas arriba).
+    if (exportPdf) {
+      try {
+        await exportOrderPdf(printableOrder, orderAddress, paymentMethod, orderCustomerName, orderDeliveryCost, displayNumber, orderNote);
+      } catch (pdfError) {
+        toast.error(
+          pdfError instanceof Error
+            ? `El pedido #${displayNumber} se guardo pero no se pudo generar el PDF: ${pdfError.message}`
+            : `El pedido #${displayNumber} se guardo pero no se pudo generar el PDF.`
+        );
+      }
+    }
+
+    clearOrder();
     setIsPrinting(false);
     setIsPaymentModalOpen(false);
   }
@@ -353,6 +372,8 @@ export function OrdersScreen({
         isPrinting={isPrinting}
         ticketCopies={ticketCopies}
         onTicketCopiesChange={setTicketCopies}
+        exportPdf={exportPdf}
+        onExportPdfChange={setExportPdf}
         onEditItem={setEditingItem}
         onRemoveItem={removeItem}
         onPrint={() => setIsPaymentModalOpen(true)}
