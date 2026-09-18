@@ -1,7 +1,6 @@
 import { Menu, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { ChatWidget } from "./components/ChatWidget";
 import { JokerRoleLoginScreen } from "./components/JokerRoleLoginScreen";
 import { JokerSidebar } from "./components/JokerSidebar";
 import { PendingOrderBadge } from "./components/PendingOrderBadge";
@@ -505,8 +504,6 @@ export function JokerHomePage() {
       </main>
 
       {role ? <JokerSidebar activeTab={activeTab} isAdmin={role === "administrador"} onNavigate={goToTab} /> : null}
-
-      {role ? <ChatWidget role={role} /> : null}
 
       {isPrinterModalOpen ? (
         <PrinterSettingsModal
