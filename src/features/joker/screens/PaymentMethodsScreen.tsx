@@ -14,13 +14,18 @@ function buildEntryText(item: JokerPaymentAccount): string {
   return `🏦 *${item.label}*\n👤 Cuenta: ${item.ownerName}\n🔢 Numero: ${item.accountInfo}`;
 }
 
+// Pedido explicito (20/09/2026): frase corta con simbolo de tarjeta en vez
+// del saludo largo, y al final la misma despedida que ya usan los tickets
+// (ver FOOTER_MESSAGE en joker.ticketFormat.ts).
+const HEADING = "💳 Metodos de pago";
+const FAREWELL = "Muito obrigado!!";
+
 function buildSingleClipboardText(item: JokerPaymentAccount): string {
-  return `Este es el metodo de pago de Joker 👋\n\n${buildEntryText(item)}`;
+  return `${HEADING}\n\n${buildEntryText(item)}\n\n${FAREWELL}`;
 }
 
 function buildAllClipboardText(items: JokerPaymentAccount[]): string {
-  const greeting = "Estos son los metodos de pago de Joker 👋";
-  return `${greeting}\n\n${items.map(buildEntryText).join("\n\n")}`;
+  return `${HEADING}\n\n${items.map(buildEntryText).join("\n\n")}\n\n${FAREWELL}`;
 }
 
 export function PaymentMethodsScreen() {
