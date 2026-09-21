@@ -40,12 +40,13 @@ import { DeliveryScreen } from "./screens/DeliveryScreen";
 import { MesScreen } from "./screens/MesScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { PanelScreen } from "./screens/PanelScreen";
+import { PaymentMethodsScreen } from "./screens/PaymentMethodsScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
 import { SalesHistoryScreen } from "./screens/SalesHistoryScreen";
 import { StockScreen } from "./screens/StockScreen";
 import { UserPanelScreen } from "./screens/UserPanelScreen";
 
-type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock" | "delivery" | "mes" | "historial";
+type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock" | "delivery" | "mes" | "historial" | "metodos-pago";
 type CustomizeMode = "cliente" | "dev";
 
 const ROLE_STORAGE_KEY = "joker.role";
@@ -65,7 +66,8 @@ const TAB_TITLES: Record<JokerTab, string> = {
   stock: "Stock",
   delivery: "Delivery",
   mes: "Mes",
-  historial: "Historial de ventas"
+  historial: "Historial de ventas",
+  "metodos-pago": "Metodos de pago"
 };
 
 
@@ -500,6 +502,8 @@ export function JokerHomePage() {
             role={role}
             onAccountEntryRegistered={loadAccountEntries}
           />
+        ) : activeTab === "metodos-pago" ? (
+          <PaymentMethodsScreen />
         ) : null}
       </main>
 

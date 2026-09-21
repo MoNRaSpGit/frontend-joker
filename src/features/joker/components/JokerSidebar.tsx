@@ -1,7 +1,16 @@
-import { Bike, Boxes, Calendar, History, LayoutDashboard, Package, UtensilsCrossed, Wallet } from "lucide-react";
+import { Bike, Boxes, Calendar, CreditCard, History, LayoutDashboard, Package, UtensilsCrossed, Wallet } from "lucide-react";
 import type { ComponentType } from "react";
 
-export type JokerSidebarTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock" | "delivery" | "mes" | "historial";
+export type JokerSidebarTab =
+  | "pedidos"
+  | "productos"
+  | "panel"
+  | "cuenta"
+  | "stock"
+  | "delivery"
+  | "mes"
+  | "historial"
+  | "metodos-pago";
 
 type SidebarItem = {
   tab: JokerSidebarTab;
@@ -18,7 +27,8 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { tab: "cuenta", label: "Cuenta corriente", icon: Wallet, adminOnly: true },
   { tab: "stock", label: "Stock", icon: Boxes, adminOnly: true },
   { tab: "delivery", label: "Delivery", icon: Bike, adminOnly: true },
-  { tab: "mes", label: "Mes", icon: Calendar, adminOnly: true }
+  { tab: "mes", label: "Mes", icon: Calendar, adminOnly: true },
+  { tab: "metodos-pago", label: "Metodos de pago", icon: CreditCard, adminOnly: true }
 ];
 
 type JokerSidebarProps = {

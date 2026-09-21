@@ -6,6 +6,7 @@ export * from "./api/products.api";
 export * from "./api/orders.api";
 export * from "./api/couriers.api";
 export * from "./api/clients.api";
+export * from "./api/payment-accounts.api";
 export * from "./api/account.api";
 export * from "./api/admin-expenses.api";
 export * from "./api/stock.api";

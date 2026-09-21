@@ -1,0 +1,71 @@
+/* Metodos de pago (20/09/2026): pantalla chica, lista corta + boton de
+   copiar bien destacado (es lo que mas se va a usar). */
+.joker-pm-card {
+  max-width: 520px;
+}
+
+.joker-pm-copy-btn {
+  width: 100%;
+  margin-bottom: 10px;
+  font-size: 1.05rem;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.joker-pm-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.joker-pm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--joker-border);
+  border-radius: var(--joker-radius-sm);
+  background: var(--joker-surface);
+}
+
+.joker-pm-row__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.joker-pm-row__info strong {
+  color: var(--joker-text);
+}
+
+.joker-pm-row__account {
+  color: var(--joker-muted);
+  font-size: 0.9rem;
+  word-break: break-all;
+}
+
+.joker-pm-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.joker-pm-row__edit {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 4px;
+  border-radius: var(--joker-radius-sm);
+}
+
+.joker-pm-row__edit:hover {
+  background: var(--joker-bg);
+}

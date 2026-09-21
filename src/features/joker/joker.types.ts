@@ -216,6 +216,19 @@ export type JokerClient = {
   createdAt: string;
 };
 
+// Metodos de pago -- CUENTAS para transferencias (20/09/2026): listado
+// corto para responder rapido por WhatsApp. Se llama "Account" (no
+// "Method") para no chocar con JokerPaymentMethod (efectivo/tarjeta/
+// transferencia/cuenta, mas arriba), que es el medio de pago de un pedido.
+export type JokerPaymentAccount = {
+  id: number;
+  label: string;
+  ownerName: string;
+  accountInfo: string;
+  sortOrder: number;
+  createdAt: string;
+};
+
 export type JokerAccountEntry = {
   id: number;
   clientId: number;
