@@ -290,3 +290,10 @@
   gap: 12px;
 }
 
+/* Hora de cada movimiento de caja (14/10/2026, pedido explicito: "cuando
+   entregan dinero que quede registrada la hora tambien"). */
+.joker-delivery-movement__time {
+  color: var(--joker-muted);
+  font-weight: 400;
+}
+

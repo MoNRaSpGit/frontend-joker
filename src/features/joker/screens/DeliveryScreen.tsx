@@ -18,6 +18,14 @@ function formatPrice(amount: number) {
   return amount.toLocaleString("es-UY", { style: "currency", currency: "UYU", minimumFractionDigits: 0 });
 }
 
+// Pedido explicito (14/10/2026): "cuando entregan dinero... que quede
+// registrada la hora tambien" -- el dato ya existia (movement.createdAt
+// trae fecha y hora completas desde el backend, ver joker-courier.
+// service.ts), lo unico que faltaba era mostrarlo en el historial.
+function formatMovementTime(isoDate: string) {
+  return new Date(isoDate).toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
+}
+
 type CashMovementType = "inicial" | "gasto" | "entrega";
 
 function CourierCash({ courier }: { courier: JokerCourier }) {
@@ -233,6 +241,8 @@ function CourierCash({ courier }: { courier: JokerCourier }) {
                 <span>
                   {movement.type === "inicial" ? "💰 Caja inicial" : movement.type === "gasto" ? "🧾 Gasto" : "📦 Entrega"}
                   {movement.description ? ` · ${movement.description}` : ""}
+                  {" · "}
+                  <span className="joker-delivery-movement__time">{formatMovementTime(movement.createdAt)}</span>
                 </span>
                 <span className="joker-order-item__excluded">{formatPrice(movement.amount)}</span>
               </li>

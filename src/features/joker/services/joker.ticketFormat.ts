@@ -610,7 +610,12 @@ export function buildCourierSummaryTicketLines(
   lines.push(BOLD_OFF);
   if (handoverMovements.length) {
     handoverMovements.forEach((movement) => {
-      lines.push(`${rightAlignedLine("  Entrega ", formatMoney(movement.amount))}\n`);
+      // Pedido explicito (14/10/2026): "cuando entregan dinero que quede
+      // registrada la hora tambien" -- el ticket impreso es la
+      // constancia fisica de la entrega, asi que la hora va ahi tambien,
+      // no solo en la pantalla.
+      const time = new Date(movement.createdAt).toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
+      lines.push(`${rightAlignedLine(`  ${time} Entrega `, formatMoney(movement.amount))}\n`);
     });
   } else {
     lines.push("  Sin entregas registradas.\n");
