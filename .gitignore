@@ -7,3 +7,7 @@ coverage
 *.tsbuildinfo
 .env
 NOTES.local.md
+
+# Interno: documentacion y respaldos, no se suben (13/11/2026)
+CONTEXTO.md
+.env.local
