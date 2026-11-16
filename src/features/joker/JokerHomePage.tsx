@@ -45,6 +45,7 @@ import { ProductsScreen } from "./screens/ProductsScreen";
 import { SalesHistoryScreen } from "./screens/SalesHistoryScreen";
 import { StockScreen } from "./screens/StockScreen";
 import { UserPanelScreen } from "./screens/UserPanelScreen";
+import { ServiceNotice } from "../../shared/components/ServiceNotice";
 
 type JokerTab = "pedidos" | "productos" | "panel" | "cuenta" | "stock" | "delivery" | "mes" | "historial" | "metodos-pago";
 type CustomizeMode = "cliente" | "dev";
@@ -402,6 +403,9 @@ export function JokerHomePage() {
   }
 
   return (
+    <>
+    {/* Aviso de demora activado desde Scrum: solo lo ve el administrador. */}
+    {role === "administrador" ? <ServiceNotice appPath="joker" /> : null}
     <div className={`joker-app${role ? " joker-app--with-sidebar" : ""}`}>
       <header className="joker-topbar">
         <div className="joker-topbar__inner">
@@ -542,5 +546,6 @@ export function JokerHomePage() {
         />
       ) : null}
     </div>
+    </>
   );
 }
